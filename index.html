@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+
+    <title>Absalon Pro</title>
+
+    <meta name="theme-color" content="#111827">
+
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="styles.css">
+
+    <!-- LIBRERÍAS DE JSPDF AGREGADAS PARA EL SPRINT 4 -->
+    <script src="https://unpkg.com/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+    <script src="https://unpkg.com/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
+
+    <!-- <link rel="icon" href="assets/icons/icon-192.png"> -->
+
+</head>
+<link rel="icon" href="assets/icons/favicon.ico">
+<link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+
+<body>
+
+<div id="app">
+
+    <!-- ========================= -->
+    <!-- HEADER -->
+    <!-- ========================= -->
+
+    <header class="topbar">
+
+        <div class="logo">
+
+            <div class="logo-icon">
+                AP
+            </div>
+
+            <div class="logo-text">
+
+                <h1>ABSALON PRO</h1>
+
+                <small>
+                    Versión 2.0.0
+                    ·
+                    Build 001
+                </small>
+
+            </div>
+
+        </div>
+
+        <div class="topbar-actions">
+
+            <button
+                id="btnDarkMode"
+                class="icon-button"
+                title="Modo oscuro">
+
+                🌙
+
+            </button>
+
+            <button
+                id="btnSettings"
+                class="icon-button"
+                title="Configuración">
+
+                ⚙
+
+            </button>
+
+        </div>
+
+    </header>
+
+    <!-- ========================= -->
+    <!-- MENU LATERAL -->
+    <!-- ========================= -->
+
+    <aside id="sidebar">
+
+        <nav>
+
+            <button class="menu-item active"
+                    data-view="dashboard">
+
+                🏠
+                <span>Dashboard</span>
+
+            </button>
+
+            <button class="menu-item"
+                    data-view="clientes">
+
+                👥
+                <span>Clientes</span>
+
+            </button>
+
+            <button class="menu-item"
+                    data-view="presupuestos">
+
+                📄
+                <span>Presupuestos</span>
+
+            </button>
+
+            <button class="menu-item"
+                    data-view="catalogos">
+
+                📚
+                <span>Catálogos</span>
+
+            </button>
+
+            <button class="menu-item"
+                    data-view="historial">
+
+                📂
+                <span>Historial</span>
+
+            </button>
+
+	    <button class="menu-item" data-view="construccionSeco">
+               <span>🧮</span> Calc. Seco
+	    </button>
+
+            <button class="menu-item"
+                    data-view="estadisticas">
+
+                📊
+                <span>Estadísticas</span>
+
+            </button>
+
+            <button class="menu-item"
+                    data-view="garantias">
+
+                🛡
+                <span>Garantías</span>
+
+            </button>
+
+            <button class="menu-item"
+                    data-view="fotos">
+
+                📸
+                <span>Fotos</span>
+
+            </button>
+
+            <button class="menu-item"
+                    data-view="configuracion">
+
+                ⚙
+                <span>Configuración</span>
+
+            </button>
+
+        </nav>
+
+    </aside>
+
+    <!-- ========================= -->
+    <!-- CONTENIDO -->
+    <!-- ========================= -->
+
+    <main id="mainContent">
+
+        <section id="dashboardView">
+
+            <div class="welcome-card">
+
+                <h2>
+                    Bienvenido a Absalon Pro
+                </h2>
+
+                <p>
+
+                    Sistema profesional para
+                    presupuestos,
+                    clientes,
+                    catálogos
+                    y garantías.
+
+                </p>
+
+            </div>
+
+            <div class="cards-grid">
+
+                <div class="dashboard-card">
+
+                    <h3>👥 Clientes</h3>
+
+                    <span id="clientesCount">
+                        0
+                    </span>
+
+                </div>
+
+                <div class="dashboard-card">
+
+                    <h3>📄 Presupuestos</h3>
+
+                    <span id="presupuestosCount">
+                        0
+                    </span>
+
+                </div>
+
+                <div class="dashboard-card">
+
+                    <h3>📚 Catálogos</h3>
+
+                    <span id="catalogosCount">
+                        0
+                    </span>
+
+                </div>
+
+                <div class="dashboard-card">
+
+                    <h3>🛡 Garantías</h3>
+
+                    <span id="garantiasCount">
+                        0
+                    </span>
+
+                </div>
+
+            </div>
+
+            <section id="workspace">
+    </section>
+
+    <nav class="bottom-nav">
+        <button data-module="dashboard">🏠<span>Inicio</span></button>
+        <button data-module="clientes">👥<span>Clientes</span></button>
+        <button data-module="presupuestos">📄<span>Trabajos</span></button>
+        <button data-module="agenda">🔔<span>Agenda</span></button>
+        <button data-module="menu">☰<span>Más</span></button>
+    </nav>
+
+            </section>
+
+        </section>
+
+    </main>
+
+</div>
+
+<script type="module" src="app.js"></script>
+
+</body>
+</html>
