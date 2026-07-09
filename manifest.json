@@ -1,0 +1,805 @@
+{
+  "clientes": [
+    {
+      "id": 1,
+      "nombre": "ruth",
+      "referencia": "Resistencia",
+      "telefono": "3624800993",
+      "direccion": "gardel 1420",
+      "tipoDocumento": "X",
+      "numeroDocumento": "X",
+      "observaciones": "amor"
+    },
+    {
+      "id": 2,
+      "nombre": "GABRIEL ESPINOSA",
+      "referencia": "Resistencia",
+      "telefono": "3624884054",
+      "direccion": "CARLOS GARDEL 1420",
+      "tipoDocumento": "CUIL",
+      "numeroDocumento": "20-35466718-6",
+      "observaciones": "SOY YO"
+    },
+    {
+      "id": 3,
+      "nombre": "zoe espinosa",
+      "referencia": "Resistencia",
+      "telefono": "3625268380",
+      "direccion": "gardel 1420",
+      "tipoDocumento": "X",
+      "numeroDocumento": "X",
+      "observaciones": ""
+    },
+    {
+      "id": 4,
+      "nombre": "Jardon Roberto",
+      "referencia": "Resistencia",
+      "telefono": "3624228776",
+      "direccion": "AV LIMA Y CALLE 6",
+      "tipoDocumento": "X",
+      "numeroDocumento": "X",
+      "observaciones": "EDIFICIO LIMA"
+    }
+  ],
+  "presupuestos": [
+    {
+      "id": 1,
+      "numero": 1,
+      "numeroFormat": "B-1",
+      "fecha": "2026-07-02",
+      "estado": "Borrador",
+      "cliente": 1,
+      "especialidades": [],
+      "descripcionTrabajo": "",
+      "garantíaId": "",
+      "materiales": [],
+      "manoObraDetalle": [],
+      "totalGeneral": 0,
+      "tiempo": {
+        "cantidad": 1,
+        "unidad": "Horas"
+      }
+    },
+    {
+      "id": 2,
+      "numero": 2,
+      "numeroFormat": "T-2",
+      "fecha": "2026-07-02",
+      "estado": "Finalizado",
+      "cliente": 1,
+      "especialidades": [],
+      "descripcionTrabajo": "",
+      "garantíaId": "",
+      "materiales": [
+        {
+          "amount": 1,
+          "cantidad": 1,
+          "idConcepto": "1782994557026",
+          "descripcion": "solera 35",
+          "precio": 6500,
+          "total": 6500
+        }
+      ],
+      "manoObraDetalle": [
+        {
+          "cantidad": 10,
+          "unidad": "Global",
+          "idConcepto": "1782994581150",
+          "descripcion": "tabique",
+          "precio": 12000,
+          "total": 120000
+        }
+      ],
+      "totalGeneral": 126500,
+      "tiempo": {
+        "cantidad": 10,
+        "unidad": "Horas"
+      },
+      "prefijo": "T"
+    },
+    {
+      "id": 3,
+      "numero": 3,
+      "numeroFormat": "B-3",
+      "fecha": "2026-07-02",
+      "estado": "Borrador",
+      "cliente": 2,
+      "especialidades": [],
+      "descripcionTrabajo": "",
+      "garantíaId": "",
+      "materiales": [
+        {
+          "amount": 1,
+          "cantidad": 1,
+          "idConcepto": "1782994557026",
+          "descripcion": "solera 35",
+          "precio": 6500,
+          "total": 6500
+        }
+      ],
+      "manoObraDetalle": [
+        {
+          "cantidad": 1,
+          "unidad": "Metro",
+          "idConcepto": "1782994581150",
+          "descripcion": "tabique",
+          "precio": 12000,
+          "total": 12000
+        }
+      ],
+      "totalGeneral": 18500,
+      "tiempo": {
+        "cantidad": 12,
+        "unidad": "Horas"
+      }
+    },
+    {
+      "id": 4,
+      "numero": 4,
+      "numeroFormat": "T-4",
+      "fecha": "2026-07-02",
+      "estado": "Finalizado",
+      "cliente": 2,
+      "especialidades": [],
+      "descripcionTrabajo": "",
+      "garantíaId": "",
+      "materiales": [
+        {
+          "amount": 1,
+          "cantidad": 1,
+          "idConcepto": "1782994557026",
+          "descripcion": "solera 35",
+          "precio": 6500,
+          "total": 6500
+        }
+      ],
+      "manoObraDetalle": [
+        {
+          "cantidad": 10,
+          "unidad": "Global",
+          "idConcepto": "1782994581150",
+          "descripcion": "tabique",
+          "precio": 12000,
+          "total": 120000
+        }
+      ],
+      "totalGeneral": 126500,
+      "tiempo": {
+        "cantidad": 1,
+        "unidad": "Horas"
+      }
+    },
+    {
+      "id": 5,
+      "numero": 5,
+      "numeroFormat": "B-5",
+      "fecha": "2026-07-03",
+      "estado": "Borrador",
+      "cliente": 3,
+      "especialidades": [
+        "Construcción Seco"
+      ],
+      "descripcionTrabajo": "",
+      "garantíaId": "",
+      "materiales": [
+        {
+          "amount": 1,
+          "cantidad": 1,
+          "idConcepto": "1782994581150",
+          "descripcion": "tabique",
+          "precio": 12000,
+          "total": 12000
+        },
+        {
+          "amount": 1,
+          "cantidad": 1,
+          "idConcepto": "1782994581150",
+          "descripcion": "tabique",
+          "precio": 12000,
+          "total": 12000
+        }
+      ],
+      "manoObraDetalle": [
+        {
+          "cantidad": 1,
+          "unidad": "Global",
+          "idConcepto": "1782994581150",
+          "descripcion": "tabique",
+          "precio": 12000,
+          "total": 12000
+        }
+      ],
+      "totalGeneral": 36001,
+      "tiempo": {
+        "cantidad": 1,
+        "unidad": "Semanas"
+      }
+    },
+    {
+      "id": 6,
+      "numero": 6,
+      "numeroFormat": "B-6",
+      "fecha": "2026-07-04",
+      "estado": "Borrador",
+      "cliente": 2,
+      "especialidades": [
+        "Construcción Seco"
+      ],
+      "descripcionTrabajo": "",
+      "garantíaId": "",
+      "materiales": [
+        {
+          "amount": 16,
+          "cantidad": 16,
+          "idConcepto": "solera70",
+          "descripcion": "Solera de 70 mm Perfil Galvanizado",
+          "precio": 1000,
+          "total": 16000
+        },
+        {
+          "amount": 24,
+          "cantidad": 24,
+          "idConcepto": "montante70",
+          "descripcion": "Montante de 70 mm Perfil Galvanizado",
+          "precio": 1000,
+          "total": 24000
+        },
+        {
+          "amount": 18,
+          "cantidad": 18,
+          "idConcepto": "placa125",
+          "descripcion": "Placa de Yeso 12,5 mm (Tabique/Revestimiento)",
+          "precio": 1000,
+          "total": 18000
+        },
+        {
+          "amount": 1,
+          "cantidad": 1,
+          "idConcepto": "masillaPasta",
+          "descripcion": "Masilla en Pasta (Baldes Comerciales)",
+          "precio": 1000,
+          "total": 1000
+        },
+        {
+          "amount": 4,
+          "cantidad": 4,
+          "idConcepto": "masillaPolvo",
+          "descripcion": "Masilla en Polvo (Bolsas Comerciales)",
+          "precio": 1000,
+          "total": 4000
+        },
+        {
+          "amount": 1,
+          "cantidad": 1,
+          "idConcepto": "cintaPapel",
+          "descripcion": "Cinta de Papel Microperforada (Rollos)",
+          "precio": 1000,
+          "total": 1000
+        },
+        {
+          "amount": 89,
+          "cantidad": 89,
+          "idConcepto": "tarugo8",
+          "descripcion": "Tarugos N° 8 con tope (Fijación Estructura)",
+          "precio": 1000,
+          "total": 89000
+        },
+        {
+          "amount": 89,
+          "cantidad": 89,
+          "idConcepto": "tornillo8",
+          "descripcion": "Tornillos de Fijación N° 8",
+          "precio": 1000,
+          "total": 89000
+        },
+        {
+          "amount": 189,
+          "cantidad": 189,
+          "idConcepto": "tornilloT1A",
+          "descripcion": "Tornillos T1 Punta Aguja",
+          "precio": 1000,
+          "total": 189000
+        },
+        {
+          "amount": 1185,
+          "cantidad": 1185,
+          "idConcepto": "tornilloT2A",
+          "descripcion": "Tornillos T2 Punta Aguja",
+          "precio": 1000,
+          "total": 1185000
+        }
+      ],
+      "manoObraDetalle": [
+        {
+          "cantidad": 1,
+          "unidad": "Metro",
+          "idConcepto": "1782994581150",
+          "descripcion": "tabique",
+          "precio": 12000,
+          "total": 12000
+        }
+      ],
+      "totalGeneral": 1628000,
+      "tiempo": {
+        "cantidad": 72,
+        "unidad": "Horas"
+      }
+    },
+    {
+      "id": 7,
+      "numero": 7,
+      "numeroFormat": "B-7",
+      "fecha": "2026-07-04",
+      "estado": "Borrador",
+      "cliente": 4,
+      "especialidades": [
+        "Construcción Seco"
+      ],
+      "descripcionTrabajo": "",
+      "garantíaId": "",
+      "materiales": [
+        {
+          "amount": 16,
+          "cantidad": 16,
+          "idConcepto": "solera70",
+          "descripcion": "Solera de 70 mm Perfil Galvanizado",
+          "precio": 5613.66,
+          "total": 89818.56
+        },
+        {
+          "amount": 24,
+          "cantidad": 24,
+          "idConcepto": "montante70",
+          "descripcion": "Montante de 70 mm Perfil Galvanizado",
+          "precio": 6312.18,
+          "total": 151492.32
+        },
+        {
+          "amount": 18,
+          "cantidad": 18,
+          "idConcepto": "placa125",
+          "descripcion": "Placa de Yeso 12,5 mm (Tabique/Revestimiento)",
+          "precio": 17884.44,
+          "total": 321919.92
+        },
+        {
+          "amount": 1,
+          "cantidad": 1,
+          "idConcepto": "masillaPasta",
+          "descripcion": "Masilla en Pasta (Baldes Comerciales)",
+          "precio": 42000,
+          "total": 42000
+        },
+        {
+          "amount": 4,
+          "cantidad": 4,
+          "idConcepto": "masillaPolvo",
+          "descripcion": "Masilla en Polvo (Bolsas Comerciales)",
+          "precio": 21045.29,
+          "total": 84181.16
+        },
+        {
+          "amount": 1,
+          "cantidad": 1,
+          "idConcepto": "cintaPapel",
+          "descripcion": "Cinta de Papel Microperforada (Rollos)",
+          "precio": 13662.59,
+          "total": 13662.59
+        },
+        {
+          "amount": 89,
+          "cantidad": 89,
+          "idConcepto": "tarugo8",
+          "descripcion": "Tarugos N° 8 con tope (Fijación Estructura)",
+          "precio": 43.71,
+          "total": 3890.19
+        },
+        {
+          "amount": 89,
+          "cantidad": 89,
+          "idConcepto": "tornillo8",
+          "descripcion": "Tornillos de Fijación N° 8",
+          "precio": 60.03,
+          "total": 5342.67
+        },
+        {
+          "amount": 189,
+          "cantidad": 189,
+          "idConcepto": "tornilloT1A",
+          "descripcion": "Tornillos T1 Punta Aguja",
+          "precio": 28.25,
+          "total": 5339.25
+        },
+        {
+          "amount": 1185,
+          "cantidad": 1185,
+          "idConcepto": "tornilloT2A",
+          "descripcion": "Tornillos T2 Punta Aguja",
+          "precio": 17.73,
+          "total": 21010.05
+        },
+        {
+          "amount": 2,
+          "cantidad": 2,
+          "idConcepto": "1783186826516",
+          "descripcion": "Puerta placa 0.80",
+          "precio": 119191.05,
+          "total": 238382.1
+        },
+        {
+          "amount": 1,
+          "cantidad": 1,
+          "idConcepto": "anguloAjuste",
+          "descripcion": "Ángulo de ajuste estructural",
+          "precio": 2000,
+          "total": 2000
+        }
+      ],
+      "manoObraDetalle": [
+        {
+          "cantidad": 24,
+          "unidad": "Global",
+          "idConcepto": "1782994581150",
+          "descripcion": "tabique",
+          "precio": 12000,
+          "total": 288000
+        }
+      ],
+      "totalGeneral": 1267038.81,
+      "tiempo": {
+        "cantidad": 72,
+        "unidad": "Horas"
+      }
+    },
+    {
+      "id": 8,
+      "numero": 8,
+      "numeroFormat": "E-8",
+      "fecha": "2026-07-06",
+      "estado": "Enviado",
+      "cliente": 4,
+      "especialidades": [
+        "Construcción Seco"
+      ],
+      "descripcionTrabajo": "Se le agrega al presupuesto anterior estas modificaciones. NO ESTABAN INCLUIDAS EN EL PRESUPUESTO ORIGINAL",
+      "garantíaId": "",
+      "materiales": [
+        {
+          "amount": 2,
+          "cantidad": 2,
+          "idConcepto": "1783377772951",
+          "descripcion": "Picaporte",
+          "precio": 10000,
+          "total": 20000
+        },
+        {
+          "amount": 9,
+          "cantidad": 9,
+          "idConcepto": "1783377826913",
+          "descripcion": "Zocalos de madera sin pintar",
+          "precio": 5000,
+          "total": 45000
+        }
+      ],
+      "manoObraDetalle": [
+        {
+          "cantidad": 6.4,
+          "unidad": "Metro",
+          "idConcepto": "1783377914106",
+          "descripcion": "pintura/ puertas",
+          "precio": 2500,
+          "total": 16000
+        }
+      ],
+      "totalGeneral": 81000,
+      "tiempo": {
+        "cantidad": 10,
+        "unidad": "Horas"
+      }
+    }
+  ],
+  "catalogos": [
+    {
+      "id": 1782994557026,
+      "nombre": "solera 35",
+      "descripcion": "galvanizado",
+      "tipo": "material",
+      "especialidad": "Construcción en Seco",
+      "unidad": "Unidad",
+      "precio": 6500
+    },
+    {
+      "id": 1782994581150,
+      "nombre": "tabique",
+      "descripcion": "sin aislacion",
+      "tipo": "mano_obra",
+      "especialidad": "Construcción en Seco",
+      "unidad": "M2",
+      "precio": 12000
+    },
+    {
+      "id": "1783182694446",
+      "nombre": "montante 70",
+      "descripcion": "galanizado",
+      "tipo": "material",
+      "especialidad": "Construcción Seco",
+      "unidad": "perfil",
+      "precio": 4600
+    },
+    {
+      "id": "1783186826516",
+      "nombre": "Puerta placa 0.80",
+      "descripcion": "Puerta placa marco de aluminio.",
+      "tipo": "material",
+      "especialidad": "Construcción Seco",
+      "unidad": "unidad",
+      "precio": 119191.05
+    },
+    {
+      "id": "1783377772951",
+      "nombre": "Picaporte",
+      "descripcion": "Picaporte para puerta placa",
+      "tipo": "material",
+      "especialidad": "Construcción Seco",
+      "unidad": "unidad",
+      "precio": 10000
+    },
+    {
+      "id": "1783377826913",
+      "nombre": "Zocalos de madera sin pintar",
+      "descripcion": "zocalo de madera sin pintar",
+      "tipo": "material",
+      "especialidad": "Construcción Seco",
+      "unidad": "unidad",
+      "precio": 5000
+    },
+    {
+      "id": "1783377914106",
+      "nombre": "pintura/ puertas",
+      "descripcion": "Pintura esmalte sintetico 2 manos",
+      "tipo": "mano_obra",
+      "especialidad": "Construcción Seco",
+      "unidad": "unidad",
+      "precio": 2500
+    },
+    {
+      "id": "1783380364859",
+      "nombre": "PINTURA ZOCALOS",
+      "descripcion": "PINTURA ZOCALO",
+      "tipo": "mano_obra",
+      "especialidad": "Construcción Seco",
+      "unidad": "ml",
+      "precio": 1000
+    },
+    {
+      "id": "anguloAjuste",
+      "nombre": "Ángulo de ajuste estructural",
+      "precio": 1000,
+      "tipo": "material",
+      "especialidad": "Construcción Seco",
+      "unidad": "perfil",
+      "descripcion": "Ángulo de terminación y ajuste"
+    },
+    {
+      "id": "bordeJ",
+      "nombre": "Perfil de terminación Borde 'J'",
+      "precio": 1000,
+      "tipo": "material",
+      "especialidad": "Construcción Seco",
+      "unidad": "ml",
+      "descripcion": "Perfil J plástico de terminación para placas de PVC"
+    },
+    {
+      "id": "cintaPapel",
+      "nombre": "Cinta de Papel Microperforada (Rollos)",
+      "descripcion": "Cinta de celulosa de alta resistencia para uniones de placas",
+      "tipo": "material",
+      "especialidad": "Construcción Seco",
+      "unidad": "Comercial",
+      "precio": 13662.59
+    },
+    {
+      "id": "larguero366",
+      "nombre": "Perfil Larguero de 3,66 mts",
+      "precio": 1000,
+      "tipo": "material",
+      "especialidad": "Construcción Seco",
+      "unidad": "perfil",
+      "descripcion": "Componente estructural desmontable principal"
+    },
+    {
+      "id": "machPVC",
+      "nombre": "Machimbre PVC 14mm (20x200x3000 Mts)",
+      "precio": 1000,
+      "tipo": "material",
+      "especialidad": "Construcción Seco",
+      "unidad": "placa",
+      "descripcion": "Tablilla plástica para cielorraso PVC galerías"
+    },
+    {
+      "id": "masillaPasta",
+      "nombre": "Masilla en Pasta (Baldes Comerciales)",
+      "descripcion": "Masilla lista para usar tomado de juntas y pegado de cinta",
+      "tipo": "material",
+      "especialidad": "Construcción Seco",
+      "unidad": "Comercial",
+      "precio": 42000
+    },
+    {
+      "id": "masillaPolvo",
+      "nombre": "Masilla en Polvo (Bolsas Comerciales)",
+      "descripcion": "Masilla de secado rápido en polvo para preparación",
+      "tipo": "material",
+      "especialidad": "Construcción Seco",
+      "unidad": "Comercial",
+      "precio": 21045.29
+    },
+    {
+      "id": "montante34",
+      "nombre": "Montante de 34 mm (PVC / Estructural)",
+      "precio": 1000,
+      "tipo": "material",
+      "especialidad": "Construcción Seco",
+      "unidad": "perfil",
+      "descripcion": "Perfil montante para soporte de tablillas"
+    },
+    {
+      "id": "montante35",
+      "nombre": "Montante de 35 mm Perfil Galvanizado",
+      "precio": 1000,
+      "tipo": "material",
+      "especialidad": "Construcción Seco",
+      "unidad": "perfil",
+      "descripcion": "Perfil montante estructural para cielorraso"
+    },
+    {
+      "id": "montante70",
+      "nombre": "Montante de 70 mm Perfil Galvanizado",
+      "descripcion": "Perfil montante estructural para tabique",
+      "tipo": "material",
+      "especialidad": "Construcción Seco",
+      "unidad": "perfil",
+      "precio": 6312.18
+    },
+    {
+      "id": "perfilOmega",
+      "nombre": "Perfil Omega Galvanizado",
+      "precio": 1000,
+      "tipo": "material",
+      "especialidad": "Construcción Seco",
+      "unidad": "perfil",
+      "descripcion": "Perfil omega para revestimiento directo de paredes"
+    },
+    {
+      "id": "perimetral3",
+      "nombre": "Perfil Perimetral de 3 mts",
+      "precio": 1000,
+      "tipo": "material",
+      "especialidad": "Construcción Seco",
+      "unidad": "perfil",
+      "descripcion": "Perfil perimetral para cielorraso desmontable"
+    },
+    {
+      "id": "placa125",
+      "nombre": "Placa de Yeso 12,5 mm (Tabique/Revestimiento)",
+      "descripcion": "Placa estándar durlock de alta resistencia para tabiques",
+      "tipo": "material",
+      "especialidad": "Construcción Seco",
+      "unidad": "placa",
+      "precio": 17884.44
+    },
+    {
+      "id": "placa95",
+      "nombre": "Placa de Yeso 9,5 mm (Cielorraso)",
+      "precio": 1000,
+      "tipo": "material",
+      "especialidad": "Construcción Seco",
+      "unidad": "placa",
+      "descripcion": "Placa estándar durlock para cielorrasos junta tomada"
+    },
+    {
+      "id": "placaNebula60",
+      "nombre": "Placa Nebula Desmontable 60x1,20",
+      "precio": 1000,
+      "tipo": "material",
+      "especialidad": "Construcción Seco",
+      "unidad": "placa",
+      "descripcion": "Placa acústica/térmica para cielorraso desmontable"
+    },
+    {
+      "id": "solera35",
+      "nombre": "Solera de 35 mm Perfil Galvanizado",
+      "precio": 1000,
+      "tipo": "material",
+      "especialidad": "Construcción Seco",
+      "unidad": "perfil",
+      "descripcion": "Perfil guía para estructura de cielorraso junta tomada"
+    },
+    {
+      "id": "solera70",
+      "nombre": "Solera de 70 mm Perfil Galvanizado",
+      "descripcion": "Perfil guía para estructura de tabique",
+      "tipo": "material",
+      "especialidad": "Construcción Seco",
+      "unidad": "perfil",
+      "precio": 5613.66
+    },
+    {
+      "id": "tarugo8",
+      "nombre": "Tarugos N° 8 con tope (Fijación Estructura)",
+      "descripcion": "Tarugo expansivo de nylon para fijación en losa/pared",
+      "tipo": "material",
+      "especialidad": "Construcción Seco",
+      "unidad": "unidad",
+      "precio": 43.71
+    },
+    {
+      "id": "tornillo8",
+      "nombre": "Tornillos de Fijación N° 8",
+      "descripcion": "Tornillo de rosca madera/tarugo para fijar soleras",
+      "tipo": "material",
+      "especialidad": "Construcción Seco",
+      "unidad": "unidad",
+      "precio": 60.03
+    },
+    {
+      "id": "tornilloT1A",
+      "nombre": "Tornillos T1 Punta Aguja",
+      "descripcion": "Tornillo extra chato fijación metal con metal entre perfiles",
+      "tipo": "material",
+      "especialidad": "Construcción Seco",
+      "unidad": "unidad",
+      "precio": 28.25
+    },
+    {
+      "id": "tornilloT1M",
+      "nombre": "Tornillos T1 Punta Mecha",
+      "descripcion": "Tornillo punta mecha autoperforante estructural pesado",
+      "tipo": "material",
+      "especialidad": "Construcción Seco",
+      "unidad": "unidad",
+      "precio": 28.25
+    },
+    {
+      "id": "tornilloT2A",
+      "nombre": "Tornillos T2 Punta Aguja",
+      "descripcion": "Tornillo aguja para fijar placa durlock a perfiles",
+      "tipo": "material",
+      "especialidad": "Construcción Seco",
+      "unidad": "unidad",
+      "precio": 17.73
+    },
+    {
+      "id": "travesano060",
+      "nombre": "Perfil Travesaño de 0,60 mts",
+      "precio": 1000,
+      "tipo": "material",
+      "especialidad": "Construcción Seco",
+      "unidad": "perfil",
+      "descripcion": "Perfil travesaño para modulación 60x60"
+    }
+  ],
+  "garantias": [
+    {
+      "titulo": "Garantía de Servicio Técnico - Refrigeración",
+      "especialidad": "Refrigeración",
+      "duracion": "6 meses",
+      "textoGarantia": "\"La presente garantiza el funcionamiento del equipo intervenido por un período de 6 meses a partir de la fecha de entrega. La garantía cubre exclusivamente los componentes sustituidos y la mano de obra aplicada durante la reparación. Exclusiones: La garantía pierde validez ante manipulaciones por terceros, daños causados por picos de tensión eléctrica, falta de mantenimiento preventivo (cada 6 meses), uso indebido del equipo o fallas en el suministro eléctrico domiciliario.\"",
+      "id": 1
+    },
+    {
+      "titulo": "Garantía de Instalación y Reparación Eléctrica",
+      "especialidad": "Electricidad",
+      "duracion": "6 meses",
+      "textoGarantia": "El servicio técnico cuenta con una garantía de 6 meses por los trabajos realizados. Se certifica que la instalación/reparación cumple con los criterios técnicos adecuados para su uso seguro. Exclusiones: Esta garantía no cubre daños derivados de sobrecargas ajenas a la instalación, cortocircuitos causados por dispositivos externos defectuosos, modificaciones en el circuito realizadas por personal no autorizado o siniestros naturales (rayos/inundaciones). Se recomienda el uso de protecciones diferenciales y térmicas adecuadas.",
+      "id": 2
+    },
+    {
+      "titulo": "Garantía de Obra y Terminaciones",
+      "especialidad": "Construcción Seco",
+      "duracion": "12 meses",
+      "textoGarantia": "La ejecución de los trabajos de construcción en seco cuenta con una garantía de 12 meses ante defectos de mano de obra y estabilidad estructural de las placas. Exclusiones: No se cubren fisuras menores producto del asentamiento natural de la estructura de la vivienda, daños causados por humedad preexistente no tratada, golpes, impactos o intervenciones posteriores a la entrega. El uso de productos de acabado (pintura/revestimiento) es responsabilidad del cliente una vez finalizada la etapa de encintado y masillado.",
+      "id": 3
+    }
+  ]
+}

@@ -1,0 +1,272 @@
+/* ==========================================
+   ABSALON PRO
+   styles.css
+   Base limpia con Modo Oscuro Nativo Integrado
+========================================== */
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+    font-family:Segoe UI,Arial,sans-serif;
+    background:#f5f7fa;
+    color:#222;
+    transition: background 0.25s ease, color 0.25s ease;
+}
+
+#app{
+    display:flex;
+    min-height:100vh;
+}
+
+.topbar{
+    position:fixed;
+    top:0;
+    left:0;
+    right:0;
+    height:70px;
+    background:#104E2E;
+    color:white;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:0 20px;
+    z-index:1000;
+}
+
+#sidebar{
+    width:240px;
+    background:#ffffff;
+    border-right:1px solid #ddd;
+    margin-top:70px;
+    padding:20px 0;
+    transition: background 0.25s ease, border-color 0.25s ease;
+}
+
+#mainContent{
+    flex:1;
+    margin-top:70px;
+    padding:25px;
+    background:#f5f7fa;
+    transition: background 0.25s ease;
+}
+
+#workspace{
+    margin-top:20px;
+}
+
+.menu-item{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    width:100%;
+    padding:14px 20px;
+    border:none;
+    background:white;
+    cursor:pointer;
+    text-align:left;
+    color: #222;
+    transition: background 0.25s ease, color 0.25s ease;
+}
+
+.menu-item:hover{
+    background:#f1f1f1;
+}
+
+.menu-item.active{
+    background:#104E2E;
+    color:white;
+}
+
+.card,
+.dashboard-card,
+.welcome-card{
+    background:white;
+    border-radius:10px;
+    padding:20px;
+    margin-bottom:20px;
+    border:1px solid #ddd;
+    transition: background 0.25s ease, border-color 0.25s ease, color 0.25s ease;
+}
+
+.cards-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    gap:20px;
+}
+
+button{
+    cursor:pointer;
+}
+
+.bottom-nav{
+    display:none;
+}
+
+/* Estilo por defecto para el botón de la barra superior */
+.icon-button {
+    background: transparent;
+    border: none;
+    font-size: 20px;
+    color: white;
+    padding: 8px;
+    cursor: pointer;
+    border-radius: 50%;
+    transition: background 0.2s;
+}
+.icon-button:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+/* ==========================================
+   MODAL ABSALON PRO
+========================================== */
+
+.modal{
+    position:fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    background:rgba(0,0,0,.55);
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    z-index:9999;
+}
+
+.modal.oculto{
+    display:none;
+}
+
+.modalContenido{
+    background:#fff;
+    width:650px;
+    max-width:95%;
+    border-radius:10px;
+    padding:25px;
+    box-shadow:0 10px 40px rgba(0,0,0,.35);
+    animation:modalEntrada .18s ease;
+    color: #222;
+}
+
+@keyframes modalEntrada{
+    from{
+        transform:scale(.92);
+        opacity:0;
+    }
+    to{
+        transform:scale(1);
+        opacity:1;
+    }
+}
+
+/* ==========================================
+   REGLAS PARA MODO OSCURO (body.dark)
+========================================== */
+body.dark {
+    background: #111827; /* Fondo general gris oscuro */
+    color: #f3f4f6;       /* Texto claro */
+}
+
+body.dark #mainContent {
+    background: #111827;
+}
+
+body.dark #sidebar {
+    background: #1f2937;
+    border-right-color: #374151;
+}
+
+body.dark .menu-item {
+    background: #1f2937;
+    color: #e5e7eb;
+}
+
+body.dark .menu-item:hover {
+    background: #374151;
+}
+
+body.dark .menu-item.active {
+    background: #104E2E; /* Mantiene tu verde característico */
+    color: white;
+}
+
+body.dark .card,
+body.dark .dashboard-card,
+body.dark .welcome-card {
+    background: #1f2937; /* Tarjetas oscuras */
+    border-color: #374151;
+    color: #f3f4f6;
+}
+
+body.dark .modalContenido {
+    background: #1f2937;
+    color: #f3f4f6;
+}
+
+/* Inputs, Selects y Textareas dentro de formularios para que no encandilen */
+body.dark input[type="text"],
+body.dark input[type="hidden"],
+body.dark select,
+body.dark textarea {
+    background: #374151 !important;
+    color: #ffffff !important;
+    border-color: #4b5563 !important;
+}
+
+/* Estilos de tablas dinámicas en Modo Oscuro */
+body.dark table th {
+    background: #374151 !important;
+    color: #ffffff !important;
+}
+body.dark table tr {
+    border-bottom-color: #374151 !important;
+}
+
+/* ==========================================================
+   AJUSTES CRÍTICOS PARA MODAL EN MODO OSCURO (CORREGIDO)
+========================================================== */
+
+/* Asegura visibilidad de textos, etiquetas y títulos dentro de ventanas flotantes */
+body.dark .modalContenido label,
+body.dark .modalContenido h2,
+body.dark .modalContenido h3,
+body.dark #dynamicModalContainer label,
+body.dark #dynamicModalContainer h2,
+body.dark #dynamicModalContainer p {
+    color: #f3f4f6 !important;
+}
+
+/* Asegura que el contenedor dinámico de clientes también herede fondo oscuro */
+body.dark #dynamicModalContainer > div {
+    background: #1f2937 !important;
+    color: #f3f4f6 !important;
+}
+
+/* Mapeo completo de inputs numéricos, fechas y variantes */
+body.dark input[type="number"],
+body.dark input[type="date"],
+body.dark input[type="password"],
+body.dark input[type="email"] {
+    background: #374151 !important;
+    color: #ffffff !important;
+    border-color: #4b5563 !important;
+}
+
+/* Contraste adaptativo para el texto indicativo (placeholder) */
+body.dark input::placeholder,
+body.dark textarea::placeholder {
+    color: #9ca3af !important;
+}
+
+/* Estilo para botones de cancelación secundarios en el modo noche */
+body.dark .modalContenido button:not(.active):not([type="submit"]):not(.btn-primary),
+body.dark #dynamicModalContainer button#cancelarCliente {
+    background: #4b5563 !important;
+    color: #ffffff !important;
+    border: 1px solid #3d4452 !important;
+}
