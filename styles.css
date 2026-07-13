@@ -168,8 +168,8 @@ button{
    REGLAS PARA MODO OSCURO (body.dark)
 ========================================== */
 body.dark {
-    background: #111827; /* Fondo general gris oscuro */
-    color: #f3f4f6;       /* Texto claro */
+    background: #111827;
+    color: #f3f4f6;
 }
 
 body.dark #mainContent {
@@ -191,14 +191,14 @@ body.dark .menu-item:hover {
 }
 
 body.dark .menu-item.active {
-    background: #104E2E; /* Mantiene tu verde característico */
+    background: #104E2E;
     color: white;
 }
 
 body.dark .card,
 body.dark .dashboard-card,
 body.dark .welcome-card {
-    background: #1f2937; /* Tarjetas oscuras */
+    background: #1f2937;
     border-color: #374151;
     color: #f3f4f6;
 }
@@ -208,7 +208,6 @@ body.dark .modalContenido {
     color: #f3f4f6;
 }
 
-/* Inputs, Selects y Textareas dentro de formularios para que no encandilen */
 body.dark input[type="text"],
 body.dark input[type="hidden"],
 body.dark select,
@@ -218,7 +217,6 @@ body.dark textarea {
     border-color: #4b5563 !important;
 }
 
-/* Estilos de tablas dinámicas en Modo Oscuro */
 body.dark table th {
     background: #374151 !important;
     color: #ffffff !important;
@@ -231,7 +229,6 @@ body.dark table tr {
    AJUSTES CRÍTICOS PARA MODAL EN MODO OSCURO (CORREGIDO)
 ========================================================== */
 
-/* Asegura visibilidad de textos, etiquetas y títulos dentro de ventanas flotantes */
 body.dark .modalContenido label,
 body.dark .modalContenido h2,
 body.dark .modalContenido h3,
@@ -241,13 +238,11 @@ body.dark #dynamicModalContainer p {
     color: #f3f4f6 !important;
 }
 
-/* Asegura que el contenedor dinámico de clientes también herede fondo oscuro */
 body.dark #dynamicModalContainer > div {
     background: #1f2937 !important;
     color: #f3f4f6 !important;
 }
 
-/* Mapeo completo de inputs numéricos, fechas y variantes */
 body.dark input[type="number"],
 body.dark input[type="date"],
 body.dark input[type="password"],
@@ -257,16 +252,108 @@ body.dark input[type="email"] {
     border-color: #4b5563 !important;
 }
 
-/* Contraste adaptativo para el texto indicativo (placeholder) */
 body.dark input::placeholder,
 body.dark textarea::placeholder {
     color: #9ca3af !important;
 }
 
-/* Estilo para botones de cancelación secundarios en el modo noche */
 body.dark .modalContenido button:not(.active):not([type="submit"]):not(.btn-primary),
 body.dark #dynamicModalContainer button#cancelarCliente {
     background: #4b5563 !important;
     color: #ffffff !important;
     border: 1px solid #3d4452 !important;
+}
+
+/* ==========================================================
+   NUEVA CAPA: RESPONSIVE DESIGN & ADAPTACIÓN PARA CELULARES
+========================================================== */
+@media (max-width: 768px) {
+    
+    #app {
+        flex-direction: column;
+    }
+
+    /* Ocultamos el menú lateral de PC en móviles */
+    #sidebar {
+        display: none;
+    }
+
+    /* El contenido principal ocupa el ancho completo y deja espacio para la barra inferior */
+    #mainContent {
+        margin-top: 70px;
+        padding: 15px;
+        margin-bottom: 75px; 
+    }
+
+    #workspace {
+        margin-top: 5px;
+    }
+
+    /* Las tarjetas del dashboard pasan a ordenarse en una sola columna */
+    .cards-grid {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+
+    /* Estilos estructurales para la botonera inferior */
+    .bottom-nav {
+        display: flex;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 65px;
+        background: #ffffff;
+        border-top: 1px solid #ddd;
+        justify-content: space-around;
+        align-items: center;
+        z-index: 1000;
+        box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+        padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    .bottom-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: transparent;
+        border: none;
+        color: #555;
+        font-size: 11px;
+        width: 100%;
+        height: 100%;
+        gap: 4px;
+        cursor: pointer;
+    }
+
+    .bottom-icon {
+        font-size: 20px;
+    }
+
+    /* Color verde activo institucional */
+    .bottom-item.active {
+        color: #104E2E;
+        font-weight: bold;
+    }
+
+    .modalContenido {
+        width: 95%;
+        padding: 15px;
+    }
+
+    /* Adaptación de la barra inferior al Modo Oscuro */
+    body.dark .bottom-nav {
+        background: #1f2937;
+        border-top-color: #374151;
+        box-shadow: 0 -2px 10px rgba(0,0,0,0.3);
+    }
+
+    body.dark .bottom-item {
+        color: #9ca3af;
+    }
+
+    body.dark .bottom-item.active {
+        color: #34d399; /* Un verde un poco más luminoso para resaltar de noche */
+    }
 }
