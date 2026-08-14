@@ -149,7 +149,7 @@ const App = {
                     console.error("Error al cargar Cómputo Seco:", err);
                 }
                 break;
-                case "albanileria":
+                case "albañileria":
                 try {
                     const { default: albaMod } = await import("./modules/albanileria.js");
                     if (albaMod && typeof albaMod.iniciar === "function") await albaMod.iniciar();
