@@ -1,8 +1,7 @@
 /* ==========================================================
-   ABSALON PRO - MÓDULO ALBAÑILERÍA / ESTRUCTURAS
+   ABSALON PRO - MÓDULO ALBAÑILERÍA COMPLETO (FÓRMULAS DE OBRA)
 ========================================================== */
-
-import { getAll } from "./storage.js";
+import { getAll } from "./storage.js"; // Como storage.js está en la misma carpeta 'modules'
 
 export const albanileria = {
     catalogo: [],
@@ -18,88 +17,47 @@ export const albanileria = {
         try {
             this.catalogo = await getAll("catalogos");
         } catch (error) {
-            console.error("Error al cargar el catálogo:", error);
+            console.error("Error al cargar catálogo en albañilería:", error);
         }
     },
 
     render() {
         document.getElementById("workspace").innerHTML = `
         <div class="card">
-            <h2>🧱 Cómputo Métrico y Estructuras - Albañilería</h2>
-            <p class="text-muted">Cálculo de Vigas de Hormigón Armado, Acero y Excavación.</p>
+            <h2>🏗️ Cómputo Métrico de Albañilería y Obra Húmeda</h2>
+            <p class="text-muted">Cálculo parametrizado por dosificación y rendimiento de materiales por m² y m³.</p>
             <br>
 
-            <form id="formViga">
-                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:15px;">
+            <form id="formAlbanileria">
+                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:15px;">
                     <div>
-                        <label><b>Ancho Viga (cm)</b></label><br>
-                        <input type="number" id="vigaAncho" value="20" style="width:100%; padding:6px;">
+                        <label><b>Seleccionar Rubro/Trabajo:</b></label><br>
+                        <select id="rubroAlbanileria" style="width:100%; padding:8px; font-weight:bold; margin-top:5px;">
+                            <option value="muro_ceramico_12">Muro Ladrillo Cerámico 12x18x33 (Tabique 15cm)</option>
+                            <option value="muro_ceramico_18">Muro Ladrillo Cerámico 18x18x33 (Muro 20cm)</option>
+                            <option value="muro_comun_15">Muro Ladrillo Común (Espesor 15cm)</option>
+                            <option value="revoque_grueso">Revoque Grueso (Espesor 1.5 cm)</option>
+                            <option value="revoque_fino">Revoque Fino (Espesor 0.5 cm)</option>
+                            <option value="contrapiso">Contrapiso H° Cascote (Espesor 10 cm)</option>
+                            <option value="carpeta">Carpeta de Nivelación (Espesor 2.5 cm)</option>
+                            <option value="membrana_liquida">Impermeabilización con Membrana Líquida (3 Manos)</option>
+                        </select>
                     </div>
+
                     <div>
-                        <label><b>Alto Viga (cm)</b></label><br>
-                        <input type="number" id="vigaAlto" value="40" style="width:100%; padding:6px;">
-                    </div>
-                    <div>
-                        <label><b>Largo / Metros Lineales (m)</b></label><br>
-                        <input type="number" id="vigaLargo" value="10" step="0.1" style="width:100%; padding:6px;">
+                        <label><b>Superficie Total (m²):</b></label><br>
+                        <input type="number" id="superficieM2" value="35" step="0.5" min="0.1" style="width:100%; padding:8px; margin-top:5px;">
                     </div>
                 </div>
 
                 <hr style="margin:20px 0;">
 
-                <h4>🔨 Armadura de Hierros y Estribos</h4>
-                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:15px; margin-top:10px;">
-                    <div>
-                        <label>Hierro Superior (Cant. y Ø)</label><br>
-                        <div style="display:flex; gap:5px;">
-                            <input type="number" id="cantSup" value="2" style="width:60px; padding:6px;">
-                            <select id="diamSup" style="flex:1; padding:6px;">
-                                <option value="6">Ø6 mm</option>
-                                <option value="8">Ø8 mm</option>
-                                <option value="10" selected>Ø10 mm</option>
-                                <option value="12">Ø12 mm</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div>
-                        <label>Hierro Inferior (Cant. y Ø)</label><br>
-                        <div style="display:flex; gap:5px;">
-                            <input type="number" id="cantInf" value="2" style="width:60px; padding:6px;">
-                            <select id="diamInf" style="flex:1; padding:6px;">
-                                <option value="6">Ø6 mm</option>
-                                <option value="8">Ø8 mm</option>
-                                <option value="10">Ø10 mm</option>
-                                <option value="12" selected>Ø12 mm</option>
-                                <option value="16">Ø16 mm</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div>
-                        <label>Estribos (Ø y Separación)</label><br>
-                        <div style="display:flex; gap:5px;">
-                            <select id="diamEstribo" style="width:90px; padding:6px;">
-                                <option value="6" selected>Ø6 mm</option>
-                                <option value="8">Ø8 mm</option>
-                            </select>
-                            <input type="number" id="sepEstribo" value="15" placeholder="Separación cm" style="flex:1; padding:6px;"> <span style="align-self:center;">cm</span>
-                        </div>
-                    </div>
-                </div>
-
-                <hr style="margin:20px 0;">
-
-                <div style="display:flex; align-items:center; gap:10px;">
-                    <input type="checkbox" id="incluirExcavacion" id="incluirExcavacion" style="transform:scale(1.3);">
-                    <label for="incluirExcavacion" style="font-weight:bold; cursor:pointer;">¿Incluir Cómputo de Excavación?</label>
-                </div>
-
-                <br>
-                <button type="button" id="btnCalcularViga" style="padding:10px 20px; background:#104E2E; color:white; border:none; border-radius:4px; font-weight:bold; cursor:pointer;">⚡ Calcular Materiales</button>
+                <button type="button" id="btnCalcularAlba" style="padding:10px 20px; background:#104E2E; color:white; border:none; border-radius:4px; font-weight:bold; cursor:pointer;">🧱 Calcular Materiales</button>
             </form>
         </div>
 
-        <div class="card mt-3" id="cardResultados" style="display:none;">
-            <h3>📋 Materiales Computados y Costos Estimados</h3>
+        <div class="card mt-3" id="cardResultadosAlba" style="display:none;">
+            <h3>📋 Resumen de Insumos Computados</h3>
             <table id="tablaResumenAlbanileria" style="width:100%; margin-top:10px; border-collapse:collapse;">
                 <thead>
                     <tr style="text-align:left; border-bottom:2px solid #ddd;">
@@ -114,80 +72,111 @@ export const albanileria = {
             </table>
 
             <div style="text-align:right; margin-top:15px;">
-                <h3 id="lblTotalCalculado" style="color:#104E2E;">Total: $ 0,00</h3>
-                <button id="btnTransferirPresupuesto" style="padding:12px 20px; background:#2196F3; color:white; border:none; border-radius:4px; font-weight:bold; cursor:pointer; margin-top:10px;">🚀 Cargar al Presupuesto</button>
+                <h3 id="lblTotalCalculadoAlba" style="color:#104E2E;">Total: $ 0,00</h3>
+                <button id="btnTransferirAlba" style="padding:12px 20px; background:#2196F3; color:white; border:none; border-radius:4px; font-weight:bold; cursor:pointer; margin-top:10px;">🚀 Cargar al Presupuesto</button>
             </div>
         </div>
         `;
     },
 
     eventos() {
-        document.getElementById("btnCalcularViga").addEventListener("click", () => this.calcularViga());
-        
-        document.getElementById("btnTransferirPresupuesto").addEventListener("click", () => {
-            this.enviarAPresupuesto();
-        });
+        document.getElementById("btnCalcularAlba").addEventListener("click", () => this.calcularAlbanileria());
+        document.getElementById("btnTransferirAlba").addEventListener("click", () => this.enviarAPresupuesto());
     },
 
-    calcularViga() {
-        const anchoM = Number(document.getElementById("vigaAncho").value) / 100;
-        const altoM = Number(document.getElementById("vigaAlto").value) / 100;
-        const largoM = Number(document.getElementById("vigaLargo").value);
+    calcularAlbanileria() {
+        const rubro = document.getElementById("rubroAlbanileria").value;
+        const m2 = Number(document.getElementById("superficieM2").value) || 0;
 
-        const cantSup = Number(document.getElementById("cantSup").value);
-        const diamSup = document.getElementById("diamSup").value;
-
-        const cantInf = Number(document.getElementById("cantInf").value);
-        const diamInf = document.getElementById("diamInf").value;
-
-        const diamEstribo = document.getElementById("diamEstribo").value;
-        const sepEstriboM = Number(document.getElementById("sepEstribo").value) / 100;
-
-        const conExcavacion = document.getElementById("incluirExcavacion").checked;
-
-        // 1. CÓMPUTO DE HORMIGÓN (Volumen m³)
-        const volHormigon = anchoM * altoM * largoM;
-
-        // Dosificación estándar Hormigón H17/H21 por m³ (350kg Cemento, 0.65m³ Arena, 0.65m³ Piedra)
-        const kgCemento = volHormigon * 350;
-        const bolsasCemento = Math.ceil(kgCemento / 50); // Bolsas de 50kg
-        const m3Arena = Math.round((volHormigon * 0.65) * 100) / 100;
-        const m3Piedra = Math.round((volHormigon * 0.65) * 100) / 100;
-
-        // 2. CÓMPUTO DE ACERO (Peso por metro según diámetro)
-        const pesosMetro = { "6": 0.222, "8": 0.395, "10": 0.617, "12": 0.888, "16": 1.578 };
-
-        // Hierros longitudinales (con recubrimiento y desperdicio ~10%)
-        const metrosHierroSup = cantSup * largoM * 1.1;
-        const kgHierroSup = metrosHierroSup * pesosMetro[diamSup];
-
-        const metrosHierroInf = cantInf * largoM * 1.1;
-        const kgHierroInf = metrosHierroInf * pesosMetro[diamInf];
-
-        // Estribos (Perímetro descontando 2.5cm de recubrimiento por lado)
-        const perimetroEstribo = 2 * ((anchoM - 0.05) + (altoM - 0.05)) + 0.10; // +10cm de patillas
-        const cantEstribos = Math.ceil(largoM / sepEstriboM) + 1;
-        const metrosEstribos = cantEstribos * perimetroEstribo;
-        const kgEstribos = metrosEstribos * pesosMetro[diamEstribo];
-
-        // 3. EXCAVACIÓN
-        let m3Excavacion = 0;
-        if (conExcavacion) {
-            m3Excavacion = volHormigon; // Volumen aproximado de zanja
+        if (m2 <= 0) {
+            alert("⚠️ Por favor ingresá una superficie válida en m².");
+            return;
         }
 
-        // Armamos la lista de ítems para buscar en el catálogo
-        const resumen = [
-            { nombreBusqueda: "Cemento 50kg", cantidad: bolsasCemento, unidad: "Bolsa" },
-            { nombreBusqueda: "Arena", cantidad: m3Arena, unidad: "m³" },
-            { nombreBusqueda: "Piedra Partida", cantidad: m3Piedra, unidad: "m³" },
-            { nombreBusqueda: `Hierro del Ø${diamSup}`, cantidad: Math.ceil(kgHierroSup), unidad: "Kg" },
-            { nombreBusqueda: `Hierro del Ø${diamInf}`, cantidad: Math.ceil(kgHierroInf), unidad: "Kg" },
-            { nombreBusqueda: `Hierro del Ø${diamEstribo}`, cantidad: Math.ceil(kgEstribos), unidad: "Kg" }
-        ];
+        let resumen = [];
 
-        if (conExcavacion) {
-            resumen.push({ nombreBusqueda: "Excavación de Zanja", cantidad: Math.round(m3Excavacion * 100) / 100, unidad: "m³" });
+        // -------------------------------------------------------------
+        // FÓRMULAS DE DOSIFICACIÓN Y RENDIMIENTO SEGÚN RUBRO
+        // -------------------------------------------------------------
+        switch (rubro) {
+            case "muro_ceramico_12":
+                // Ladrillo Cerámico 12x18x33 (16 a 17 un/m2)
+                resumen = [
+                    { nombreBusqueda: "Ladrillo Cerámico Hueco 12x18x33", cantidad: Math.ceil(m2 * 16.5 * 1.05), unidad: "Unidad" }, // +5% desperdicio
+                    { nombreBusqueda: "Cemento", cantidad: Math.ceil(m2 * 3.5), unidad: "Kg" },
+                    { nombreBusqueda: "Cal Hidráulica", cantidad: Math.ceil(m2 * 7.0), unidad: "Kg" },
+                    { nombreBusqueda: "Arena Gruesa", cantidad: Math.round((m2 * 0.025) * 100) / 100, unidad: "m³" }
+                ];
+                break;
+
+            case "muro_ceramico_18":
+                // Ladrillo Cerámico 18x18x33 (16 a 17 un/m2)
+                resumen = [
+                    { nombreBusqueda: "Ladrillo Cerámico Hueco 18x18x33", cantidad: Math.ceil(m2 * 16.5 * 1.05), unidad: "Unidad" },
+                    { nombreBusqueda: "Cemento", cantidad: Math.ceil(m2 * 5.0), unidad: "Kg" },
+                    { nombreBusqueda: "Cal Hidráulica", cantidad: Math.ceil(m2 * 10.0), unidad: "Kg" },
+                    { nombreBusqueda: "Arena Gruesa", cantidad: Math.round((m2 * 0.038) * 100) / 100, unidad: "m³" }
+                ];
+                break;
+
+            case "muro_comun_15":
+                // Ladrillo Común espesor 15cm (~60 un/m2)
+                resumen = [
+                    { nombreBusqueda: "Ladrillo Común", cantidad: Math.ceil(m2 * 60 * 1.07), unidad: "Unidad" }, // +7% rotura/desperdicio
+                    { nombreBusqueda: "Cemento", cantidad: Math.ceil(m2 * 7.5), unidad: "Kg" },
+                    { nombreBusqueda: "Cal Hidráulica", cantidad: Math.ceil(m2 * 15.0), unidad: "Kg" },
+                    { nombreBusqueda: "Arena Gruesa", cantidad: Math.round((m2 * 0.05) * 100) / 100, unidad: "m³" }
+                ];
+                break;
+
+            case "revoque_grueso":
+                // Revoque Grueso 1.5 cm (0.015 m³ mortero/m2)
+                resumen = [
+                    { nombreBusqueda: "Cemento", cantidad: Math.ceil(m2 * 2.5), unidad: "Kg" },
+                    { nombreBusqueda: "Cal Hidráulica", cantidad: Math.ceil(m2 * 6.0), unidad: "Kg" },
+                    { nombreBusqueda: "Arena Gruesa", cantidad: Math.round((m2 * 0.018) * 100) / 100, unidad: "m³" }
+                ];
+                break;
+
+            case "revoque_fino":
+                // Revoque Fino 0.5 cm (0.005 m³ mortero/m2)
+                resumen = [
+                    { nombreBusqueda: "Cal Aérea / Fina", cantidad: Math.ceil(m2 * 2.2), unidad: "Kg" },
+                    { nombreBusqueda: "Cemento", cantidad: Math.ceil(m2 * 0.8), unidad: "Kg" },
+                    { nombreBusqueda: "Arena Fina", cantidad: Math.round((m2 * 0.006) * 100) / 100, unidad: "m³" }
+                ];
+                break;
+
+            case "contrapiso":
+                // Contrapiso 10 cm espesor
+                resumen = [
+                    { nombreBusqueda: "Cemento", cantidad: Math.ceil(m2 * 10.5), unidad: "Kg" },
+                    { nombreBusqueda: "Cal Hidráulica", cantidad: Math.ceil(m2 * 15.0), unidad: "Kg" },
+                    { nombreBusqueda: "Arena Gruesa", cantidad: Math.round((m2 * 0.045) * 100) / 100, unidad: "m³" },
+                    { nombreBusqueda: "Cascote / Contrapiso", cantidad: Math.round((m2 * 0.09) * 100) / 100, unidad: "m³" }
+                ];
+                break;
+
+            case "carpeta":
+                // Carpeta de nivelación 2.5 cm (Dosificación 1:3)
+                resumen = [
+                    { nombreBusqueda: "Cemento", cantidad: Math.ceil(m2 * 9.0), unidad: "Kg" },
+                    { nombreBusqueda: "Arena Gruesa / Mediana", cantidad: Math.round((m2 * 0.028) * 100) / 100, unidad: "m³" },
+                    { nombreBusqueda: "Hidrófugo Líquido (Ceresita)", cantidad: Math.round((m2 * 0.5) * 10) / 10, unidad: "Kg" }
+                ];
+                break;
+
+            case "membrana_liquida":
+                // Membrana Líquida impermeabilizante (3 Manos: ~1.4 kg por m2)
+                const kgMembrana = Math.ceil(m2 * 1.4);
+                // Si la lata estándar es de 20kg, se calcula la cantidad de baldes requeridos
+                const baldes20kg = Math.ceil(kgMembrana / 20);
+
+                resumen = [
+                    { nombreBusqueda: "Membrana Líquida Impermeabilizante 20kg", cantidad: baldes20kg, unidad: "Balde" },
+                    { nombreBusqueda: "Malla / Venda Sintética (Refuerzo)", cantidad: Math.ceil(m2 * 1.1), unidad: "Metro" }
+                ];
+                break;
         }
 
         this.mostrarResultados(resumen);
@@ -200,7 +189,7 @@ export const albanileria = {
         let totalGeneral = 0;
 
         resumen.forEach(item => {
-            // Se busca coincidencia en el catálogo del sistema por nombre/concepto
+            // Buscamos coincidencia aproximada con el nombre en el catálogo
             const itemCat = this.catalogo.find(c => 
                 (c.concepto || c.nombre || "").toLowerCase().includes(item.nombreBusqueda.toLowerCase())
             );
@@ -209,13 +198,8 @@ export const albanileria = {
             const subtotal = item.cantidad * precioUnit;
             totalGeneral += subtotal;
 
-            const idItem = itemCat ? itemCat.id : null;
-
-            if (idItem) {
-                this.materialesCalculados.push({
-                    id: idItem,
-                    cantidad: item.cantidad
-                });
+            if (itemCat) {
+                this.materialesCalculados.push({ id: itemCat.id, cantidad: item.cantidad });
             }
 
             const tr = document.createElement("tr");
@@ -229,26 +213,22 @@ export const albanileria = {
             tbody.appendChild(tr);
         });
 
-        document.getElementById("lblTotalCalculado").textContent = `Total Estimado: $ ${totalGeneral.toLocaleString("es-AR", { minimumFractionDigits: 2 })}`;
-        document.getElementById("cardResultados").style.display = "block";
+        document.getElementById("lblTotalCalculadoAlba").textContent = `Total Estimado: $ ${totalGeneral.toLocaleString("es-AR", { minimumFractionDigits: 2 })}`;
+        document.getElementById("cardResultadosAlba").style.display = "block";
     },
 
     enviarAPresupuesto() {
         if (this.materialesCalculados.length === 0) {
-            alert("⚠️ No hay materiales reconocidos en el catálogo para transferir.");
-            return;
+            alert("⚠️ Algunos materiales no se vincularon automáticamente con el catálogo, pero la lista base se enviará al presupuesto.");
         }
 
-        // Guarda en localStorage con la misma estructura que usa Construcción en Seco
         localStorage.setItem("materiales_computados", JSON.stringify(this.materialesCalculados));
+        localStorage.setItem("origen_computo", "albanileria");
 
-        alert("✅ Materiales cargados. Serás redirigido al generador de presupuestos.");
+        alert("✅ Materiales de albañilería cargados. Redirigiendo al generador de presupuestos...");
         
-        // Simula clic en el menú o redirección de vista
         const btnPresupuesto = document.querySelector('[data-view="presupuestos"]');
-        if (btnPresupuesto) {
-            btnPresupuesto.click();
-        }
+        if (btnPresupuesto) btnPresupuesto.click();
     }
 };
 
