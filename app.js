@@ -3,8 +3,8 @@
    app.js - COMPLETAMENTE REPARADO (ENRUTADOR SPA, MODO OSCURO Y ESTADÍSTICAS)
 ========================================================== */
 
-import electricidad from "./electricidad.js";
-import refrigeracion from "./refrigeracion.js";
+import electricidad from "./modules/electricidad.js";
+import refrigeracion from "./modules/refrigeracion.js";
 import { albañileria } from "./modules/albañileria.js";
 import { initDB } from "./modules/storage.js";
 import dashboard from "./modules/dashboard.js"; 
