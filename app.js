@@ -3,7 +3,9 @@
    app.js - COMPLETAMENTE REPARADO (ENRUTADOR SPA, MODO OSCURO Y ESTADÍSTICAS)
 ========================================================== */
 
-import { albanileria } from "./modules/albañileria.js";
+import electricidad from "./electricidad.js";
+import refrigeracion from "./refrigeracion.js";
+import { albañileria } from "./modules/albañileria.js";
 import { initDB } from "./modules/storage.js";
 import dashboard from "./modules/dashboard.js"; 
 
@@ -151,9 +153,28 @@ const App = {
                 break;
                 case "albanileria":
                 try {
-                    await albanileria.iniciar();
+                    const { default: albaMod } = await import("./modules/albanileria.js");
+                    if (albaMod && typeof albaMod.iniciar === "function") await albaMod.iniciar();
                 } catch (err) {
                     console.error("Error al cargar Albañilería:", err);
+                }
+                break;
+
+            case "electricidad":
+                try {
+                    const { default: elecMod } = await import("./modules/electricidad.js");
+                    if (elecMod && typeof elecMod.iniciar === "function") await elecMod.iniciar();
+                } catch (err) {
+                    console.error("Error al cargar Electricidad:", err);
+                }
+                break;
+
+            case "refrigeracion":
+                try {
+                    const { default: refMod } = await import("./modules/refrigeracion.js");
+                    if (refMod && typeof refMod.iniciar === "function") await refMod.iniciar();
+                } catch (err) {
+                    console.error("Error al cargar Refrigeración:", err);
                 }
                 break;
 
