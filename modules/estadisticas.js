@@ -1,6 +1,6 @@
 /* ==========================================================
    ABSALON PRO - modules/estadisticas.js
-   Sprint 9.1: Corrección de fechas segura (con/sin cero adelante)
+   Sprint 9.2: Desglose de Mano de Obra (T- / Finalizados)
 ========================================================== */
 import { getAll } from "./storage.js";
 
@@ -96,7 +96,7 @@ class Estadisticas {
                             style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; margin-bottom: 15px; box-sizing: border-box;">
                         
                         <div id="listaClientesEstadisticas" style="max-height: 250px; overflow-y: auto; border: 1px solid #f1f5f9; border-radius: 6px;">
-                            </div>
+                        </div>
                     </div>
 
                     <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-top: 4px solid #104E2E;">
@@ -165,19 +165,51 @@ class Estadisticas {
         return isNaN(num) ? 0 : num;
     }
 
+    // Extrae de forma segura la mano de obra de un presupuesto
+    _obtenerManoObra(p) {
+        let subMo = 0;
+
+        // 1. Si tiene un listado explicito de items de mano de obra
+        if (Array.isArray(p.manoObraItems) && p.manoObraItems.length > 0) {
+            subMo = p.manoObraItems.reduce((s, item) => {
+                const cant = Number(item.cantidad || 1);
+                const precio = Number(item.precio || item.valor || 0);
+                return s + (cant * precio);
+            }, 0);
+        } 
+        // 2. Si se guardo como un campo directo
+        else if (p.manoDeObra !== undefined || p.manoObra !== undefined || p.totalManoObra !== undefined) {
+            subMo = this._parseMonto(p.manoDeObra || p.manoObra || p.totalManoObra || 0);
+        } 
+        // 3. Si no hay desglose, pero si materiales: Total - Materiales
+        else if (p.totalMateriales !== undefined || p.costoMateriales !== undefined) {
+            const tot = this._parseMonto(p.totalGeneral || p.total || 0);
+            const mat = this._parseMonto(p.totalMateriales || p.costoMateriales || 0);
+            subMo = Math.max(0, tot - mat);
+        }
+
+        return subMo;
+    }
+
+    // Verifica si un presupuesto esta finalizado o empieza con T-
+    _esTrabajoFinalizado(p) {
+        const est = String(p.estado || '').toLowerCase().trim();
+        const cod = String(p.codigo || p.numero || p.id || p.titulo || '').toLowerCase().trim();
+        return est === "finalizado" || cod.startsWith("t-");
+    }
+
     procesarMetricasDelMes() {
         const [anoFiltro, mesFiltro] = this.mesSeleccionado.split("-");
         const nAnoFiltro = Number(anoFiltro);
         const nMesFiltro = Number(mesFiltro);
 
-        // Presupuestos creados en este mes (Filtrado ultra-seguro sin importar el formato de barra)
+        // Presupuestos creados en este mes
         const delMes = this.presupuestos.filter(p => {
             if (!p.fecha) return false;
             
             if (p.fecha.includes("/")) {
                 const parts = p.fecha.split("/");
                 if (parts.length === 3) {
-                    const d = Number(parts[0]);
                     const m = Number(parts[1]);
                     const a = Number(parts[2]);
                     return a === nAnoFiltro && m === nMesFiltro;
@@ -187,7 +219,6 @@ class Estadisticas {
             if (p.fecha.includes("-")) {
                 const parts = p.fecha.split("-");
                 if (parts.length >= 2) {
-                    // Formato AAAA-MM-DD o AAAA-MM
                     const a = Number(parts[0]);
                     const m = Number(parts[1]);
                     return a === nAnoFiltro && m === nMesFiltro;
@@ -198,10 +229,8 @@ class Estadisticas {
 
         const totalPresupuestos = delMes.length;
         
-        const finalizados = delMes.filter(p => {
-            const est = String(p.estado || '').toLowerCase().trim();
-            return est === "finalizado";
-        });
+        // Filtra los que sean "finalizados" O empiecen con "T-"
+        const finalizados = delMes.filter(p => this._esTrabajoFinalizado(p));
 
         /* =====================================================
            MÉTRICA 1: ACTIVIDAD MENSUAL COMPLETA
@@ -213,15 +242,7 @@ class Estadisticas {
         /* =====================================================
            MÉTRICA 2: CÁLCULOS SÓLO DE MANO DE OBRA (CONTROL FINANCIERO)
         ===================================================== */
-        const totalManoObraTerminada = finalizados.reduce((suma, p) => {
-            const itemsMo = p.manoObraItems || [];
-            const subMo = itemsMo.reduce((s, item) => {
-                const cant = Number(item.cantidad || 1);
-                const precio = Number(item.precio || item.valor || 0);
-                return s + (cant * precio);
-            }, 0);
-            return suma + subMo;
-        }, 0);
+        const totalManoObraTerminada = finalizados.reduce((suma, p) => suma + this._obtenerManoObra(p), 0);
 
         const ahorro = totalManoObraTerminada * 0.10;
         const inversion = totalManoObraTerminada * 0.12;
@@ -238,12 +259,9 @@ class Estadisticas {
 
         // Renderizado del Bloque Financiero
         const elTotalMo = document.getElementById("totalManoObraMes");
-        const elNecesidades = document.getElementById("finNeeds"); // fallback o el ID de abajo
+        const realNecesidades = document.getElementById("finNecesidades") || document.getElementById("finNeeds");
         const elInversion = document.getElementById("finInversion");
         const elAhorro = document.getElementById("finAhorro");
-
-        // Nos aseguramos que apunte a "finNecesidades" que creamos arriba
-        const realNecesidades = document.getElementById("finNecesidades") || elNecesidades;
 
         if (elTotalMo) elTotalMo.innerText = totalManoObraTerminada.toLocaleString("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 });
         if (realNecesidades) realNecesidades.innerText = necesidades.toLocaleString("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 });
@@ -291,18 +309,8 @@ class Estadisticas {
         });
 
         const totalManoObraCliente = pCliente
-            .filter(p => {
-                const est = String(p.estado || '').toLowerCase().trim();
-                return est === "finalizado";
-            })
-            .reduce((s, p) => {
-                const subMo = (p.manoObraItems || []).reduce((sumaMo, item) => {
-                    const cant = Number(item.cantidad || 1);
-                    const precio = Number(item.precio || item.valor || 0);
-                    return sumaMo + (cant * precio);
-                }, 0);
-                return s + subMo;
-            }, 0);
+            .filter(p => this._esTrabajoFinalizado(p))
+            .reduce((s, p) => s + this._obtenerManoObra(p), 0);
 
         let ult = "S/D";
         if (pCliente.length > 0) {
