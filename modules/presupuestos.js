@@ -20,7 +20,7 @@ export const presupuestos = {
         await this.cargarGarantias();
         this.eventos();
 
-        // 🚀 ENGANCHE INTELIGENTE DEL CÓMPUTO MÉTRICO (Si viene desde Construcción en Seco)
+        // 🚀 ENGANCHE INTELIGENTE DEL CÓMPUTO MÉTRICO (Si viene desde Construcción en Seco o Albañilería)
         if (!idPresupuesto) {
             this.verificarMaterialesComputados();
         }
@@ -169,8 +169,16 @@ export const presupuestos = {
             const listaMateriales = JSON.parse(guardados);
             if (listaMateriales.length === 0) return;
 
+            // 🚀 MODIFICADO: Soporta marcado automático de Construcción en Seco y/o Albañilería
+            const origen = localStorage.getItem("origen_computo") || "";
             document.querySelectorAll(".especialidad").forEach(cb => {
-                if (cb.value === "Construcción Seco") cb.checked = true;
+                if (origen === "albanileria" && cb.value === "Albañilería") {
+                    cb.checked = true;
+                } else if (origen === "construccion_seco" && cb.value === "Construcción Seco") {
+                    cb.checked = true;
+                } else if (!origen && (cb.value === "Construcción Seco" || cb.value === "Albañilería")) {
+                    cb.checked = true; // Fallback general por compatibilidad
+                }
             });
 
             const tbodyMat = document.querySelector("#tablaMateriales tbody");
@@ -204,6 +212,7 @@ export const presupuestos = {
 
             this.recalcularTotales();
             localStorage.removeItem("materiales_computados");
+            localStorage.removeItem("origen_computo");
 
         } catch (error) {
             console.error("Error al procesar materiales computados:", error);
@@ -242,10 +251,11 @@ export const presupuestos = {
             
             <br>
             <label>Especialidades Requeridas</label><br>
-            <div style="display:flex; gap:15px; margin-top:5px;">
+            <div style="display:flex; gap:15px; margin-top:5px; flex-wrap:wrap;">
                 <label><input type="checkbox" class="especialidad" value="Refrigeración"> Refrigeración</label>
                 <label><input type="checkbox" class="especialidad" value="Electricidad"> Electricidad</label>
                 <label><input type="checkbox" class="especialidad" value="Construcción Seco"> Construcción Seco</label>
+                <label><input type="checkbox" class="especialidad" value="Albañilería"> Albañilería</label>
             </div>
         </div>
 
@@ -525,7 +535,6 @@ export const presupuestos = {
     },
 
     // 🛠️ EXPORTADOR EXCLUSIVO PARA LISTA DE COMPRAS (SIN PRECIOS NI TOTALES)
-    // 🛠️ EXPORTADOR CORREGIDO: LISTA DE COMPRAS SIN CORTES RENTABLES CON LOGO Y PIE DE PÁGINA
    async generarPDFListaCompras() {
         const idCliente = document.getElementById("cliente").value;
         if (!idCliente) {
