@@ -5,7 +5,7 @@
 
 import electricidad from "./modules/electricidad.js";
 import refrigeracion from "./modules/refrigeracion.js";
-import { albañileria } from "./modules/albañileria.js";
+import albañileria from "./modules/albañileria.js";
 import { initDB } from "./modules/storage.js";
 import dashboard from "./modules/dashboard.js"; 
 
