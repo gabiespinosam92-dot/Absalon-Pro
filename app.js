@@ -23,7 +23,7 @@ const App = {
             await initDB();
             console.log("✔ Base de datos iniciada.");
         } catch (error) {
-            console.error(error);
+            console.error("Error al iniciar DB:", error);
         }
 
         this.initMenu();
@@ -38,10 +38,7 @@ const App = {
     /* =====================================================
        MENÚ DE NAVEGACIÓN
     ===================================================== */
-  /* =====================================================
-       MENÚ DE NAVEGACIÓN
-    ===================================================== */
-   initMenu() {
+    initMenu() {
         // Seleccionamos tanto los botones de PC (.menu-item) como los de celular (.bottom-item)
         document.querySelectorAll(".menu-item, .bottom-item").forEach(btn => {
             btn.addEventListener("click", async () => {
@@ -51,37 +48,15 @@ const App = {
                 // Quitamos la clase active de TODOS los botones
                 document.querySelectorAll(".menu-item, .bottom-item").forEach(b => b.classList.remove("active"));
                 
-                // Le ponemos la clase active a los botones que apunten a esta misma vista (sincroniza PC y celular)
+                // Sincroniza PC y celular activando los botones correspondientes a esta vista
                 document.querySelectorAll(`[data-view="${view}"]`).forEach(b => b.classList.add("active"));
 
                 this.currentView = view;
                 await this.cargarVista(view); 
             });
         });
-    },/* =====================================================
-       MENÚ DE NAVEGACIÓN
-    ===================================================== */
-  /* =====================================================
-       MENÚ DE NAVEGACIÓN
-    ===================================================== */
-   initMenu() {
-        // Selecciona tanto los botones de PC (.menu-item) como los de celular (.bottom-item)
-        document.querySelectorAll(".menu-item, .bottom-item").forEach(btn => {
-            btn.addEventListener("click", async () => {
-                const view = btn.getAttribute("data-view");
-                if(!view) return;
-
-                // Quita la clase active de todos los botones
-                document.querySelectorAll(".menu-item, .bottom-item").forEach(b => b.classList.remove("active"));
-                
-                // Activa el botón clickeado
-                btn.classList.add("active");
-
-                this.currentView = view;
-                await this.cargarVista(view); 
-            });
-        });
     },
+
     /* =====================================================
        MANEJADOR DE VISTAS (SPA) - REPARADO PARA ENTRAR A TODO
     ===================================================== */
@@ -99,7 +74,6 @@ const App = {
                 await dashboard.load();
                 break;
 
-            // COPIÁ Y PEGÁ ESTO AQUÍ: Caso para cargar el módulo de Agenda
             case "agenda":
                 try {
                     const { default: agendaMod } = await import("./modules/agenda.js");
@@ -136,7 +110,6 @@ const App = {
                     console.error("Error al cargar catálogos:", err);
                 }
                 break;
-                
 
             case "construccionSeco":
             case "seco":
@@ -148,7 +121,9 @@ const App = {
                     console.error("Error al cargar Cómputo Seco:", err);
                 }
                 break;
-                case "albañileria":
+
+            case "albanileria":
+            case "albañileria":
                 try {
                     const { default: albaMod } = await import("./modules/albañileria.js");
                     if (albaMod && typeof albaMod.iniciar === "function") await albaMod.iniciar();
@@ -280,7 +255,7 @@ const App = {
                 }
                 break;
 
-                case "fotos":
+            case "fotos":
                 try {
                     const { default: fotosMod } = await import("./modules/fotos.js");
                     await fotosMod.iniciar();
