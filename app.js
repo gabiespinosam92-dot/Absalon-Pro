@@ -151,7 +151,7 @@ const App = {
                 break;
                 case "albañileria":
                 try {
-                    const { default: albaMod } = await import("./modules/albanileria.js");
+                    const { default: albaMod } = await import("./modules/albañileria.js");
                     if (albaMod && typeof albaMod.iniciar === "function") await albaMod.iniciar();
                 } catch (err) {
                     console.error("Error al cargar Albañilería:", err);
