@@ -3,6 +3,7 @@
    app.js - COMPLETAMENTE REPARADO (ENRUTADOR SPA, MODO OSCURO Y ESTADÍSTICAS)
 ========================================================== */
 
+import { albanileria } from "./modules/albanileria.js";
 import { initDB } from "./modules/storage.js";
 import dashboard from "./modules/dashboard.js"; 
 
@@ -136,6 +137,7 @@ const App = {
                     console.error("Error al cargar catálogos:", err);
                 }
                 break;
+                
 
             case "construccionSeco":
             case "seco":
@@ -145,6 +147,13 @@ const App = {
                     else if (secoMod && typeof secoMod.load === "function") await secoMod.load();
                 } catch (err) {
                     console.error("Error al cargar Cómputo Seco:", err);
+                }
+                break;
+                case "albanileria":
+                try {
+                    await albanileria.iniciar();
+                } catch (err) {
+                    console.error("Error al cargar Albañilería:", err);
                 }
                 break;
 
