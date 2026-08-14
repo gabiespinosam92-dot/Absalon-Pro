@@ -1,11 +1,10 @@
 /* ==========================================================
    ABSALON PRO - modules/historial.js
 ========================================================== */
-import { getAll, getById, save, update } from "./storage.js";
+import { getAll } from "./storage.js";
 
 class Historial {
     constructor() {
-        this.workspace = document.getElementById("workspace");
         this.presupuestos = [];
         this.clientes = [];
         const hoy = new Date();
@@ -14,6 +13,8 @@ class Historial {
     }
 
     async load() {
+        // Obtenemos el workspace de pantalla activo al cargar
+        this.workspace = document.getElementById("workspace");
         try {
             this.presupuestos = await getAll("presupuestos") || [];
             this.clientes = await getAll("clientes") || [];
@@ -54,7 +55,6 @@ class Historial {
 
                     tx.oncomplete = async () => {
                         alert("🗑️ Presupuesto eliminado del registro.");
-                        // Recargar datos locales y refrescar interfaz
                         this.presupuestos = this.presupuestos.filter(p => p.id != id);
                         this.procesarYRenderizar();
                     };
@@ -66,6 +66,8 @@ class Historial {
     }
 
     async render() {
+        // Siempre consultamos el elemento fresco de la pantalla
+        this.workspace = document.getElementById("workspace");
         if (!this.workspace) return;
 
         this.workspace.innerHTML = `
@@ -127,14 +129,21 @@ class Historial {
             </div>
         `;
 
-        document.getElementById("filtroMesHistorial").onchange = (e) => {
-            this.mesSeleccionado = e.target.value;
-            this.procesarYRenderizar();
-        };
+        // Vinculamos los eventos verificando primero que los elementos existan
+        const filtroMes = document.getElementById("filtroMesHistorial");
+        if (filtroMes) {
+            filtroMes.onchange = (e) => {
+                this.mesSeleccionado = e.target.value;
+                this.procesarYRenderizar();
+            };
+        }
 
-        document.getElementById("buscadorHistorial").oninput = () => {
-            this.procesarYRenderizar();
-        };
+        const buscador = document.getElementById("buscadorHistorial");
+        if (buscador) {
+            buscador.oninput = () => {
+                this.procesarYRenderizar();
+            };
+        }
 
         this.procesarYRenderizar();
     }
@@ -157,7 +166,8 @@ class Historial {
     }
 
     procesarYRenderizar() {
-        const busqueda = document.getElementById("buscadorHistorial").value.toLowerCase().trim();
+        const buscadorEl = document.getElementById("buscadorHistorial");
+        const busqueda = buscadorEl ? buscadorEl.value.toLowerCase().trim() : "";
         
         let countB = 0, countE = 0, countT = 0;
         let dineroB = 0, dineroE = 0, dineroT = 0;
@@ -174,7 +184,7 @@ class Historial {
                 const [d, m, a] = p.fecha.split("/");
                 return a === anoFiltro && m === mesFiltro;
             }
-            return p.fecha.startsWith(this.mesSelected || this.mesSeleccionado);
+            return p.fecha.startsWith(this.mesSeleccionado);
         });
 
         presupuestosDelMes.forEach(p => {
@@ -195,9 +205,13 @@ class Historial {
 
         const fmt = (v) => v.toLocaleString("es-AR", { style: "currency", currency: "ARS", minimumFractionDigits: 2 });
 
-        document.getElementById("txtTotalB").innerText = fmt(dineroB);
-        document.getElementById("txtTotalE").innerText = fmt(dineroE);
-        document.getElementById("txtTotalT").innerText = fmt(dineroT);
+        const txtTotalB = document.getElementById("txtTotalB");
+        const txtTotalE = document.getElementById("txtTotalE");
+        const txtTotalT = document.getElementById("txtTotalT");
+
+        if (txtTotalB) txtTotalB.innerText = fmt(dineroB);
+        if (txtTotalE) txtTotalE.innerText = fmt(dineroE);
+        if (txtTotalT) txtTotalT.innerText = fmt(dineroT);
 
         this.dibujarCirculo(countB, countE, countT);
 

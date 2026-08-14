@@ -1,11 +1,11 @@
 /* ==========================================================
    ABSALON PRO - modules/estadisticas.js
+   Sprint 9.1: Corrección de fechas segura (con/sin cero adelante)
 ========================================================== */
 import { getAll } from "./storage.js";
 
 class Estadisticas {
     constructor() {
-        this.workspace = document.getElementById("workspace");
         this.presupuestos = [];
         this.clientes = [];
         const hoy = new Date();
@@ -13,12 +13,12 @@ class Estadisticas {
         this.mesSeleccionado = `${hoy.getFullYear()}-${mm}`;
     }
 
-    // 🌟 ESTA ES LA FUNCIÓN QUE TU APP.JS BUSCA Y NECESITA
     async iniciar() {
         await this.load();
     }
 
     async load() {
+        this.workspace = document.getElementById("workspace");
         try {
             this.presupuestos = await getAll("presupuestos") || [];
             this.clientes = await getAll("clientes") || [];
@@ -29,138 +29,252 @@ class Estadisticas {
     }
 
     async render() {
+        this.workspace = document.getElementById("workspace");
         if (!this.workspace) return;
 
         this.workspace.innerHTML = `
             <div style="padding: 20px; font-family: sans-serif; background: #f8fafc; min-height: 100vh;">
-                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 25px;">
-                    <h2 style="color: #104E2E; margin: 0; font-size: 22px; font-weight: bold;">📊 Panel Estadístico Unificado</h2>
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 20px;">
+                    <h2 style="color: #104E2E; margin: 0; font-size: 22px; font-weight: bold;">📊 Estadísticas y Control Financiero</h2>
                     <div style="display: flex; align-items: center; gap: 10px;">
-                        <label style="font-size: 14px; font-weight: bold; color: #475569;">Período Analítico:</label>
+                        <label style="font-size: 14px; font-weight: bold; color: #475569;">Mes de Análisis:</label>
                         <input type="month" id="filtroMesEstadisticas" value="${this.mesSeleccionado}" 
                             style="padding: 6px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; color: #334155;">
                     </div>
                 </div>
 
-                <div style="display: flex; flex-wrap: wrap; gap: 20px; margin-bottom: 25px;">
-                    <div style="flex: 1; min-width: 320px; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-                        <h3 style="color: #104E2E; margin-top: 0; margin-bottom: 15px; font-size: 16px; font-weight: bold; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px;">💰 Control Financiero Mensual</h3>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                            <div style="background: #f1f5f9; padding: 12px; border-radius: 6px; grid-column: span 2; border-left: 4px solid #104E2E;">
-                                <span style="font-size: 11px; color: #64748b; font-weight: bold; display: block;">GANANCIAS TOTALES (100%)</span>
-                                <span id="finTotal" style="font-size: 20px; font-weight: bold; color: #0f172a;">$ 0,00</span>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 25px;">
+                    <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-left: 4px solid #104E2E;">
+                        <span style="font-size: 11px; color: #64748b; font-weight: bold; display: block; margin-bottom: 5px;">ACTIVIDAD MENSUAL COMPLETA</span>
+                        <span id="statMontoCompleto" style="font-size: 20px; font-weight: bold; color: #1e293b;">$ 0,00</span>
+                        <small style="color: #64748b; font-size: 0.75rem;">Monto total facturado (con materiales)</small>
+                    </div>
+                    <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-left: 4px solid #3b82f6;">
+                        <span style="font-size: 11px; color: #64748b; font-weight: bold; display: block; margin-bottom: 5px;">PROMEDIO TICKET COMPLETO</span>
+                        <span id="statPromedio" style="font-size: 20px; font-weight: bold; color: #1e293b;">$ 0,00</span>
+                    </div>
+                    <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-left: 4px solid #10b981;">
+                        <span style="font-size: 11px; color: #64748b; font-weight: bold; display: block; margin-bottom: 5px;">TASA ACEPTACIÓN / FINALIZADOS</span>
+                        <span id="statConversion" style="font-size: 20px; font-weight: bold; color: #1e293b;">0% (0)</span>
+                    </div>
+                </div>
+
+                <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 25px; border-top: 4px solid #104E2E;">
+                    <h3 style="color: #104E2E; margin-top: 0; margin-bottom: 5px; font-size: 18px; display: flex; align-items: center; gap: 8px;">
+                        💰 Control Financiero (Distribución de Mano de Obra)
+                    </h3>
+                    <p style="color: #64748b; font-size: 13px; margin-bottom: 15px;">
+                        Calculado exclusivamente sobre la ganancia líquida de tu mano de obra de los trabajos finalizados del mes (<strong id="totalManoObraMes">$ 0,00</strong>).
+                    </p>
+                    
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                        <div style="background: #f8fafc; padding: 15px; border-radius: 6px; border: 1px dashed #cbd5e1;">
+                            <span style="font-size: 11px; color: #475569; font-weight: bold; display: block; margin-bottom: 5px;">🏠 NECESIDADES BÁSICAS (78%)</span>
+                            <span id="finNecesidades" style="font-size: 22px; font-weight: bold; color: #334155;">$ 0,00</span>
+                            <p style="margin: 5px 0 0 0; font-size: 11px; color: #64748b;">Para tus gastos del día a día.</p>
+                        </div>
+
+                        <div style="background: #eff6ff; padding: 15px; border-radius: 6px; border: 1px dashed #bfdbfe;">
+                            <span style="font-size: 11px; color: #1e40af; font-weight: bold; display: block; margin-bottom: 5px;">🛠 INVERSIÓN (12%)</span>
+                            <span id="finInversion" style="font-size: 22px; font-weight: bold; color: #1d4ed8;">$ 0,00</span>
+                            <p style="margin: 5px 0 0 0; font-size: 11px; color: #1e40af;">Herramientas, equipos y capacitación.</p>
+                        </div>
+
+                        <div style="background: #f0fdf4; padding: 15px; border-radius: 6px; border: 1px dashed #bbf7d0;">
+                            <span style="font-size: 11px; color: #166534; font-weight: bold; display: block; margin-bottom: 5px;">🛡 AHORRO (10%)</span>
+                            <span id="finAhorro" style="font-size: 22px; font-weight: bold; color: #16a34a;">$ 0,00</span>
+                            <p style="margin: 5px 0 0 0; font-size: 11px; color: #166534;">Fondo de reserva y seguridad personal.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 80px;">
+                    
+                    <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                        <h3 style="color: #334155; margin-top: 0; margin-bottom: 12px; font-size: 16px;">👤 Clientes Operativos</h3>
+                        <input type="text" id="buscadorClientes" placeholder="🔍 Buscar por nombre..." 
+                            style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; margin-bottom: 15px; box-sizing: border-box;">
+                        
+                        <div id="listaClientesEstadisticas" style="max-height: 250px; overflow-y: auto; border: 1px solid #f1f5f9; border-radius: 6px;">
                             </div>
-                            <div style="background: #ecfdf5; padding: 12px; border-radius: 6px; border-left: 4px solid #10b981;">
-                                <span style="font-size: 11px; color: #047857; font-weight: bold; display: block;">GANANCIA NETA (78%)</span>
-                                <span id="finNeta" style="font-size: 15px; font-weight: bold; color: #065f46;">$ 0,00</span>
+                    </div>
+
+                    <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-top: 4px solid #104E2E;">
+                        <h3 id="fichaNombre" style="color: #104E2E; margin-top: 0; margin-bottom: 15px; font-size: 18px;">👤 Seleccioná un Cliente</h3>
+                        
+                        <div id="fichaDetalleCliente" style="display: none; flex-direction: column; gap: 15px;">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                                <div style="background: #f8fafc; padding: 12px; border-radius: 6px; text-align: center;">
+                                    <span style="font-size: 12px; color: #64748b; font-weight: bold; display: block;">PRESUPUESTOS</span>
+                                    <span id="fichaCant" style="font-size: 18px; font-weight: bold; color: #334155;">0</span>
+                                </div>
+                                <div style="background: #f0fdf4; padding: 12px; border-radius: 6px; text-align: center;">
+                                    <span style="font-size: 12px; color: #166534; font-weight: bold; display: block;">MANO DE OBRA COBRADA</span>
+                                    <span id="fichaInvertido" style="font-size: 18px; font-weight: bold; color: #16a34a;">$ 0,00</span>
+                                </div>
                             </div>
-                            <div style="background: #fef3c7; padding: 12px; border-radius: 6px; border-left: 4px solid #d97706;">
-                                <span style="font-size: 11px; color: #b45309; font-weight: bold; display: block;">AHORRO OBLIGATORIO (10%)</span>
-                                <span id="finAhorro" style="font-size: 15px; font-weight: bold; color: #92400e;">$ 0,00</span>
+                            
+                            <div style="background: #f8fafc; padding: 12px; border-radius: 6px;">
+                                <p style="margin: 0 0 5px 0; font-size: 13px; color: #64748b;"><strong>Último Trabajo:</strong> <span id="fichaUltimaFecha" style="color: #334155; font-weight: bold;">-</span></p>
+                                <p style="margin: 0; font-size: 13px; color: #64748b;"><strong>Contacto de Referencia:</strong> <span id="fichaContacto" style="color: #334155; font-weight: bold;">-</span></p>
                             </div>
-                            <div style="background: #eff6ff; padding: 12px; border-radius: 6px; border-left: 4px solid #3b82f6; grid-column: span 2;">
-                                <span style="font-size: 11px; color: #1d4ed8; font-weight: bold; display: block;">FONDO INVERSIÓN / MATERIALES (12%)</span>
-                                <span id="finInversion" style="font-size: 15px; font-weight: bold; color: #1e40af;">$ 0,00</span>
-                            </div>
+                        </div>
+
+                        <div id="fichaVacia" style="color: #94a3b8; text-align: center; padding: 40px 10px; font-style: italic;">
+                            Hacé clic en el nombre de un cliente para auditar su volumen de trabajo acumulado.
                         </div>
                     </div>
 
-                    <div style="flex: 1; min-width: 320px; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); display: flex; flex-direction: column;">
-                        <h3 style="color: #104E2E; margin-top: 0; margin-bottom: 12px; font-size: 16px; font-weight: bold; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px;">👥 Gestión y Ficha de Clientes</h3>
-                        <div style="background: #f8fafc; padding: 10px; border-radius: 6px; margin-bottom: 12px; text-align: center; border: 1px dashed #cbd5e1;">
-                            <span style="font-size: 13px; color: #475569;">Número Total de Clientes Activos: <strong id="totalClientesBadge" style="color: #104E2E; font-size: 16px;">0</strong></span>
-                        </div>
-                        <input type="text" id="busquedaClientesEst" placeholder="🔍 Buscar cliente..." style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; box-sizing: border-box; margin-bottom: 12px;">
-                        <div id="fichaDetalleCliente" style="display: none; background: #fffbeb; border: 1px solid #fef3c7; padding: 12px; border-radius: 6px; margin-bottom: 12px; font-size: 13px; color: #334155;">
-                            <h4 id="fichaNombre" style="margin: 0 0 6px 0; color: #b45309; font-size: 14px; font-weight: bold;">-</h4>
-                            <p style="margin: 2px 0;">📊 Cantidad de Presupuestos: <strong id="fichaCant">0</strong></p>
-                            <p style="margin: 2px 0;">📅 Última Interacción: <strong id="fichaUltima">S/D</strong></p>
-                        </div>
-                        <div id="listaClientesEst" style="flex: 1; max-height: 150px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 13px;"></div>
-                    </div>
                 </div>
             </div>
         `;
 
-        const inputFiltro = document.getElementById("filtroMesEstadisticas");
-        if (inputFiltro) {
-            inputFiltro.onchange = (e) => {
+        const filtroMes = document.getElementById("filtroMesEstadisticas");
+        if (filtroMes) {
+            filtroMes.onchange = (e) => {
                 this.mesSeleccionado = e.target.value;
-                this.calcularFinanzasMensuales();
+                this.procesarMetricasDelMes();
             };
         }
 
-        const inputBusqueda = document.getElementById("busquedaClientesEst");
-        if (inputBusqueda) {
-            inputBusqueda.oninput = () => {
-                this.renderizarListaClientes();
+        const buscador = document.getElementById("buscadorClientes");
+        if (buscador) {
+            buscador.oninput = () => {
+                this.filtrarClientes(buscador.value);
             };
         }
 
-        this.calcularFinanzasMensuales();
-        this.renderizarListaClientes();
+        this.procesarMetricasDelMes();
+        this.filtrarClientes(""); 
     }
 
-    calcularFinanzasMensuales() {
-        let dineroAprobadosTotal = 0;
-        const [anoFiltro, mesFiltro] = this.mesSeleccionado.split("-");
-
-        const aprobados = this.presupuestos.filter(p => {
-            if (!p.fecha) return false;
-            const est = String(p.estado || '').toLowerCase().trim();
-            const esValido = (est === "finalizado" || est === "terminado" || est === "t" || est === "aceptado");
-            if (!esValido) return false;
-
-            if (p.fecha.includes("/")) {
-                const [d, m, a] = p.fecha.split("/");
-                return a === anoFiltro && m === mesFiltro;
+    _parseMonto(val) {
+        if (val === null || val === undefined) return 0;
+        if (typeof val === 'number') return val;
+        let str = String(val).replace(/\s/g, '').replace(/\$/g, '');
+        if (str.includes(',') && str.includes('.')) {
+            if (str.indexOf('.') < str.indexOf(',')) {
+                str = str.replace(/\./g, '').replace(',', '.');
+            } else {
+                str = str.replace(/,/g, '');
             }
-            return p.fecha.startsWith(this.mesSeleccionado);
-        });
+        } else if (str.includes(',')) {
+            str = str.replace(',', '.');
+        }
+        const num = parseFloat(str);
+        return isNaN(num) ? 0 : num;
+    }
 
-        aprobados.forEach(p => {
-            let valorBruto = p.totalGeneral || p.total || p.monto || p.totalPresupuesto || 0;
-            if (typeof valorBruto === "string") {
-                valorBruto = valorBruto.replace(/\$/g, "").replace(/\s/g, "");
-                if (valorBruto.includes(",") && valorBruto.includes(".")) {
-                    valorBruto = valorBruto.replace(/\./g, "").replace(",", ".");
-                } else if (valorBruto.includes(",")) {
-                    valorBruto = valorBruto.replace(",", ".");
+    procesarMetricasDelMes() {
+        const [anoFiltro, mesFiltro] = this.mesSeleccionado.split("-");
+        const nAnoFiltro = Number(anoFiltro);
+        const nMesFiltro = Number(mesFiltro);
+
+        // Presupuestos creados en este mes (Filtrado ultra-seguro sin importar el formato de barra)
+        const delMes = this.presupuestos.filter(p => {
+            if (!p.fecha) return false;
+            
+            if (p.fecha.includes("/")) {
+                const parts = p.fecha.split("/");
+                if (parts.length === 3) {
+                    const d = Number(parts[0]);
+                    const m = Number(parts[1]);
+                    const a = Number(parts[2]);
+                    return a === nAnoFiltro && m === nMesFiltro;
                 }
             }
-            const num = parseFloat(valorBruto);
-            if (!isNaN(num)) dineroAprobadosTotal += num;
+            
+            if (p.fecha.includes("-")) {
+                const parts = p.fecha.split("-");
+                if (parts.length >= 2) {
+                    // Formato AAAA-MM-DD o AAAA-MM
+                    const a = Number(parts[0]);
+                    const m = Number(parts[1]);
+                    return a === nAnoFiltro && m === nMesFiltro;
+                }
+            }
+            return false;
         });
 
-        const ahorro = dineroAprobadosTotal * 0.10;
-        const inversion = dineroAprobadosTotal * 0.12;
-        const neta = dineroAprobadosTotal - ahorro - inversion;
+        const totalPresupuestos = delMes.length;
+        
+        const finalizados = delMes.filter(p => {
+            const est = String(p.estado || '').toLowerCase().trim();
+            return est === "finalizado";
+        });
 
-        const fmt = (v) => v.toLocaleString("es-AR", { style: "currency", currency: "ARS", minimumFractionDigits: 2 });
+        /* =====================================================
+           MÉTRICA 1: ACTIVIDAD MENSUAL COMPLETA
+        ===================================================== */
+        const totalDineroCompleto = finalizados.reduce((s, p) => s + this._parseMonto(p.totalGeneral || p.total || 0), 0);
+        const promedioCompleto = finalizados.length > 0 ? (totalDineroCompleto / finalizados.length) : 0;
+        const tasaConversion = totalPresupuestos > 0 ? Math.round((finalizados.length / totalPresupuestos) * 100) : 0;
 
-        if (document.getElementById("finTotal")) document.getElementById("finTotal").innerText = fmt(dineroAprobadosTotal);
-        if (document.getElementById("finNeta")) document.getElementById("finNeta").innerText = fmt(neta);
-        if (document.getElementById("finAhorro")) document.getElementById("finAhorro").innerText = fmt(ahorro);
-        if (document.getElementById("finInversion")) document.getElementById("finInversion").innerText = fmt(inversion);
+        /* =====================================================
+           MÉTRICA 2: CÁLCULOS SÓLO DE MANO DE OBRA (CONTROL FINANCIERO)
+        ===================================================== */
+        const totalManoObraTerminada = finalizados.reduce((suma, p) => {
+            const itemsMo = p.manoObraItems || [];
+            const subMo = itemsMo.reduce((s, item) => {
+                const cant = Number(item.cantidad || 1);
+                const precio = Number(item.precio || item.valor || 0);
+                return s + (cant * precio);
+            }, 0);
+            return suma + subMo;
+        }, 0);
+
+        const ahorro = totalManoObraTerminada * 0.10;
+        const inversion = totalManoObraTerminada * 0.12;
+        const necesidades = totalManoObraTerminada * 0.78;
+
+        // Renderizado en el DOM
+        const elMontoCompleto = document.getElementById("statMontoCompleto");
+        const elPromedio = document.getElementById("statPromedio");
+        const elConversion = document.getElementById("statConversion");
+
+        if (elMontoCompleto) elMontoCompleto.innerText = totalDineroCompleto.toLocaleString("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 });
+        if (elPromedio) elPromedio.innerText = promedioCompleto.toLocaleString("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 });
+        if (elConversion) elConversion.innerText = `${tasaConversion}% (${finalizados.length} de ${totalPresupuestos})`;
+
+        // Renderizado del Bloque Financiero
+        const elTotalMo = document.getElementById("totalManoObraMes");
+        const elNecesidades = document.getElementById("finNeeds"); // fallback o el ID de abajo
+        const elInversion = document.getElementById("finInversion");
+        const elAhorro = document.getElementById("finAhorro");
+
+        // Nos aseguramos que apunte a "finNecesidades" que creamos arriba
+        const realNecesidades = document.getElementById("finNecesidades") || elNecesidades;
+
+        if (elTotalMo) elTotalMo.innerText = totalManoObraTerminada.toLocaleString("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 });
+        if (realNecesidades) realNecesidades.innerText = necesidades.toLocaleString("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 });
+        if (elInversion) elInversion.innerText = inversion.toLocaleString("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 });
+        if (elAhorro) elAhorro.innerText = ahorro.toLocaleString("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 });
     }
 
-    renderizarListaClientes() {
-        const inputBusqueda = document.getElementById("busquedaClientesEst");
-        const busqueda = inputBusqueda ? inputBusqueda.value.toLowerCase().trim() : "";
-        const contenedor = document.getElementById("listaClientesEst");
+    filtrarClientes(busqueda = "") {
+        const contenedor = document.getElementById("listaClientesEstadisticas");
         if (!contenedor) return;
-        contenedor.innerHTML = "";
 
-        if (document.getElementById("totalClientesBadge")) {
-            document.getElementById("totalClientesBadge").innerText = this.clientes.length;
+        contenedor.innerHTML = "";
+        const textoBusqueda = busqueda.toLowerCase().trim();
+
+        const filtrados = this.clientes.filter(c => c.nombre && c.nombre.toLowerCase().includes(textoBusqueda));
+
+        if (filtrados.length === 0) {
+            contenedor.innerHTML = `<div style="padding: 15px; text-align: center; color: #94a3b8; font-size: 13px;">No hay clientes registrados</div>`;
+            return;
         }
 
-        const filtrados = this.clientes.filter(c => c.nombre && c.nombre.toLowerCase().includes(busqueda));
+        filtrados.sort((a, b) => a.nombre.localeCompare(b.nombre));
 
         filtrados.forEach(c => {
             const item = document.createElement("div");
-            item.style = "padding: 8px 12px; border-bottom: 1px solid #f1f5f9; cursor: pointer; font-weight: bold; color: #334155;";
+            item.style = "padding: 10px 12px; border-bottom: 1px solid #f1f5f9; cursor: pointer; font-weight: bold; color: #334155; transition: background 0.2s;";
             item.innerText = c.nombre;
+
+            item.onmouseover = () => { item.style.background = "#f1f5f9"; };
+            item.onmouseout = () => { item.style.background = "transparent"; };
+            
             item.onclick = () => this.mostrarFichaCliente(c);
             contenedor.appendChild(item);
         });
@@ -168,19 +282,51 @@ class Estadisticas {
 
     mostrarFichaCliente(cliente) {
         const ficha = document.getElementById("fichaDetalleCliente");
-        if (!ficha) return;
+        const fichaVacia = document.getElementById("fichaVacia");
+        if (!ficha || !fichaVacia) return;
 
-        const pCliente = this.presupuestos.filter(p => p.clienteId === cliente.id || p.cliente === cliente.id);
+        const pCliente = this.presupuestos.filter(p => {
+            const cliId = String(p.cliente || '');
+            return cliId === String(cliente.id) || cliId === String(cliente.nombre);
+        });
+
+        const totalManoObraCliente = pCliente
+            .filter(p => {
+                const est = String(p.estado || '').toLowerCase().trim();
+                return est === "finalizado";
+            })
+            .reduce((s, p) => {
+                const subMo = (p.manoObraItems || []).reduce((sumaMo, item) => {
+                    const cant = Number(item.cantidad || 1);
+                    const precio = Number(item.precio || item.valor || 0);
+                    return sumaMo + (cant * precio);
+                }, 0);
+                return s + subMo;
+            }, 0);
+
         let ult = "S/D";
         if (pCliente.length > 0) {
-            const f = pCliente.map(p => p.fecha).filter(x => !!x).sort((a, b) => b.localeCompare(a));
-            if (f.length > 0) ult = f[0];
+            const fechas = pCliente.map(p => p.fecha).filter(x => !!x).sort((a, b) => b.localeCompare(a));
+            if (fechas.length > 0) ult = fechas[0];
         }
 
-        if (document.getElementById("fichaNombre")) document.getElementById("fichaNombre").innerText = `👤 ${cliente.nombre}`;
-        if (document.getElementById("fichaCant")) document.getElementById("fichaCant").innerText = pCliente.length;
-        if (document.getElementById("fichaUltima")) document.getElementById("fichaUltima").innerText = ult;
-        ficha.style.display = "block";
+        const elNombre = document.getElementById("fichaNombre");
+        const elCant = document.getElementById("fichaCant");
+        const elInvertido = document.getElementById("fichaInvertido");
+        const elUltimaFecha = document.getElementById("fichaUltimaFecha");
+        const elContacto = document.getElementById("fichaContacto");
+
+        if (elNombre) elNombre.innerText = `👤 ${cliente.nombre}`;
+        if (elCant) elCant.innerText = pCliente.length;
+        if (elInvertido) elInvertido.innerText = totalManoObraCliente.toLocaleString("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 });
+        if (elUltimaFecha) elUltimaFecha.innerText = ult;
+        
+        if (elContacto) {
+            elContacto.innerText = cliente.telefono ? `📞 ${cliente.telefono}` : "S/D";
+        }
+
+        fichaVacia.style.display = "none";
+        ficha.style.display = "flex";
     }
 }
 
