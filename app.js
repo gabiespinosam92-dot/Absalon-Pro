@@ -38,13 +38,43 @@ const App = {
     /* =====================================================
        MENÚ DE NAVEGACIÓN
     ===================================================== */
+  /* =====================================================
+       MENÚ DE NAVEGACIÓN
+    ===================================================== */
    initMenu() {
-        document.querySelectorAll(".menu-item").forEach(btn => {
+        // Seleccionamos tanto los botones de PC (.menu-item) como los de celular (.bottom-item)
+        document.querySelectorAll(".menu-item, .bottom-item").forEach(btn => {
             btn.addEventListener("click", async () => {
                 const view = btn.getAttribute("data-view");
                 if(!view) return;
 
-                document.querySelectorAll(".menu-item").forEach(b => b.classList.remove("active"));
+                // Quitamos la clase active de TODOS los botones
+                document.querySelectorAll(".menu-item, .bottom-item").forEach(b => b.classList.remove("active"));
+                
+                // Le ponemos la clase active a los botones que apunten a esta misma vista (sincroniza PC y celular)
+                document.querySelectorAll(`[data-view="${view}"]`).forEach(b => b.classList.add("active"));
+
+                this.currentView = view;
+                await this.cargarVista(view); 
+            });
+        });
+    },/* =====================================================
+       MENÚ DE NAVEGACIÓN
+    ===================================================== */
+  /* =====================================================
+       MENÚ DE NAVEGACIÓN
+    ===================================================== */
+   initMenu() {
+        // Selecciona tanto los botones de PC (.menu-item) como los de celular (.bottom-item)
+        document.querySelectorAll(".menu-item, .bottom-item").forEach(btn => {
+            btn.addEventListener("click", async () => {
+                const view = btn.getAttribute("data-view");
+                if(!view) return;
+
+                // Quita la clase active de todos los botones
+                document.querySelectorAll(".menu-item, .bottom-item").forEach(b => b.classList.remove("active"));
+                
+                // Activa el botón clickeado
                 btn.classList.add("active");
 
                 this.currentView = view;
@@ -52,7 +82,6 @@ const App = {
             });
         });
     },
-
     /* =====================================================
        MANEJADOR DE VISTAS (SPA) - REPARADO PARA ENTRAR A TODO
     ===================================================== */
@@ -68,6 +97,16 @@ const App = {
         switch (view) {
             case "dashboard":
                 await dashboard.load();
+                break;
+
+            // COPIÁ Y PEGÁ ESTO AQUÍ: Caso para cargar el módulo de Agenda
+            case "agenda":
+                try {
+                    const { default: agendaMod } = await import("./modules/agenda.js");
+                    if (agendaMod && typeof agendaMod.iniciar === "function") await agendaMod.iniciar();
+                } catch (err) {
+                    console.error("Error al cargar la agenda:", err);
+                }
                 break;
 
             case "presupuestos":

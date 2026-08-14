@@ -6,17 +6,18 @@ function crearVentana() {
         width: 1200,
         height: 800,
         title: "Absalon Pro",
-        icon: path.join(__dirname, 'icono.ico'), // Por si le querés poner logo después
+        // Aquí asignamos directamente tu logo para la barra superior de la app
+        icon: path.join(__dirname, 'logo_2.png'), 
         webPreferences: {
-            nodeIntegration: false, // Seguridad activada
-            contextIsolation: true
+            nodeIntegration: false, // Seguridad activada[cite: 3]
+            contextIsolation: true // Seguridad activada[cite: 3]
         }
     });
 
-    // Remueve la barra de menú típica de navegador (Archivo, Editar, etc.) para que parezca un programa real
+    // Remueve la barra de menú típica de navegador (Archivo, Editar, etc.) para que parezca un programa real[cite: 3]
     ventana.setMenu(null);
 
-    // Carga tu index.html local directo desde el disco duro
+    // Carga tu index.html local directo desde el disco duro[cite: 3]
     ventana.loadFile('index.html');
 }
 

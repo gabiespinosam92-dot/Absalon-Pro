@@ -469,16 +469,24 @@
           "cantidad": 2,
           "idConcepto": "1783377772951",
           "descripcion": "Picaporte",
-          "precio": 10000,
-          "total": 20000
+          "precio": 5000,
+          "total": 10000
         },
         {
           "amount": 9,
           "cantidad": 9,
           "idConcepto": "1783377826913",
           "descripcion": "Zocalos de madera sin pintar",
-          "precio": 5000,
-          "total": 45000
+          "precio": 3000,
+          "total": 27000
+        },
+        {
+          "amount": 2,
+          "cantidad": 2,
+          "idConcepto": "1783382179346",
+          "descripcion": "Aplique Luz Exterior",
+          "precio": 7500,
+          "total": 15000
         }
       ],
       "manoObraDetalle": [
@@ -494,6 +502,157 @@
       "totalGeneral": 81000,
       "tiempo": {
         "cantidad": 10,
+        "unidad": "Horas"
+      },
+      "prefijo": "E"
+    },
+    {
+      "id": 9,
+      "numero": 9,
+      "numeroFormat": "B-9",
+      "fecha": "2026-07-07",
+      "estado": "Borrador",
+      "cliente": 4,
+      "especialidades": [
+        "Construcción Seco"
+      ],
+      "descripcionTrabajo": "",
+      "garantíaId": "",
+      "materiales": [
+        {
+          "amount": 16,
+          "cantidad": 16,
+          "idConcepto": "solera70",
+          "descripcion": "Solera de 70 mm Perfil Galvanizado",
+          "precio": 5613.66,
+          "total": 89818.56
+        },
+        {
+          "amount": 24,
+          "cantidad": 24,
+          "idConcepto": "montante70",
+          "descripcion": "Montante de 70 mm Perfil Galvanizado",
+          "precio": 6312.18,
+          "total": 151492.32
+        },
+        {
+          "amount": 18,
+          "cantidad": 18,
+          "idConcepto": "placa125",
+          "descripcion": "Placa de Yeso 12,5 mm (Tabique/Revestimiento)",
+          "precio": 17884.44,
+          "total": 321919.92
+        },
+        {
+          "amount": 1,
+          "cantidad": 1,
+          "idConcepto": "masillaPasta",
+          "descripcion": "Masilla en Pasta (Baldes Comerciales)",
+          "precio": 42000,
+          "total": 42000
+        },
+        {
+          "amount": 4,
+          "cantidad": 4,
+          "idConcepto": "masillaPolvo",
+          "descripcion": "Masilla en Polvo (Bolsas Comerciales)",
+          "precio": 21045.29,
+          "total": 84181.16
+        },
+        {
+          "amount": 1,
+          "cantidad": 1,
+          "idConcepto": "cintaPapel",
+          "descripcion": "Cinta de Papel Microperforada (Rollos)",
+          "precio": 13662.59,
+          "total": 13662.59
+        },
+        {
+          "amount": 89,
+          "cantidad": 89,
+          "idConcepto": "tarugo8",
+          "descripcion": "Tarugos N° 8 con tope (Fijación Estructura)",
+          "precio": 43.71,
+          "total": 3890.19
+        },
+        {
+          "amount": 89,
+          "cantidad": 89,
+          "idConcepto": "tornillo8",
+          "descripcion": "Tornillos de Fijación N° 8",
+          "precio": 60.03,
+          "total": 5342.67
+        },
+        {
+          "amount": 189,
+          "cantidad": 189,
+          "idConcepto": "tornilloT1A",
+          "descripcion": "Tornillos T1 Punta Aguja",
+          "precio": 28.25,
+          "total": 5339.25
+        },
+        {
+          "amount": 1185,
+          "cantidad": 1185,
+          "idConcepto": "tornilloT2A",
+          "descripcion": "Tornillos T2 Punta Aguja",
+          "precio": 17.73,
+          "total": 21010.05
+        },
+        {
+          "amount": 2,
+          "cantidad": 2,
+          "idConcepto": "1783186826516",
+          "descripcion": "Puerta placa 0.80",
+          "precio": 119191.05,
+          "total": 238382.1
+        },
+        {
+          "amount": 2,
+          "cantidad": 2,
+          "idConcepto": "1783377772951",
+          "descripcion": "Picaporte",
+          "precio": 5000,
+          "total": 10000
+        },
+        {
+          "amount": 10,
+          "cantidad": 10,
+          "idConcepto": "1783377826913",
+          "descripcion": "Zocalos de madera sin pintar",
+          "precio": 3000,
+          "total": 30000
+        }
+      ],
+      "manoObraDetalle": [
+        {
+          "cantidad": 24,
+          "unidad": "Metro",
+          "idConcepto": "1782994581150",
+          "descripcion": "tabique",
+          "precio": 12000,
+          "total": 288000
+        },
+        {
+          "cantidad": 6.4,
+          "unidad": "Metro",
+          "idConcepto": "1783377914106",
+          "descripcion": "pintura/ puertas",
+          "precio": 2500,
+          "total": 16000
+        },
+        {
+          "cantidad": 10,
+          "unidad": "Global",
+          "idConcepto": "1783380364859",
+          "descripcion": "PINTURA ZOCALOS",
+          "precio": 1000,
+          "total": 10000
+        }
+      ],
+      "totalGeneral": 1331038.81,
+      "tiempo": {
+        "cantidad": 72,
         "unidad": "Horas"
       }
     }
@@ -570,6 +729,15 @@
       "especialidad": "Construcción Seco",
       "unidad": "ml",
       "precio": 1000
+    },
+    {
+      "id": "1783382179346",
+      "nombre": "Aplique Luz Exterior",
+      "descripcion": "PLAFON BLANCO CALIDO BELLINI 21CM APROXIMADO",
+      "tipo": "material",
+      "especialidad": "Construcción Seco",
+      "unidad": "Unidad",
+      "precio": 7500
     },
     {
       "id": "anguloAjuste",

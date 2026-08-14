@@ -26,11 +26,10 @@
 
     <header class="topbar">
 
-        <div class="logo">
+        <div class="logo" style="display: flex; align-items: center; gap: 10px;">
 
-            <div class="logo-icon">
-                AP
-            </div>
+            <!-- Tu logo oficial -->
+            <img src="logo_2.png" alt="Absalon Pro Logo" style="width: 32px; height: 32px; object-fit: contain;">
 
             <div class="logo-text">
 
@@ -79,6 +78,15 @@
 
                 🏠
                 <span>Dashboard</span>
+
+            </button>
+
+            <!-- Asegurate de tener este botón exactamente así, adentro del <nav> -->
+            <button class="menu-item"
+                    data-view="agenda">
+
+                📅
+                <span>Agenda</span>
 
             </button>
 
@@ -195,6 +203,12 @@
         <button class="bottom-item active" data-view="dashboard">
             <span class="bottom-icon">🏠</span>
             <span class="bottom-text">Inicio</span>
+        </button>
+
+        <!-- COPIÁ Y PEGÁ ESTO AQUÍ: Botón de Agenda para Celular -->
+        <button class="bottom-item" data-view="agenda">
+            <span class="bottom-icon">📅</span>
+            <span class="bottom-text">Agenda</span>
         </button>
         <button class="bottom-item" data-view="clientes">
             <span class="bottom-icon">👥</span>
