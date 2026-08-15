@@ -708,9 +708,26 @@ export const presupuestos = {
         });
 
         let totalManoObraNeto = 0;
+        const manoObraItemsDetalle = [];
+
         document.querySelectorAll("#tablaManoObra tbody tr").forEach(tr => {
-            const inputMoTotal = tr.querySelector(".mo-total");
-            if (inputMoTotal) totalManoObraNeto += Number(inputMoTotal.value || 0);
+            const comboSel = tr.querySelector(".mo-concepto");
+            if (comboSel && comboSel.value) {
+                const cant = Number(tr.querySelector(".mo-cantidad").value || 1);
+                const un = tr.querySelector(".mo-unidad").value || "";
+                const prec = Number(tr.querySelector(".mo-precio").value || 0);
+                const tot = Number(tr.querySelector(".mo-total").value || 0);
+
+                totalManoObraNeto += tot;
+
+                manoObraItemsDetalle.push({
+                    concepto: comboSel.selectedOptions[0].text,
+                    cantidad: cant,
+                    unidad: un,
+                    precio: prec,
+                    total: tot
+                });
+            }
         });
 
         const ivaMateriales = totalMaterialesNeto * 0.21;
@@ -725,6 +742,7 @@ export const presupuestos = {
         const tiempoUnidad = document.getElementById("tiempoUnidad").value || "Días";
         const observacionesInput = document.getElementById("descripcionTrabajo") ? document.getElementById("descripcionTrabajo").value.trim() : "";
         const logoPath  = "./logo_083121.png";
+        
         const paqueteDatos = {
             numero: numeroRealPresupuesto,
             fecha: fechaInput,
@@ -733,6 +751,7 @@ export const presupuestos = {
             clienteTelefono: clienteData.telefono || '',
             clienteTipoDoc: clienteData.tipoDocumento || 'CUIL/CUIT',
             clienteNumDoc: clienteData.numeroDocumento || '',
+            manoObraItems: manoObraItemsDetalle,
             totalMaterialesNeto: totalMaterialesNeto,
             totalManoObraNeto: totalManoObraNeto,
             ivaMateriales: ivaMateriales,
