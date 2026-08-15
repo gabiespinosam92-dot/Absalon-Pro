@@ -230,23 +230,27 @@ const construccionSeco = {
 
             if (item.tipoEspecial === "cinta") {
                 let res = this.calcularCinta(totalConDesperdicio);
-                celdaTexto = res.texto; cantidadFinal = res.cant;
+                celdaTexto = res.texto; 
+                cantidadFinal = res.cant;
             } else if (item.tipoEspecial === "masillaPasta") {
                 let res = this.calcularMasillaPasta(totalConDesperdicio);
-                celdaTexto = res.texto; cantidadFinal = res.cant;
+                celdaTexto = res.texto; 
+                cantidadFinal = res.cant;
             } else if (item.tipoEspecial === "masillaPolvo") {
                 let res = this.calcularMasillaPolvo(totalConDesperdicio);
-                celdaTexto = res.texto; cantidadFinal = res.cant;
+                celdaTexto = res.texto; 
+                cantidadFinal = res.cant;
             } else {
                 cantidadFinal = Math.ceil(totalConDesperdicio);
                 celdaTexto = `${cantidadFinal} ${item.uni}(s)`;
             }
 
-            // Guardamos el material procesado para el presupuesto
+            // Guardamos la estructura limpia para enviar a Presupuestos
             this.ultimoCalculo.push({
                 id: item.id,
-                descripcion: `${item.desc} (${celdaTexto.split('x')[1] || item.uni})`,
-                cantidad: cantidadFinal
+                concepto: item.desc,
+                cantidad: cantidadFinal,
+                detalleComercial: celdaTexto
             });
 
             html += `
@@ -265,15 +269,13 @@ const construccionSeco = {
     async exportarAPresupuesto() {
         if (this.ultimoCalculo.length === 0) return;
 
-        // Avisamos a la consola que estamos enviando materiales calculados
-        console.log("Exportando materiales a presupuestos...", this.ultimoCalculo);
-
-        // Guardamos temporalmente en localStorage para que el módulo de presupuestos lo levante
+        // Guardamos en localStorage especificando que el origen es 'construccion_seco'
         localStorage.setItem("materiales_computados", JSON.stringify(this.ultimoCalculo));
+        localStorage.setItem("origen_computo", "construccion_seco");
 
         alert("¡Materiales exportados! Te estamos redirigiendo al módulo de presupuestos para que agregues el cliente y la mano de obra.");
 
-        // Simulamos el clic en la pestaña de presupuestos para redireccionar al usuario automáticamente
+        // Redireccionamos a presupuestos
         const btnPresupuestos = document.querySelector('[data-view="presupuestos"]');
         if (btnPresupuestos) {
             btnPresupuestos.click();
