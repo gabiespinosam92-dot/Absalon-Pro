@@ -1,6 +1,6 @@
 /* ==========================================================
    ABSALON PRO
-   MÓDULO CATÁLOGOS - SEMBRADO FORZADO POR ID (RESOLUCIÓN DE REGISTROS)
+   MÓDULO CATÁLOGOS - SEMBRADO COMPLETO (DRY, ALBAÑILERÍA Y REFRIGERACIÓN)
 ========================================================== */
 
 import { getAll, save } from "./storage.js";
@@ -15,49 +15,68 @@ export const catalogos = {
 
     async load() {
         this.renderEstructura();
-        await this.verificarYPrecargarInsumos(); // 🚀 Revisa uno por uno e inyecta los faltantes
+        await this.verificarYPrecargarInsumos(); // 🚀 Revisa e inyecta faltantes
         await this.cargarArticulos();
         this.registrarEventosMódulo();
     },
 
-    // 🛠️ SEMBRADO SEGURO: Si el ID del material no existe en el catálogo, lo inserta directamente
+    // 🛠️ SEMBRADO SEGURO: Inyecta insumos base de Seco, Albañilería y Refrigeración
     async verificarYPrecargarInsumos() {
         try {
             const existentes = await getAll("catalogos");
-            // Creamos un Set con los IDs que ya tenés guardados para buscar más rápido
             const idsExistentes = new Set(existentes.map(item => item.id));
 
-            console.log("🌱 Verificando insumos base de Construcción en Seco en el Catálogo...");
+            console.log("🌱 Verificando insumos base en el Catálogo...");
 
-            const insumosDurlock = [
-                { id: "solera35", nombre: "Solera de 35 mm Perfil Galvanizado", precio: 1000, tipo: "material", especialidad: "Construcción Seco", unidad: "perfil", descripcion: "Perfil guía para estructura de cielorraso junta tomada" },
-                { id: "montante35", nombre: "Montante de 35 mm Perfil Galvanizado", precio: 1000, tipo: "material", especialidad: "Construcción Seco", unidad: "perfil", descripcion: "Perfil montante estructural para cielorraso" },
-                { id: "solera70", nombre: "Solera de 70 mm Perfil Galvanizado", precio: 1000, tipo: "material", especialidad: "Construcción Seco", unidad: "perfil", descripcion: "Perfil guía para estructura de tabique" },
-                { id: "montante70", nombre: "Montante de 70 mm Perfil Galvanizado", precio: 1000, tipo: "material", especialidad: "Construcción Seco", unidad: "perfil", descripcion: "Perfil montante estructural para tabique" },
-                { id: "perimetral3", nombre: "Perfil Perimetral de 3 mts", precio: 1000, tipo: "material", especialidad: "Construcción Seco", unidad: "perfil", descripcion: "Perfil perimetral para cielorraso desmontable" },
-                { id: "larguero366", nombre: "Perfil Larguero de 3,66 mts", precio: 1000, tipo: "material", especialidad: "Construcción Seco", unidad: "perfil", descripcion: "Componente estructural desmontable principal" },
-                { id: "travesano060", nombre: "Perfil Travesaño de 0,60 mts", precio: 1000, tipo: "material", especialidad: "Construcción Seco", unidad: "perfil", descripcion: "Perfil travesaño para modulación 60x60" },
-                { id: "anguloAjuste", nombre: "Ángulo de ajuste estructural", precio: 1000, tipo: "material", especialidad: "Construcción Seco", unidad: "perfil", descripcion: "Ángulo de terminación y ajuste" },
-                { id: "perfilOmega", nombre: "Perfil Omega Galvanizado", precio: 1000, tipo: "material", especialidad: "Construcción Seco", unidad: "perfil", descripcion: "Perfil omega para revestimiento directo de paredes" },
-                { id: "montante34", nombre: "Montante de 34 mm (PVC / Estructural)", precio: 1000, tipo: "material", especialidad: "Construcción Seco", unidad: "perfil", descripcion: "Perfil montante para soporte de tablillas" },
-                { id: "placa95", nombre: "Placa de Yeso 9,5 mm (Cielorraso)", precio: 1000, tipo: "material", especialidad: "Construcción Seco", unidad: "placa", descripcion: "Placa estándar durlock para cielorrasos junta tomada" },
-                { id: "placa125", nombre: "Placa de Yeso 12,5 mm (Tabique/Revestimiento)", precio: 1000, tipo: "material", especialidad: "Construcción Seco", unidad: "placa", descripcion: "Placa estándar durlock de alta resistencia para tabiques" },
-                { id: "placaNebula60", nombre: "Placa Nebula Desmontable 60x1,20", precio: 1000, tipo: "material", especialidad: "Construcción Seco", unidad: "placa", descripcion: "Placa acústica/térmica para cielorraso desmontable" },
-                { id: "machPVC", nombre: "Machimbre PVC 14mm (20x200x3000 Mts)", precio: 1000, tipo: "material", especialidad: "Construcción Seco", unidad: "placa", descripcion: "Tablilla plástica para cielorraso PVC galerías" },
-                { id: "bordeJ", nombre: "Perfil de terminación Borde 'J'", precio: 1000, tipo: "material", especialidad: "Construcción Seco", unidad: "ml", descripcion: "Perfil J plástico de terminación para placas de PVC" },
-                { id: "masillaPasta", nombre: "Masilla en Pasta (Baldes Comerciales)", precio: 1000, tipo: "material", especialidad: "Construcción Seco", unidad: "Comercial", descripcion: "Masilla lista para usar tomado de juntas y pegado de cinta" },
-                { id: "masillaPolvo", nombre: "Masilla en Polvo (Bolsas Comerciales)", precio: 1000, tipo: "material", especialidad: "Construcción Seco", unidad: "Comercial", descripcion: "Masilla de secado rápido en polvo para preparación" },
-                { id: "cintaPapel", nombre: "Cinta de Papel Microperforada (Rollos)", precio: 1000, tipo: "material", especialidad: "Construcción Seco", unidad: "Comercial", descripcion: "Cinta de celulosa de alta resistencia para uniones de placas" },
-                { id: "tarugo8", nombre: "Tarugos N° 8 con tope (Fijación Estructura)", precio: 1000, tipo: "material", especialidad: "Construcción Seco", unidad: "unidad", descripcion: "Tarugo expansivo de nylon para fijación en losa/pared" },
-                { id: "tornillo8", nombre: "Tornillos de Fijación N° 8", precio: 1000, tipo: "material", especialidad: "Construcción Seco", unidad: "unidad", descripcion: "Tornillo de rosca madera/tarugo para fijar soleras" },
-                { id: "tornilloT1A", nombre: "Tornillos T1 Punta Aguja", precio: 1000, tipo: "material", especialidad: "Construcción Seco", unidad: "unidad", descripcion: "Tornillo extra chato fijación metal con metal entre perfiles" },
-                { id: "tornilloT1M", nombre: "Tornillos T1 Punta Mecha", precio: 1000, tipo: "material", especialidad: "Construcción Seco", unidad: "unidad", descripcion: "Tornillo punta mecha autoperforante estructural pesado" },
-                { id: "tornilloT2A", nombre: "Tornillos T2 Punta Aguja", precio: 1000, tipo: "material", especialidad: "Construcción Seco", unidad: "unidad", descripcion: "Tornillo aguja para fijar placa durlock a perfiles" }
+            const insumosBase = [
+                // --- CONSTRUCCIÓN EN SECO ---
+                { id: "solera35", nombre: "Solera de 35 mm Perfil Galvanizado", precio: 1000, tipo: "material", especialidad: "Construcción Seco", unidad: "Perfil", descripcion: "Perfil guía para estructura de cielorraso" },
+                { id: "montante35", nombre: "Montante de 35 mm Perfil Galvanizado", precio: 1000, tipo: "material", especialidad: "Construcción Seco", unidad: "Perfil", descripcion: "Perfil montante estructural para cielorraso" },
+                { id: "solera70", nombre: "Solera de 70 mm Perfil Galvanizado", precio: 1000, tipo: "material", especialidad: "Construcción Seco", unidad: "Perfil", descripcion: "Perfil guía para estructura de tabique" },
+                { id: "montante70", nombre: "Montante de 70 mm Perfil Galvanizado", precio: 1000, tipo: "material", especialidad: "Construcción Seco", unidad: "Perfil", descripcion: "Perfil montante estructural para tabique" },
+                { id: "perimetral3", nombre: "Perfil Perimetral de 3 mts", precio: 1000, tipo: "material", especialidad: "Construcción Seco", unidad: "Perfil", descripcion: "Perfil perimetral para cielorraso desmontable" },
+                { id: "larguero366", nombre: "Perfil Larguero de 3,66 mts", precio: 1000, tipo: "material", especialidad: "Construcción Seco", unidad: "Perfil", descripcion: "Componente estructural desmontable principal" },
+                { id: "travesano060", nombre: "Perfil Travesaño de 0,60 mts", precio: 1000, tipo: "material", especialidad: "Construcción Seco", unidad: "Perfil", descripcion: "Perfil travesaño para modulación 60x60" },
+                { id: "anguloAjuste", nombre: "Ángulo de ajuste estructural", precio: 1000, tipo: "material", especialidad: "Construcción Seco", unidad: "Perfil", descripcion: "Ángulo de terminación y ajuste" },
+                { id: "perfilOmega", nombre: "Perfil Omega Galvanizado", precio: 1000, tipo: "material", especialidad: "Construcción Seco", unidad: "Perfil", descripcion: "Perfil omega para revestimiento directo de paredes" },
+                { id: "montante34", nombre: "Montante de 34 mm (PVC / Estructural)", precio: 1000, tipo: "material", especialidad: "Construcción Seco", unidad: "Perfil", descripcion: "Perfil montante para soporte de tablillas" },
+                { id: "placa95", nombre: "Placa de Yeso 9,5 mm (Cielorraso)", precio: 1000, tipo: "material", especialidad: "Construcción Seco", unidad: "Placa", descripcion: "Placa estándar para cielorrasos junta tomada" },
+                { id: "placa125", nombre: "Placa de Yeso 12,5 mm (Tabique/Revestimiento)", precio: 1000, tipo: "material", especialidad: "Construcción Seco", unidad: "Placa", descripcion: "Placa estándar de alta resistencia para tabiques" },
+                { id: "placaNebula60", nombre: "Placa Nebula Desmontable 60x1,20", precio: 1000, tipo: "material", especialidad: "Construcción Seco", unidad: "Placa", descripcion: "Placa acústica/térmica para cielorraso desmontable" },
+                { id: "machPVC", nombre: "Machimbre PVC 14mm (20x200x3000 Mts)", precio: 1000, tipo: "material", especialidad: "Construcción Seco", unidad: "Placa", descripcion: "Tablilla plástica para cielorraso PVC" },
+                { id: "bordeJ", nombre: "Perfil de terminación Borde 'J'", precio: 1000, tipo: "material", especialidad: "Construcción Seco", unidad: "Metro Lineal", descripcion: "Perfil J plástico de terminación" },
+                { id: "masillaPasta", nombre: "Masilla en Pasta (Baldes Comerciales)", precio: 1000, tipo: "material", especialidad: "Construcción Seco", unidad: "Bulto Comercial", descripcion: "Masilla lista para tomar juntas" },
+                { id: "masillaPolvo", nombre: "Masilla en Polvo (Bolsas Comerciales)", precio: 1000, tipo: "material", especialidad: "Construcción Seco", unidad: "Bulto Comercial", descripcion: "Masilla de secado rápido en polvo" },
+                { id: "cintaPapel", nombre: "Cinta de Papel Microperforada (Rollos)", precio: 1000, tipo: "material", especialidad: "Construcción Seco", unidad: "Bulto Comercial", descripcion: "Cinta de celulosa para uniones de placas" },
+                { id: "tarugo8", nombre: "Tarugos N° 8 con tope", precio: 10, tipo: "material", especialidad: "Construcción Seco", unidad: "Unidad", descripcion: "Tarugo expansivo de nylon para fijación" },
+                { id: "tornillo8", nombre: "Tornillos de Fijación N° 8", precio: 10, tipo: "material", especialidad: "Construcción Seco", unidad: "Unidad", descripcion: "Tornillo de rosca para fijar soleras" },
+                { id: "tornilloT1A", nombre: "Tornillos T1 Punta Aguja", precio: 10, tipo: "material", especialidad: "Construcción Seco", unidad: "Unidad", descripcion: "Fijación metal con metal entre perfiles" },
+                { id: "tornilloT1M", nombre: "Tornillos T1 Punta Mecha", precio: 10, tipo: "material", especialidad: "Construcción Seco", unidad: "Unidad", descripcion: "Tornillo punta mecha autoperforante" },
+                { id: "tornilloT2A", nombre: "Tornillos T2 Punta Aguja", precio: 10, tipo: "material", especialidad: "Construcción Seco", unidad: "Unidad", descripcion: "Fijación de placa a perfil" },
+
+                // --- ALBAÑILERÍA ---
+                { id: "cemento_50kg", nombre: "Cemento Portland (Bolsa 50kg)", precio: 8500, tipo: "material", especialidad: "Albañilería", unidad: "Bulto Comercial", descripcion: "Cemento de uso general para obra limpia y mampostería" },
+                { id: "cal_25kg", nombre: "Cal Hidratada (Bolsa 25kg)", precio: 4200, tipo: "material", especialidad: "Albañilería", unidad: "Bulto Comercial", descripcion: "Cal para revoques y mezclas de mampostería" },
+                { id: "arena_m3", nombre: "Arena Fina (por m³)", precio: 15000, tipo: "material", especialidad: "Albañilería", unidad: "Metro Lineal", descripcion: "Arena zarandeada para revoques y contrapisos" },
+                { id: "piedra_m3", nombre: "Piedra Partida / Canto Rodado (por m³)", precio: 22000, tipo: "material", especialidad: "Albañilería", unidad: "Metro Lineal", descripcion: "Agregado grueso para hormigón estructural" },
+                { id: "ladrillo_comun", nombre: "Ladrillo Común (x Unidad)", precio: 180, tipo: "material", especialidad: "Albañilería", unidad: "Unidad", descripcion: "Ladrillo cerámico macizo estándar" },
+                { id: "ladrillo_12", nombre: "Ladrillo Hueco 12x18x33 (x Unidad)", precio: 450, tipo: "material", especialidad: "Albañilería", unidad: "Unidad", descripcion: "Ladrillo cerámico para tabiquería intermedia" },
+                { id: "ladrillo_18", nombre: "Ladrillo Hueco 18x18x33 (x Unidad)", precio: 620, tipo: "material", especialidad: "Albañilería", unidad: "Unidad", descripcion: "Ladrillo cerámico portante o de cerramiento exterior" },
+                { id: "membrana_liquida", nombre: "Membrana Líquida Impermeabilizante (20kg)", precio: 45000, tipo: "material", especialidad: "Albañilería", unidad: "Bulto Comercial", descripcion: "Recubrimiento elástico para techos y losas" },
+
+                // --- REFRIGERACIÓN ---
+                { id: "gas_r410a", nombre: "Refrigerante R410a (Garrafa x Kg)", precio: 18000, tipo: "material", especialidad: "Refrigeración", unidad: "Bulto Comercial", descripcion: "Gas ecológico para aires acondicionados split" },
+                { id: "gas_r22", nombre: "Refrigerante R22 (Garrafa x Kg)", precio: 22000, tipo: "material", especialidad: "Refrigeración", unidad: "Bulto Comercial", descripcion: "Gas refrigerante tradicional para equipos antiguos" },
+                { id: "caño_cobre_14", nombre: "Caño de Cobre 1/4\" (por metro)", precio: 6500, tipo: "material", especialidad: "Refrigeración", unidad: "Metro Lineal", descripcion: "Tubo de alta presión para línea de líquido" },
+                { id: "caño_cobre_38", nombre: "Caño de Cobre 3/8\" (por metro)", precio: 8900, tipo: "material", especialidad: "Refrigeración", unidad: "Metro Lineal", descripcion: "Tubo de cobre para interconexión frigorífica" },
+                { id: "caño_cobre_12", nombre: "Caño de Cobre 1/2\" (por metro)", precio: 11500, tipo: "material", especialidad: "Refrigeración", unidad: "Metro Lineal", descripcion: "Tubo de cobre línea de succión acondicionamiento" },
+                { id: "aislant_fita", nombre: "Aislante Térmico / Mamba (x Metro)", precio: 1200, tipo: "material", especialidad: "Refrigeración", unidad: "Metro Lineal", descripcion: "Aislamiento de elastómero o polietileno extruido" },
+                { id: "soporte_split", nombre: "Ménsula / Soporte Unidad Exterior 45cm", precio: 8500, tipo: "material", especialidad: "Refrigeración", unidad: "Unidad", descripcion: "Juego de soportes reforzados con pintura epoxi" },
+                { id: "capacitor_35uf", nombre: "Capacitor de Marcha 35 uF", precio: 4200, tipo: "material", especialidad: "Refrigeración", unidad: "Unidad", descripcion: "Repuesto para compresor de aire acondicionado" }
             ];
 
             let nuevosCargados = 0;
-            for (const insumo of insumosDurlock) {
-                // Si el ID no está registrado en la base de datos, lo guarda
+            for (const insumo of insumosBase) {
                 if (!idsExistentes.has(insumo.id)) {
                     await save("catalogos", insumo);
                     nuevosCargados++;
@@ -65,7 +84,7 @@ export const catalogos = {
             }
             
             if (nuevosCargados > 0) {
-                console.log(`✅ Se sembraron ${nuevosCargados} materiales nuevos que faltaban en el catálogo.`);
+                console.log(`✅ Se sembraron ${nuevosCargados} materiales e insumos faltantes en el catálogo.`);
             }
             
         } catch (error) {
@@ -124,15 +143,15 @@ export const catalogos = {
                     </div>
                     <div style="flex: 1;">
                         <label><b>Unidad</b></label><br>
-                      <select id="artUnidad" style="width:100%; padding:8px; margin-top:4px;">
-                         <option value="M2">M2 (Metro Cuadrado)</option>
-                         <option value="Perfil">Perfil</option>
-                         <option value="Placa">Placa</option>
-                         <option value="Bulto Comercial">Bulto Comercial</option>
-                         <option value="Unidad">Unidad</option>
-                         <option value="Metro Lineal">Metro Lineal</option>
-                         <option value="Global">Global</option>
-                    </select>
+                        <select id="artUnidad" style="width:100%; padding:8px; margin-top:5px; margin-bottom: 15px;">
+                            <option value="M2">M2 (Metro Cuadrado)</option>
+                            <option value="Perfil">Perfil</option>
+                            <option value="Placa">Placa</option>
+                            <option value="Bulto Comercial">Bulto Comercial</option>
+                            <option value="Unidad">Unidad</option>
+                            <option value="Metro Lineal">Metro Lineal</option>
+                            <option value="Global">Global</option>
+                        </select>
                     </div>
                 </div>
 
@@ -141,6 +160,7 @@ export const catalogos = {
                         <label><b>Especialidad</b></label><br>
                         <select id="artEspecialidad" style="width: 100%; padding: 8px; margin-top: 5px; margin-bottom: 15px;">
                             <option value="Construcción Seco">Construcción Seco</option>
+                            <option value="Albañilería">Albañilería</option>
                             <option value="Refrigeración">Refrigeración</option>
                             <option value="Electricidad">Electricidad</option>
                         </select>
@@ -278,7 +298,7 @@ export const catalogos = {
         document.getElementById("artPrecio").value = item.precio;
         document.getElementById("artTipo").value = item.tipo;
         document.getElementById("artEspecialidad").value = item.especialidad;
-        document.getElementById("artUnidad").value = item.unidad || "unidad";
+        document.getElementById("artUnidad").value = item.unidad || "Unidad";
         document.getElementById("artDescripcion").value = item.descripcion || "";
         
         document.getElementById("modalContainer").style.display = "flex";
