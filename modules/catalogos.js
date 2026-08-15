@@ -1,13 +1,13 @@
 /* ==========================================================
    ABSALON PRO
-   MÓDULO CATÁLOGOS - SEMBRADO COMPLETO (MATERIALES Y MANO DE OBRA)
+   MÓDULO CATÁLOGOS - CON FILTROS Y BUSCADOR
 ========================================================== */
 
 import { getAll, save } from "./storage.js";
 
 export const catalogos = {
     articulos: [],
-    pestanaActual: "material", // Puede ser 'material' o 'mano_obra'
+    pestanaActual: "material", // 'material' o 'mano_obra'
     itemEditandoId: null,
     itemPreCargado: null,
 
@@ -15,21 +15,17 @@ export const catalogos = {
 
     async load() {
         this.renderEstructura();
-        await this.verificarYPrecargarInsumos(); // 🚀 Revisa e inyecta faltantes
+        await this.verificarYPrecargarInsumos();
         await this.cargarArticulos();
         this.registrarEventosMódulo();
     },
 
-    // 🛠️ SEMBRADO COMPLETO: Inyecta materiales y mano de obra para las 4 especialidades
     async verificarYPrecargarInsumos() {
         try {
             const existentes = await getAll("catalogos");
             const idsExistentes = new Set(existentes.map(item => item.id));
 
-            console.log("🌱 Verificando insumos y mano de obra en el Catálogo...");
-
             const insumosBase = [
-                // ==================== MATERIALES ====================
                 // --- CONSTRUCCIÓN EN SECO ---
                 { id: "solera35", nombre: "Solera de 35 mm Perfil Galvanizado", precio: 1000, tipo: "material", especialidad: "Construcción Seco", unidad: "Perfil", descripcion: "Perfil guía para estructura de cielorraso" },
                 { id: "montante35", nombre: "Montante de 35 mm Perfil Galvanizado", precio: 1000, tipo: "material", especialidad: "Construcción Seco", unidad: "Perfil", descripcion: "Perfil montante estructural para cielorraso" },
@@ -85,28 +81,20 @@ export const catalogos = {
                 { id: "caja_mignon", nombre: "Caja Rectangular 5x10 (Mignon)", precio: 500, tipo: "material", especialidad: "Electricidad", unidad: "Unidad", descripcion: "Caja de embutir para llaves y tomas" },
                 { id: "cano_corrugado_34", nombre: "Caño Corrugado Blanco / Gris 3/4\" (Rollo 25m)", precio: 9500, tipo: "material", especialidad: "Electricidad", unidad: "Bulto Comercial", descripcion: "Canalización de embutir flexible" },
 
-
-                // ==================== MANO DE OBRA ====================
-                // --- MANO DE OBRA ALBAÑILERÍA ---
+                // --- MANO DE OBRA ---
                 { id: "mo_muro_12", nombre: "Elevación de Muro Ladrillo Hueco (m²)", precio: 8500, tipo: "mano_obra", especialidad: "Albañilería", unidad: "M2", descripcion: "Levantado de mampostería sin revoque" },
                 { id: "mo_revoque_grueso", nombre: "Revoque Grueso / Proyectado (m²)", precio: 6000, tipo: "mano_obra", especialidad: "Albañilería", unidad: "M2", descripcion: "Capa base de emparejamiento sobre mampostería" },
                 { id: "mo_revoque_fino", nombre: "Revoque Fino / Enlucido (m²)", precio: 4500, tipo: "mano_obra", especialidad: "Albañilería", unidad: "M2", descripcion: "Terminación fina para pintar" },
                 { id: "mo_contrapiso", nombre: "Contrapiso H30 H=8cm (m²)", precio: 7500, tipo: "mano_obra", especialidad: "Albañilería", unidad: "M2", descripcion: "Base de hormigón pobre para piso o losa" },
                 { id: "mo_impermeab", nombre: "Aplicación de Membrana Líquida (m²)", precio: 3500, tipo: "mano_obra", especialidad: "Albañilería", unidad: "M2", descripcion: "Limpieza y 3 manos de impermeabilizante" },
-
-                // --- MANO DE OBRA CONSTRUCCIÓN SECO ---
                 { id: "mo_cielorraso_durlock", nombre: "Mano de Obra Cielorraso Junta Tomada (m²)", precio: 7000, tipo: "mano_obra", especialidad: "Construcción Seco", unidad: "M2", descripcion: "Estructura, emplacado y tomado de juntas" },
                 { id: "mo_tabique_durlock", nombre: "Mano de Obra Tabique Durlock Doble Cara (m²)", precio: 8500, tipo: "mano_obra", especialidad: "Construcción Seco", unidad: "M2", descripcion: "Armado de estructura y doble emplacado" },
                 { id: "mo_desmontable", nombre: "Mano de Obra Cielorraso Desmontable (m²)", precio: 6000, tipo: "mano_obra", especialidad: "Construcción Seco", unidad: "M2", descripcion: "Estructura vista y colocación de placas 60x60" },
                 { id: "mo_pvc", nombre: "Mano de Obra Cielorraso PVC (m²)", precio: 6500, tipo: "mano_obra", especialidad: "Construcción Seco", unidad: "M2", descripcion: "Estructura e instalación de tablillas PVC" },
-
-                // --- MANO DE OBRA REFRIGERACIÓN ---
                 { id: "mo_inst_split_3000", nombre: "Instalación Split hasta 3000 Fg", precio: 45000, tipo: "mano_obra", especialidad: "Refrigeración", unidad: "Global", descripcion: "Instalación básica hasta 3 metros de cañería" },
                 { id: "mo_inst_split_4500", nombre: "Instalación Split 4500 / 6000 Fg", precio: 60000, tipo: "mano_obra", especialidad: "Refrigeración", unidad: "Global", descripcion: "Instalación de equipo mediano/grande" },
                 { id: "mo_mantenimiento_ac", nombre: "Mantenimiento Preventivo / Limpieza Integral", precio: 25000, tipo: "mano_obra", especialidad: "Refrigeración", unidad: "Global", descripcion: "Desarme, turbina, serpentina e higienización" },
                 { id: "mo_carga_gas", nombre: "Carga Completa de Gas Refrigerante", precio: 30000, tipo: "mano_obra", especialidad: "Refrigeración", unidad: "Global", descripcion: "Presurización, vacío y carga por balanza" },
-
-                // --- MANO DE OBRA ELECTRICIDAD ---
                 { id: "mo_punto_caja", nombre: "Mano de Obra por Centro / Boca Eléctrica", precio: 8500, tipo: "mano_obra", especialidad: "Electricidad", unidad: "Unidad", descripcion: "Cañería, cableado y armado de caja/boca" },
                 { id: "mo_tablero_principal", nombre: "Armado y Cableado de Tablero Principal", precio: 35000, tipo: "mano_obra", especialidad: "Electricidad", unidad: "Global", descripcion: "Montaje de térmicas, disyuntor y peines de distribución" },
                 { id: "mo_colocacion_artefacto", nombre: "Colocación de Artefacto / Velador / Lámpara", precio: 4500, tipo: "mano_obra", especialidad: "Electricidad", unidad: "Unidad", descripcion: "Montaje y conexión de iluminación vista" }
@@ -119,11 +107,6 @@ export const catalogos = {
                     nuevosCargados++;
                 }
             }
-            
-            if (nuevosCargados > 0) {
-                console.log(`✅ Se sembraron ${nuevosCargados} registros entre materiales y tarifas de mano de obra.`);
-            }
-            
         } catch (error) {
             console.error("Error sembrando insumos base:", error);
         }
@@ -143,8 +126,20 @@ export const catalogos = {
                     <button id="tabManoObra" class="btn-tab" style="flex: 1; padding: 12px; font-weight: bold; cursor: pointer;">🛠️ Tarifas Mano de Obra</button>
                 </div>
 
-                <div style="text-align: right; margin-bottom: 15px;">
-                    <button id="btnAgregarItem" style="padding: 10px 20px; font-weight: bold; background: #104E2E; color: white; border: none; border-radius: 4px; cursor: pointer;">+ Nuevo Artículo</button>
+                <!-- 🔍 BARRA DE BÚSQUEDA Y FILTRO POR ESPECIALIDAD -->
+                <div style="display: flex; gap: 15px; margin-bottom: 20px; align-items: center; justify-content: space-between; flex-wrap: wrap;">
+                    <div style="display: flex; gap: 10px; flex: 1; min-width: 280px;">
+                        <input type="text" id="inputBuscarCatalogo" placeholder="🔍 Buscar por nombre o descripción..." style="flex: 2; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px;">
+                        <select id="selectFiltroEspecialidad" style="flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; background: white;">
+                            <option value="TODAS">Todas las especialidades</option>
+                            <option value="Construcción Seco">Construcción Seco</option>
+                            <option value="Albañilería">Albañilería</option>
+                            <option value="Refrigeración">Refrigeración</option>
+                            <option value="Electricidad">Electricidad</option>
+                        </select>
+                    </div>
+
+                    <button id="btnAgregarItem" style="padding: 10px 20px; font-weight: bold; background: #104E2E; color: white; border: none; border-radius: 4px; cursor: pointer; height: 42px;">+ Nuevo Artículo</button>
                 </div>
 
                 <table id="tablaArticulos" style="width: 100%; border-collapse: collapse;">
@@ -221,46 +216,67 @@ export const catalogos = {
     },
 
     async cargarArticulos() {
-        const tbody = document.querySelector("#tablaArticulos tbody");
-        if (!tbody) return;
-
         try {
             const todos = await getAll("catalogos");
             this.articulos = todos.filter(item => item.tipo === this.pestanaActual);
-
-            if (this.articulos.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" style="padding: 20px; text-align: center; color: gray;">No hay ítems registrados en este sector.</td></tr>`;
-                return;
-            }
-
-            tbody.innerHTML = "";
-            this.articulos.forEach(item => {
-                const tr = document.createElement("tr");
-                tr.style.borderBottom = "1px solid #ddd";
-
-                tr.innerHTML = `
-                    <td style="padding: 10px;"><b>${item.nombre}</b><br><small style="color:gray;">${item.descripcion || ''}</small></td>
-                    <td style="padding: 10px;"><span style="background:#f0f0f0; padding:2px 6px; border-radius:4px; font-size:12px;">${item.especialidad}</span></td>
-                    <td style="padding: 10px; text-transform: capitalize;">${item.unidad || 'unidad'}</td>
-                    <td style="padding: 10px; font-weight: bold; color: #104E2E;">$ ${(item.precio || 0).toLocaleString("es-AR", { minimumFractionDigits: 2 })}</td>
-                    <td style="padding: 10px; text-align: center;">
-                        <button class="btn-editar" style="background:#0284c7; color:white; border:none; padding:4px 8px; border-radius:3px; cursor:pointer; font-weight:bold;">✏️ Editar</button>
-                    </td>
-                `;
-
-                tr.querySelector(".btn-editar").onclick = () => this.abrirModalEdicion(item);
-                tbody.appendChild(tr);
-            });
-
+            this.aplicarFiltros();
         } catch (error) {
             console.error("Error cargando artículos:", error);
         }
+    },
+
+    // ⚡ APLICA EL BUSCADOR Y EL SELECTOR EN TIEMPO REAL
+    aplicarFiltros() {
+        const tbody = document.querySelector("#tablaArticulos tbody");
+        if (!tbody) return;
+
+        const textoBusqueda = (document.getElementById("inputBuscarCatalogo")?.value || "").toLowerCase().trim();
+        const especialidadFiltro = document.getElementById("selectFiltroEspecialidad")?.value || "TODAS";
+
+        const filtrados = this.articulos.filter(item => {
+            const coincideTexto = item.nombre.toLowerCase().includes(textoBusqueda) || 
+                                 (item.descripcion && item.descripcion.toLowerCase().includes(textoBusqueda));
+            
+            const coincideEspecialidad = especialidadFiltro === "TODAS" || item.especialidad === especialidadFiltro;
+
+            return coincideTexto && coincideEspecialidad;
+        });
+
+        if (filtrados.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="5" style="padding: 20px; text-align: center; color: gray;">No se encontraron artículos con esos filtros.</td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = "";
+        filtrados.forEach(item => {
+            const tr = document.createElement("tr");
+            tr.style.borderBottom = "1px solid #ddd";
+
+            tr.innerHTML = `
+                <td style="padding: 10px;"><b>${item.nombre}</b><br><small style="color:gray;">${item.descripcion || ''}</small></td>
+                <td style="padding: 10px;"><span style="background:#f0f0f0; padding:2px 6px; border-radius:4px; font-size:12px;">${item.especialidad}</span></td>
+                <td style="padding: 10px; text-transform: capitalize;">${item.unidad || 'unidad'}</td>
+                <td style="padding: 10px; font-weight: bold; color: #104E2E;">$ ${(item.precio || 0).toLocaleString("es-AR", { minimumFractionDigits: 2 })}</td>
+                <td style="padding: 10px; text-align: center;">
+                    <button class="btn-editar" style="background:#0284c7; color:white; border:none; padding:4px 8px; border-radius:3px; cursor:pointer; font-weight:bold;">✏️ Editar</button>
+                </td>
+            `;
+
+            tr.querySelector(".btn-editar").onclick = () => this.abrirModalEdicion(item);
+            tbody.appendChild(tr);
+        });
     },
 
     registrarEventosMódulo() {
         const tabMat = document.getElementById("tabMateriales");
         const tabMO = document.getElementById("tabManoObra");
         const modal = document.getElementById("modalContainer");
+        const inputBuscar = document.getElementById("inputBuscarCatalogo");
+        const selectEspecialidad = document.getElementById("selectFiltroEspecialidad");
+
+        // Eventos para filtrar mientras se escribe o se cambia la opción
+        inputBuscar.oninput = () => this.aplicarFiltros();
+        selectEspecialidad.onchange = () => this.aplicarFiltros();
 
         tabMat.onclick = async () => {
             tabMat.classList.add("activo");
