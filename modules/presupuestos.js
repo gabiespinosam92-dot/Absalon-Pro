@@ -279,7 +279,7 @@ export const presupuestos = {
         </div>
 
         <div class="card mt-3">
-            <h3>🛠️ Mano de Obra Detallada</h3>
+            <h3>🛠️ Servicios Técnicos / Mano de Obra</h3>
             <table id="tablaManoObra" style="width:100%; margin-top:10px;">
                 <thead>
                     <tr style="text-align:left;">
