@@ -150,9 +150,9 @@ export const exportarPresupuestoPDF = async (datos) => {
         doc.text(total ? `$ ${formato(total)}` : "", 192, y + 5, { align: "right" });
     };
 
-    // Filas cargadas con las variables que envía presupuestos.js
+    // Filas cargadas con las variables que envía presupuestos.js (Reemplazado el texto de Mano de Obra)
     agregarFilaTabla("1", "Materiales", matNeto, matIva, matTotal);
-    agregarFilaTabla("1", "Mano de Obra", moNeto, moIva, moTotal);
+    agregarFilaTabla("1", "Servicios Técnicos / Mano de Obra", moNeto, moIva, moTotal);
     
     // Filas vacías estéticas
     agregarFilaTabla("", "", null, null, null);
