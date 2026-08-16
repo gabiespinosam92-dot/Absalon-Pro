@@ -44,18 +44,13 @@ export const exportarPresupuestoPDF = async (datos) => {
     // ASIGNACIÓN DE VALORES (Extraídos directo de las cuentas de presupuestos.js)
     // =========================================================================
     const matNeto = Number(datos.totalMaterialesNeto || 0);
-    const moNeto = Number(datos.totalManoObraNeto || 0);
-    
     const matIva = Number(datos.ivaMateriales || (matNeto * 0.21));
     const matTotal = matNeto + matIva;
 
-    const moIva = Number(datos.ivaManoObra || (moNeto * 0.21));
-    const moTotal = moNeto + moIva;
-
-    // Totales de las columnas
-    const columnaTotalNeto = Number(datos.columnaTotalNeto || (matNeto + moNeto));
-    const columnaTotalIva = Number(datos.columnaTotalIva || (matIva + moIva));
-    const granTotalFinal = Number(datos.totalAPagarFinal || (matTotal + moTotal));
+    // Totales acumulados generales
+    const columnaTotalNeto = Number(datos.columnaTotalNeto || 0);
+    const columnaTotalIva = Number(datos.columnaTotalIva || 0);
+    const granTotalFinal = Number(datos.totalAPagarFinal || (columnaTotalNeto + columnaTotalIva));
 
     // ==========================================
     // 1. ENCABEZADO
@@ -143,21 +138,42 @@ export const exportarPresupuestoPDF = async (datos) => {
         
         doc.setFont("helvetica", "normal");
         doc.text(String(cant), 21, y + 5, { align: "center" });
-        doc.text(String(descripcion), 32, y + 5);
+        
+        // Truncar descripción si es muy larga para evitar montados
+        const descTexto = String(descripcion).length > 48 
+            ? String(descripcion).substring(0, 45) + "..." 
+            : String(descripcion);
+            
+        doc.text(descTexto, 32, y + 5);
         
         doc.text(neto ? `$ ${formato(neto)}` : "", 125, y + 5, { align: "right" });
         doc.text(iva ? `$ ${formato(iva)}` : "", 158, y + 5, { align: "right" });
         doc.text(total ? `$ ${formato(total)}` : "", 192, y + 5, { align: "right" });
     };
 
-    // Filas cargadas con las variables que envía presupuestos.js (Reemplazado el texto de Mano de Obra)
-    agregarFilaTabla("1", "Materiales", matNeto, matIva, matTotal);
-    agregarFilaTabla("1", "Servicios Técnicos / Mano de Obra", moNeto, moIva, moTotal);
-    
-    // Filas vacías estéticas
-    agregarFilaTabla("", "", null, null, null);
-    agregarFilaTabla("", "", null, null, null);
-    agregarFilaTabla("", "", null, null, null);
+    // 1. Agregamos fila general de Materiales si existe
+    if (matNeto > 0) {
+        agregarFilaTabla("1", "Materiales", matNeto, matIva, matTotal);
+    }
+
+    // 2. DETALLE DINÁMICO DE SERVICIOS TÉCNICOS / MANO DE OBRA
+    const moItems = datos.manoObraItems || [];
+    if (moItems.length > 0) {
+        moItems.forEach(item => {
+            const itemNeto = Number(item.total || 0);
+            const itemIva = itemNeto * 0.21;
+            const itemTotal = itemNeto + itemIva;
+            
+            // Muestra la cantidad + unidad + nombre exacto (Ej: "17 Metro - Mano de Obra Revestimiento Omega")
+            const cantMostrar = `${item.cantidad || 1}`;
+            const descMostrar = `${item.concepto || item.descripcion}`;
+
+            agregarFilaTabla(cantMostrar, descMostrar, itemNeto, itemIva, itemTotal);
+        });
+    } else if (matNeto === 0) {
+        // En caso de que no haya ni materiales ni tareas cargadas
+        agregarFilaTabla("1", "Servicios Técnicos / Mano de Obra", 0, 0, 0);
+    }
 
     // Fila de Totales generales
     y += 7.5;
@@ -199,7 +215,7 @@ export const exportarPresupuestoPDF = async (datos) => {
     // =========================================================================
     // 5. SECCIÓN DINÁMICA DE OBSERVACIONES / GARANTÍAS / VACÍO POR BORRADOR
     // =========================================================================
-    let yDinamica = 190; 
+    let yDinamica = y + 25;
 
     if (esFinalizado) {
         doc.setFont("helvetica", "bold");
@@ -234,7 +250,6 @@ export const exportarPresupuestoPDF = async (datos) => {
         doc.text(lineasEnvio, 19, yDinamica + 9);
 
     } else if (esBorrador) {
-        // Espacio completamente limpio para borradores
         console.log("Estado Borrador detectado: Espacio intermedio limpio.");
     }
 
