@@ -169,33 +169,56 @@ class Estadisticas {
     _obtenerManoObra(p) {
         let subMo = 0;
 
-        // 1. Si tiene un listado explicito de items de mano de obra
-        if (Array.isArray(p.manoObraItems) && p.manoObraItems.length > 0) {
-            subMo = p.manoObraItems.reduce((s, item) => {
-                const cant = Number(item.cantidad || 1);
-                const precio = Number(item.precio || item.valor || 0);
-                return s + (cant * precio);
-            }, 0);
-        } 
-        // 2. Si se guardo como un campo directo
-        else if (p.manoDeObra !== undefined || p.manoObra !== undefined || p.totalManoObra !== undefined) {
-            subMo = this._parseMonto(p.manoDeObra || p.manoObra || p.totalManoObra || 0);
-        } 
-        // 3. Si no hay desglose, pero si materiales: Total - Materiales
-        else if (p.totalMateriales !== undefined || p.costoMateriales !== undefined) {
-            const tot = this._parseMonto(p.totalGeneral || p.total || 0);
-            const mat = this._parseMonto(p.totalMateriales || p.costoMateriales || 0);
-            subMo = Math.max(0, tot - mat);
+        // 1. Revisar arreglos de ítems desglosados (items, manoObraItems, filas, detalles)
+        const listaItems = p.items || p.manoObraItems || p.filas || p.detalles;
+        
+        if (Array.isArray(listaItems) && listaItems.length > 0) {
+            listaItems.forEach(item => {
+                const cant = Number(item.cantidad || item.cant || 1);
+                
+                // Si el ítem explicita un valor de mano de obra
+                if (item.manoDeObra !== undefined || item.manoObra !== undefined || item.mo !== undefined) {
+                    const valMo = this._parseMonto(item.manoDeObra || item.manoObra || item.mo || 0);
+                    subMo += (cant * valMo);
+                } 
+                // Si es un ítem marcado como categoría/tipo Mano de Obra
+                else if (
+                    item.tipo === "manoDeObra" || 
+                    item.tipo === "mo" || 
+                    item.categoria === "manoDeObra" || 
+                    item.rubro === "manoDeObra"
+                ) {
+                    const valItem = this._parseMonto(item.precio || item.precioUnitario || item.valor || item.subtotal || item.monto || item.total || 0);
+                    subMo += (cant * valItem);
+                }
+            });
+        }
+
+        // 2. Si no sumó nada por ítems, verificar si existe una propiedad directa en la raíz del presupuesto
+        if (subMo === 0) {
+            if (p.manoDeObra !== undefined || p.manoObra !== undefined || p.totalManoObra !== undefined || p.moTotal !== undefined) {
+                subMo = this._parseMonto(p.manoDeObra || p.manoObra || p.totalManoObra || p.moTotal || 0);
+            } 
+            // 3. Respaldo: Si no hay desglose explícito pero hay total y materiales -> Total - Materiales
+            else if (p.totalMateriales !== undefined || p.costoMateriales !== undefined || p.materialesTotal !== undefined) {
+                const tot = this._parseMonto(p.totalGeneral || p.total || 0);
+                const mat = this._parseMonto(p.totalMateriales || p.costoMateriales || p.materialesTotal || 0);
+                subMo = Math.max(0, tot - mat);
+            }
         }
 
         return subMo;
     }
 
-    // Verifica si un presupuesto esta finalizado o empieza con T-
+    // Verifica si un presupuesto está computable como trabajo realizado/finalizado
     _esTrabajoFinalizado(p) {
         const est = String(p.estado || '').toLowerCase().trim();
         const cod = String(p.codigo || p.numero || p.id || p.titulo || '').toLowerCase().trim();
-        return est === "finalizado" || cod.startsWith("t-");
+        
+        // Acepta varios estados de finalización o prefijos de código T-
+        const estadosValidos = ["finalizado", "completado", "terminado", "cobrado", "aprobado", "en curso", "activo"];
+        
+        return estadosValidos.includes(est) || cod.startsWith("t-");
     }
 
     procesarMetricasDelMes() {
