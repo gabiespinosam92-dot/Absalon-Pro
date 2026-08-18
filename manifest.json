@@ -311,6 +311,36 @@
         "unidad": "Horas"
       },
       "prefijo": "E"
+    },
+    {
+      "id": 4,
+      "numero": 4,
+      "numeroFormat": "E-4",
+      "fecha": "2026-08-18",
+      "estado": "Enviado",
+      "cliente": 1,
+      "especialidades": [
+        "Albañilería"
+      ],
+      "descripcionTrabajo": "Dirección de obra",
+      "garantíaId": "",
+      "materiales": [],
+      "manoObraDetalle": [
+        {
+          "cantidad": 6,
+          "unidad": "Global",
+          "idConcepto": "1787051265047",
+          "descripcion": "Direccion de obra",
+          "precio": 25000,
+          "total": 150000
+        }
+      ],
+      "totalGeneral": 150000,
+      "tiempo": {
+        "cantidad": 6,
+        "unidad": "Días"
+      },
+      "prefijo": "E"
     }
   ],
   "catalogos": [
@@ -394,6 +424,51 @@
       "especialidad": "Construcción Seco",
       "unidad": "M2",
       "precio": 12500
+    },
+    {
+      "id": "1787051043324",
+      "nombre": "regilla 15x15",
+      "descripcion": "",
+      "tipo": "material",
+      "especialidad": "Albañilería",
+      "unidad": "M2",
+      "precio": 3000
+    },
+    {
+      "id": "1787051067285",
+      "nombre": "cemento x kg",
+      "descripcion": "",
+      "tipo": "material",
+      "especialidad": "Albañilería",
+      "unidad": "Bulto Comercial",
+      "precio": 2500
+    },
+    {
+      "id": "1787051129156",
+      "nombre": "Extractor de aire",
+      "descripcion": "",
+      "tipo": "material",
+      "especialidad": "Albañilería",
+      "unidad": "Unidad",
+      "precio": 29000
+    },
+    {
+      "id": "1787051160306",
+      "nombre": "Pintura latex bl (4lt)",
+      "descripcion": "",
+      "tipo": "material",
+      "especialidad": "Albañilería",
+      "unidad": "Unidad",
+      "precio": 48900
+    },
+    {
+      "id": "1787051265047",
+      "nombre": "Direccion de obra",
+      "descripcion": "",
+      "tipo": "mano_obra",
+      "especialidad": "Construcción Seco",
+      "unidad": "Global",
+      "precio": 25000
     },
     {
       "id": "aislant_fita",
