@@ -59,8 +59,8 @@ const AgendaModule = {
                         </div>
 
                         <div style="margin-bottom: 20px;">
-                            <label style="display: block; margin-bottom: 6px; font-weight: bold; font-size: 13px; color: #374151;">Fecha de Inicio de Trabajos:</label>
-                            <input type="date" id="agendaFechaInicio" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;" required>
+                            <label style="display: block; margin-bottom: 6px; font-weight: bold; font-size: 13px; color: #374151;">Fecha y Hora de Inicio:</label>
+                            <input type="datetime-local" id="agendaFechaInicio" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;" required>
                         </div>
 
                         <button type="submit" style="width: 100%; background: #104E2E; color: white; border: none; padding: 12px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 14px;">
@@ -82,7 +82,6 @@ const AgendaModule = {
 
         try {
             let lista = [];
-            // Intentar cargar de IndexedDB
             const dbRequest = window.indexedDB.databases ? await window.indexedDB.databases() : [];
             const dbInfo = dbRequest.find(d => d.name.toLowerCase().includes("absalon"));
             
@@ -112,7 +111,6 @@ const AgendaModule = {
             lista.forEach(p => {
                 const opt = document.createElement("option");
                 opt.value = p.id || p.idPresupuesto;
-                // Mostramos número de presupuesto + cliente para que la búsqueda por texto sea intuitiva
                 opt.textContent = `N° ${p.id || p.idPresupuesto} - ${p.clienteName || p.cliente || "Cliente a designar"}`;
                 select.appendChild(opt);
             });
@@ -129,18 +127,17 @@ const AgendaModule = {
         const form = document.getElementById("formAgendaObra");
 
         btnAbrir?.addEventListener("click", () => {
-            this.limpiarFormulario(true); // Habilitar campos vacíos por defecto
+            this.limpiarFormulario(true);
             modal.style.display = "flex";
         });
         
         btnCerrar?.addEventListener("click", () => modal.style.display = "none");
 
-        // Autocompletado o modo libre
         selectPresupuesto?.addEventListener("change", (e) => {
             const idSeleccionado = e.target.value;
             
             if (idSeleccionado === "manual" || !idSeleccionado) {
-                this.limpiarFormulario(true); // Permite escribir libremente
+                this.limpiarFormulario(true);
                 return;
             }
 
@@ -154,7 +151,6 @@ const AgendaModule = {
                 inputEspecialidad.value = encontrado.especialidad || encontrado.obraTipo || "";
                 inputTiempo.value = encontrado.tiempoEstimado || encontrado.duracionObra || "";
 
-                // Bloqueamos los inputs para evitar modificaciones erróneas si viene de presupuesto
                 inputCliente.readOnly = true;
                 inputEspecialidad.readOnly = true;
                 inputTiempo.readOnly = true;
@@ -167,13 +163,15 @@ const AgendaModule = {
         form?.addEventListener("submit", (e) => {
             e.preventDefault();
             
+            const fechaHoraVal = document.getElementById("agendaFechaInicio").value;
+
             const nuevaObra = {
                 id: Date.now(),
                 presupuestoId: selectPresupuesto.value === "manual" ? "Manual" : selectPresupuesto.value,
                 cliente: document.getElementById("agendaCliente").value,
                 especialidad: document.getElementById("agendaEspecialidad").value,
                 tiempo: document.getElementById("agendaTiempo").value,
-                fecha: document.getElementById("agendaFechaInicio").value
+                fecha: fechaHoraVal
             };
 
             const obrasGuardadas = JSON.parse(localStorage.getItem("agenda_obras")) || [];
@@ -184,9 +182,13 @@ const AgendaModule = {
             form.reset();
             this.renderListaObras();
             
-            // Si el dashboard está activo, actualiza también el widget del dashboard
             if (document.getElementById("widgetAgendaDashboard")) {
                 this.renderWidgetDashboard();
+            }
+
+            // Opcional: Preguntar si quiere abrir Google Calendar directamente al guardar
+            if (confirm("¿Querés agregar la alarma de este trabajo en tu Google Calendar / Celular?")) {
+                this.abrirGoogleCalendar(nuevaObra);
             }
         });
     },
@@ -236,23 +238,60 @@ const AgendaModule = {
                         ⏱ Tiempo estimado: ${o.tiempo}
                     </p>
                 </div>
-                <div style="text-align: right; display: flex; align-items: center; gap: 10px;">
+                <div style="text-align: right; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                     <span style="background: #e1f5fe; color: #0288d1; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: bold;">
                         📅 ${this.formatearFecha(o.fecha)}
                     </span>
+                    <button class="btnCal" data-id="${o.id}" style="background: #4285F4; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer;" title="Agendar en Google Calendar">🔔 Agendar</button>
                     <button class="btnEliminarObra" data-id="${o.id}" style="background: none; border: none; color: #ef4444; cursor: pointer; font-size: 14px;" title="Eliminar">🗑</button>
                 </div>
             </div>
         `).join("");
 
+        // Listener para eliminar
         document.querySelectorAll(".btnEliminarObra").forEach(btn => {
             btn.addEventListener("click", (e) => {
                 this.eliminarObra(e.target.getAttribute("data-id"));
             });
         });
+
+        // Listener para abrir Google Calendar
+        document.querySelectorAll(".btnCal").forEach(btn => {
+            btn.addEventListener("click", (e) => {
+                const id = e.target.getAttribute("data-id");
+                const obra = obras.find(o => String(o.id) === String(id));
+                if (obra) this.abrirGoogleCalendar(obra);
+            });
+        });
     },
 
-    // Renders dinámicos para el Dashboard principal
+    // Genera el enlace dinámico a Google Calendar
+    abrirGoogleCalendar(obra) {
+        const titulo = encodeURIComponent(`Obra / Servicio: ${obra.cliente}`);
+        const detalles = encodeURIComponent(`Tarea: ${obra.especialidad}\nTiempo estimado: ${obra.tiempo}\nPresupuesto N°: ${obra.presupuestoId}`);
+        
+        // Manejar Fecha / Hora ISO
+        let inicioISO = "";
+        let finISO = "";
+
+        if (obra.fecha.includes("T")) {
+            const fechaObj = new Date(obra.fecha);
+            inicioISO = fechaObj.toISOString().replace(/-|:|\.\d\d\d/g, "");
+            
+            // Asignamos 2 horas de duración por defecto para la alerta
+            const fechaFinObj = new Date(fechaObj.getTime() + (2 * 60 * 60 * 1000));
+            finISO = fechaFinObj.toISOString().replace(/-|:|\.\d\d\d/g, "");
+        } else {
+            // Si solo hay fecha sin hora
+            const f = obra.fecha.replace(/-/g, "");
+            inicioISO = `${f}T080000Z`;
+            finISO = `${f}T100000Z`;
+        }
+
+        const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${titulo}&details=${detalles}&dates=${inicioISO}/${finISO}`;
+        window.open(url, "_blank");
+    },
+
     renderWidgetDashboard() {
         const contenedorWidget = document.getElementById("widgetAgendaDashboard");
         if (!contenedorWidget) return;
@@ -265,8 +304,6 @@ const AgendaModule = {
         }
 
         obras.sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
-        
-        // Mostrar solo las primeras 3 más próximas para no saturar la pantalla de inicio
         const proximas = obras.slice(0, 3);
 
         contenedorWidget.innerHTML = proximas.map(o => `
@@ -293,6 +330,11 @@ const AgendaModule = {
 
     formatearFecha(fechaStr) {
         if (!fechaStr) return "";
+        if (fechaStr.includes("T")) {
+            const [f, h] = fechaStr.split("T");
+            const [anio, mes, dia] = f.split("-");
+            return `${dia}/${mes}/${anio} ${h} hs`;
+        }
         const [anio, mes, dia] = fechaStr.split("-");
         return `${dia}/${mes}/${anio}`;
     }
