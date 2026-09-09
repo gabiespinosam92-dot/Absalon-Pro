@@ -41,16 +41,19 @@ export const exportarPresupuestoPDF = async (datos) => {
     const esBorrador = prefijo === "B";
 
     // =========================================================================
-    // ASIGNACIÓN DE VALORES (Extraídos directo de las cuentas de presupuestos.js)
+    // CONTROL DE CÁLCULO DE IVA (Por defecto aplica IVA salvo que se desmarque)
     // =========================================================================
+    const aplicarIva = datos.incluirIva !== undefined ? datos.incluirIva : true;
+
+    // ASIGNACIÓN DE VALORES (Ajustados según el estado del switch de IVA)
     const matNeto = Number(datos.totalMaterialesNeto || 0);
-    const matIva = Number(datos.ivaMateriales || (matNeto * 0.21));
+    const matIva = aplicarIva ? Number(datos.ivaMateriales || (matNeto * 0.21)) : 0;
     const matTotal = matNeto + matIva;
 
     // Totales acumulados generales
     const columnaTotalNeto = Number(datos.columnaTotalNeto || 0);
-    const columnaTotalIva = Number(datos.columnaTotalIva || 0);
-    const granTotalFinal = Number(datos.totalAPagarFinal || (columnaTotalNeto + columnaTotalIva));
+    const columnaTotalIva = aplicarIva ? Number(datos.columnaTotalIva || 0) : 0;
+    const granTotalFinal = columnaTotalNeto + columnaTotalIva;
 
     // ==========================================
     // 1. ENCABEZADO
@@ -147,7 +150,11 @@ export const exportarPresupuestoPDF = async (datos) => {
         doc.text(descTexto, 32, y + 5);
         
         doc.text(neto ? `$ ${formato(neto)}` : "", 125, y + 5, { align: "right" });
-        doc.text(iva ? `$ ${formato(iva)}` : "", 158, y + 5, { align: "right" });
+        
+        // Mostrar $ 0,00 si la opción de IVA fue desmarcada
+        const textoIva = aplicarIva ? (iva ? `$ ${formato(iva)}` : "$ 0,00") : "$ 0,00";
+        doc.text(textoIva, 158, y + 5, { align: "right" });
+        
         doc.text(total ? `$ ${formato(total)}` : "", 192, y + 5, { align: "right" });
     };
 
@@ -161,10 +168,9 @@ export const exportarPresupuestoPDF = async (datos) => {
     if (moItems.length > 0) {
         moItems.forEach(item => {
             const itemNeto = Number(item.total || 0);
-            const itemIva = itemNeto * 0.21;
+            const itemIva = aplicarIva ? (itemNeto * 0.21) : 0;
             const itemTotal = itemNeto + itemIva;
             
-            // Muestra la cantidad + unidad + nombre exacto (Ej: "17 Metro - Mano de Obra Revestimiento Omega")
             const cantMostrar = `${item.cantidad || 1}`;
             const descMostrar = `${item.concepto || item.descripcion}`;
 
