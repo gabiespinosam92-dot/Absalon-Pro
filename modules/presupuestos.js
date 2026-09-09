@@ -44,6 +44,11 @@ export const presupuestos = {
                         });
                     }
 
+                    if (p.incluirIva !== undefined) {
+                        const chkIva = document.getElementById("incluirIva");
+                        if (chkIva) chkIva.checked = p.incluirIva;
+                    }
+
                     if (p.estado === "Enviado" && document.getElementById("descripcionTrabajo")) {
                         document.getElementById("descripcionTrabajo").value = p.descripcionTrabajo || "";
                     } else if (p.estado === "Finalizado" && document.getElementById("garantiaVinculada")) {
@@ -109,6 +114,7 @@ export const presupuestos = {
                             numeroFormat: `${prefijoLetra}-${p.id}`,
                             cliente: Number(document.getElementById("cliente").value),
                             especialidades: especs,
+                            incluirIva: document.getElementById("incluirIva") ? document.getElementById("incluirIva").checked : true,
                             descripcionTrabajo: document.getElementById("descripcionTrabajo") ? document.getElementById("descripcionTrabajo").value.trim() : "",
                             garantíaId: document.getElementById("garantiaVinculada") ? document.getElementById("garantiaVinculada").value : "",
                             materiales: [],
@@ -308,9 +314,17 @@ export const presupuestos = {
             </div>
         </div>
 
-        <div class="card mt-3 text-right" style="display:flex; justify-content:space-between; align-items:center; background:#e8f5e9;">
-            <h2 style="color:#1b5e20; margin:0;">TOTAL GENERAL:</h2>
-            <h1 id="totalGeneralLabel" style="color:#1b5e20; margin:0;">$ 0,00</h1>
+        <div class="card mt-3 text-right" style="display:flex; justify-content:space-between; align-items:center; background:#e8f5e9; flex-wrap:wrap; gap:10px;">
+            <div style="display:flex; align-items:center; gap:8px;">
+                <label style="font-weight:bold; cursor:pointer; display:flex; align-items:center; gap:8px; font-size:15px; color:#1b5e20;">
+                    <input type="checkbox" id="incluirIva" checked style="transform: scale(1.3); cursor:pointer;">
+                    Aplicar IVA (21%)
+                </label>
+            </div>
+            <div style="display:flex; align-items:center; gap:15px;">
+                <h2 style="color:#1b5e20; margin:0;">TOTAL GENERAL:</h2>
+                <h1 id="totalGeneralLabel" style="color:#1b5e20; margin:0;">$ 0,00</h1>
+            </div>
         </div>
 
         <!-- BOTONERA DE EXPORTACIÓN MODIFICADA SIN TOCAR LO EXISTENTE -->
@@ -394,6 +408,11 @@ export const presupuestos = {
         document.getElementById("estado").addEventListener("change", (e) => {
             this.manejarCambioEstado(e.target.value);
         });
+
+        const chkIva = document.getElementById("incluirIva");
+        if (chkIva) {
+            chkIva.addEventListener("change", () => this.recalcularTotales());
+        }
 
         document.getElementById("btnNuevoCliente").onclick = () => this.abrirModalCliente();
         document.getElementById("btnFilaMaterial").onclick = () => this.crearFilaMaterial();
@@ -530,12 +549,15 @@ export const presupuestos = {
             totalMO += Number(tr.querySelector(".mo-total").value || 0);
         });
 
-        const totalGral = totalMat + totalMO;
+        const subtotal = totalMat + totalMO;
+        const aplicarIva = document.getElementById("incluirIva") ? document.getElementById("incluirIva").checked : true;
+        const totalGral = aplicarIva ? (subtotal * 1.21) : subtotal;
+
         document.getElementById("totalGeneralLabel").textContent = `$ ${totalGral.toLocaleString("es-AR", { minimumFractionDigits: 2 })}`;
     },
 
     // 🛠️ EXPORTADOR EXCLUSIVO PARA LISTA DE COMPRAS (SIN PRECIOS NI TOTALES)
-   async generarPDFListaCompras() {
+    async generarPDFListaCompras() {
         const idCliente = document.getElementById("cliente").value;
         if (!idCliente) {
             alert("⚠️ Por favor, seleccione un cliente antes de exportar la Lista de Compras.");
@@ -615,6 +637,9 @@ export const presupuestos = {
         let totalMO = 0;
         document.querySelectorAll("#tablaManoObra tbody tr").forEach(tr => { totalMO += Number(tr.querySelector(".mo-total").value || 0); });
 
+        const aplicarIva = document.getElementById("incluirIva") ? document.getElementById("incluirIva").checked : true;
+        const subtotal = totalMat + totalMO;
+
         const datos = {
             id: proxId,
             numero: proxId,
@@ -623,11 +648,12 @@ export const presupuestos = {
             estado: estadoSel,
             cliente: Number(idCliente),
             especialidades: specs,
+            incluirIva: aplicarIva,
             descripcionTrabajo: document.getElementById("descripcionTrabajo") ? document.getElementById("descripcionTrabajo").value.trim() : "",
             garantíaId: document.getElementById("garantiaVinculada") ? document.getElementById("garantiaVinculada").value : "",
             materiales: [],
             manoObraDetalle: [],
-            totalGeneral: totalMat + totalMO,
+            totalGeneral: aplicarIva ? (subtotal * 1.21) : subtotal,
             tiempo: { 
                 cantidad: Number(document.getElementById("tiempoCantidad").value),
                 unidad: document.getElementById("tiempoUnidad").value
@@ -730,8 +756,10 @@ export const presupuestos = {
             }
         });
 
-        const ivaMateriales = totalMaterialesNeto * 0.21;
-        const ivaManoObra = totalManoObraNeto * 0.21;
+        const aplicarIva = document.getElementById("incluirIva") ? document.getElementById("incluirIva").checked : true;
+
+        const ivaMateriales = aplicarIva ? (totalMaterialesNeto * 0.21) : 0;
+        const ivaManoObra = aplicarIva ? (totalManoObraNeto * 0.21) : 0;
 
         const columnaTotalNeto = totalMaterialesNeto + totalManoObraNeto;
         const columnaTotalIva = ivaMateriales + ivaManoObra;
@@ -752,6 +780,7 @@ export const presupuestos = {
             clienteTipoDoc: clienteData.tipoDocumento || 'CUIL/CUIT',
             clienteNumDoc: clienteData.numeroDocumento || '',
             manoObraItems: manoObraItemsDetalle,
+            incluirIva: aplicarIva,
             totalMaterialesNeto: totalMaterialesNeto,
             totalManoObraNeto: totalManoObraNeto,
             ivaMateriales: ivaMateriales,
