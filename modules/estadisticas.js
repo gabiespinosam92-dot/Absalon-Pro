@@ -1,6 +1,6 @@
 /* ==========================================================
    ABSALON PRO - modules/estadisticas.js
-   Sprint 9.2: Desglose de Mano de Obra (Diagnóstico Extendido)
+   Sprint 9.2: Desglose de Mano de Obra (Versión Definitiva)
 ========================================================== */
 import { getAll } from "./storage.js";
 
@@ -168,10 +168,17 @@ class Estadisticas {
     _obtenerManoObra(p) {
         let subMo = 0;
 
-        // 1. Mano de obra directa en la raíz
-        if (p.totalManoObra !== undefined || p.manoObraTotal !== undefined || p.manoObra !== undefined || p.moTotal !== undefined) {
-            const directo = this._parseMonto(p.totalManoObra ?? p.manoObraTotal ?? p.manoObra ?? p.moTotal);
-            if (directo > 0) subMo = directo;
+        // 1. Campos directos explícitos
+        const camposDirectos = [
+            p.subtotalManoObra, p.manoObraTotal, p.totalManoObra, 
+            p.manoDeObra, p.manoObra, p.moTotal, p.mo
+        ];
+        for (let c of camposDirectos) {
+            const val = this._parseMonto(c);
+            if (val > 0) {
+                subMo = val;
+                break;
+            }
         }
 
         // 2. Arreglo manoObraItems
@@ -183,7 +190,7 @@ class Estadisticas {
             }, 0);
         }
 
-        // 3. Arreglo items general
+        // 3. Arreglo de ítems general (recorriendo ítems)
         if (subMo === 0) {
             const listaItems = p.items || p.filas || p.detalles || [];
             if (Array.isArray(listaItems) && listaItems.length > 0) {
@@ -206,12 +213,17 @@ class Estadisticas {
             }
         }
 
-        // 4. Resta entre Total y Materiales si nada anterior funcionó
+        // 4. Si el presupuesto no separa mano de obra, restar materiales del total
         if (subMo === 0) {
             const tot = this._parseMonto(p.totalGeneral || p.total || 0);
-            const mat = this._parseMonto(p.totalMateriales || p.costoMateriales || p.materialesTotal || p.subtotalMateriales || 0);
-            if (tot > 0 && mat > 0) {
-                subMo = Math.max(0, tot - mat);
+            const mat = this._parseMonto(p.totalMateriales || p.subtotalMateriales || p.costoMateriales || p.materialesTotal || p.materiales || 0);
+            
+            if (tot > 0 && mat > 0 && tot > mat) {
+                subMo = tot - mat;
+            } else if (tot > 0) {
+                // Si el presupuesto está marcado como finalizado pero no desglosa materiales,
+                // se asume el total como mano de obra pura de servicio/contrata
+                subMo = tot;
             }
         }
 
@@ -230,10 +242,6 @@ class Estadisticas {
         const [anoFiltro, mesFiltro] = this.mesSeleccionado.split("-");
         const nAnoFiltro = Number(anoFiltro);
         const nMesFiltro = Number(mesFiltro);
-
-        console.log("=== DIAGNÓSTICO ABSALON PRO ESTADÍSTICAS ===");
-        console.log("Mes filtrado:", this.mesSeleccionado);
-        console.log("Total presupuestos guardados:", this.presupuestos.length);
 
         const delMes = this.presupuestos.filter(p => {
             if (!p.fecha) return false;
@@ -258,18 +266,8 @@ class Estadisticas {
             return false;
         });
 
-        console.log("Presupuestos encontrados en el mes:", delMes.length);
-
         const totalPresupuestos = delMes.length;
         const finalizados = delMes.filter(p => this._esTrabajoFinalizado(p));
-
-        console.log("Presupuestos finalizados / T-:", finalizados.length);
-
-        // Imprimir cada presupuesto relevante para ver la estructura real
-        finalizados.forEach((p, idx) => {
-            const moExtraida = this._obtenerManoObra(p);
-            console.log(`[P#${idx + 1}] Código: ${p.codigo || p.numero || p.id} | Fecha: ${p.fecha} | Total: ${p.totalGeneral || p.total} | MO Extraída: ${moExtraida}`, p);
-        });
 
         const totalDineroCompleto = finalizados.reduce((s, p) => s + this._parseMonto(p.totalGeneral || p.total || 0), 0);
         const promedioCompleto = finalizados.length > 0 ? (totalDineroCompleto / finalizados.length) : 0;
