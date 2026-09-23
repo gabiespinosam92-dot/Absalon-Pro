@@ -1,6 +1,6 @@
 /* ==========================================================
    ABSALON PRO - modules/estadisticas.js
-   Sprint 9.2: Desglose de Mano de Obra (T- / Finalizados)
+   Sprint 9.2: Desglose de Mano de Obra (Diagnóstico Extendido)
 ========================================================== */
 import { getAll } from "./storage.js";
 
@@ -165,12 +165,17 @@ class Estadisticas {
         return isNaN(num) ? 0 : num;
     }
 
-    // Extrae de forma segura la mano de obra de un presupuesto
     _obtenerManoObra(p) {
         let subMo = 0;
 
-        // 1. PRIMERA PRIORIDAD: Sumar directamente desde manoObraItems
-        if (Array.isArray(p.manoObraItems) && p.manoObraItems.length > 0) {
+        // 1. Mano de obra directa en la raíz
+        if (p.totalManoObra !== undefined || p.manoObraTotal !== undefined || p.manoObra !== undefined || p.moTotal !== undefined) {
+            const directo = this._parseMonto(p.totalManoObra ?? p.manoObraTotal ?? p.manoObra ?? p.moTotal);
+            if (directo > 0) subMo = directo;
+        }
+
+        // 2. Arreglo manoObraItems
+        if (subMo === 0 && Array.isArray(p.manoObraItems) && p.manoObraItems.length > 0) {
             subMo = p.manoObraItems.reduce((acc, item) => {
                 const cant = Number(item.cantidad || item.cant || 1);
                 const precio = this._parseMonto(item.precio || item.precioUnitario || item.valor || item.monto || 0);
@@ -178,18 +183,17 @@ class Estadisticas {
             }, 0);
         }
 
-        // 2. SEGUNDA PRIORIDAD: Si no sumó nada y existe lista general p.items
+        // 3. Arreglo items general
         if (subMo === 0) {
             const listaItems = p.items || p.filas || p.detalles || [];
             if (Array.isArray(listaItems) && listaItems.length > 0) {
                 listaItems.forEach(item => {
                     const cant = Number(item.cantidad || item.cant || 1);
-                    
                     const valMoDirecto = this._parseMonto(item.manoDeObra ?? item.manoObra ?? item.mo);
+                    
                     if (valMoDirecto > 0) {
                         subMo += (cant * valMoDirecto);
-                    } 
-                    else if (
+                    } else if (
                         item.tipo === "manoDeObra" || 
                         item.tipo === "mo" || 
                         item.categoria === "manoDeObra" || 
@@ -202,15 +206,11 @@ class Estadisticas {
             }
         }
 
-        // 3. TERCERA PRIORIDAD: Propiedad directa en la raíz del presupuesto
+        // 4. Resta entre Total y Materiales si nada anterior funcionó
         if (subMo === 0) {
-            const moRaiz = this._parseMonto(p.manoDeObra ?? p.manoObra ?? p.totalManoObra ?? p.moTotal);
-            if (moRaiz > 0) {
-                subMo = moRaiz;
-            } 
-            else if (p.totalMateriales !== undefined || p.costoMateriales !== undefined || p.materialesTotal !== undefined) {
-                const tot = this._parseMonto(p.totalGeneral || p.total || 0);
-                const mat = this._parseMonto(p.totalMateriales || p.costoMateriales || p.materialesTotal || 0);
+            const tot = this._parseMonto(p.totalGeneral || p.total || 0);
+            const mat = this._parseMonto(p.totalMateriales || p.costoMateriales || p.materialesTotal || p.subtotalMateriales || 0);
+            if (tot > 0 && mat > 0) {
                 subMo = Math.max(0, tot - mat);
             }
         }
@@ -218,14 +218,11 @@ class Estadisticas {
         return subMo;
     }
 
-    // Verifica si un presupuesto está computable como trabajo realizado/finalizado
     _esTrabajoFinalizado(p) {
         const est = String(p.estado || '').toLowerCase().trim();
         const cod = String(p.codigo || p.numero || p.id || p.titulo || '').toLowerCase().trim();
         
-        // Acepta varios estados de finalización o prefijos de código T-
         const estadosValidos = ["finalizado", "completado", "terminado", "cobrado", "aprobado", "en curso", "activo"];
-        
         return estadosValidos.includes(est) || cod.startsWith("t-");
     }
 
@@ -234,7 +231,10 @@ class Estadisticas {
         const nAnoFiltro = Number(anoFiltro);
         const nMesFiltro = Number(mesFiltro);
 
-        // Presupuestos creados en este mes
+        console.log("=== DIAGNÓSTICO ABSALON PRO ESTADÍSTICAS ===");
+        console.log("Mes filtrado:", this.mesSeleccionado);
+        console.log("Total presupuestos guardados:", this.presupuestos.length);
+
         const delMes = this.presupuestos.filter(p => {
             if (!p.fecha) return false;
             
@@ -258,28 +258,29 @@ class Estadisticas {
             return false;
         });
 
+        console.log("Presupuestos encontrados en el mes:", delMes.length);
+
         const totalPresupuestos = delMes.length;
-        
-        // Filtra los que sean "finalizados" O empiecen con "T-"
         const finalizados = delMes.filter(p => this._esTrabajoFinalizado(p));
 
-        /* =====================================================
-           MÉTRICA 1: ACTIVIDAD MENSUAL COMPLETA
-        ===================================================== */
+        console.log("Presupuestos finalizados / T-:", finalizados.length);
+
+        // Imprimir cada presupuesto relevante para ver la estructura real
+        finalizados.forEach((p, idx) => {
+            const moExtraida = this._obtenerManoObra(p);
+            console.log(`[P#${idx + 1}] Código: ${p.codigo || p.numero || p.id} | Fecha: ${p.fecha} | Total: ${p.totalGeneral || p.total} | MO Extraída: ${moExtraida}`, p);
+        });
+
         const totalDineroCompleto = finalizados.reduce((s, p) => s + this._parseMonto(p.totalGeneral || p.total || 0), 0);
         const promedioCompleto = finalizados.length > 0 ? (totalDineroCompleto / finalizados.length) : 0;
         const tasaConversion = totalPresupuestos > 0 ? Math.round((finalizados.length / totalPresupuestos) * 100) : 0;
 
-        /* =====================================================
-           MÉTRICA 2: CÁLCULOS SÓLO DE MANO DE OBRA (CONTROL FINANCIERO)
-        ===================================================== */
         const totalManoObraTerminada = finalizados.reduce((suma, p) => suma + this._obtenerManoObra(p), 0);
 
         const ahorro = totalManoObraTerminada * 0.10;
         const inversion = totalManoObraTerminada * 0.12;
         const necesidades = totalManoObraTerminada * 0.78;
 
-        // Renderizado en el DOM
         const elMontoCompleto = document.getElementById("statMontoCompleto");
         const elPromedio = document.getElementById("statPromedio");
         const elConversion = document.getElementById("statConversion");
@@ -288,7 +289,6 @@ class Estadisticas {
         if (elPromedio) elPromedio.innerText = promedioCompleto.toLocaleString("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 });
         if (elConversion) elConversion.innerText = `${tasaConversion}% (${finalizados.length} de ${totalPresupuestos})`;
 
-        // Renderizado del Bloque Financiero
         const elTotalMo = document.getElementById("totalManoObraMes");
         const realNecesidades = document.getElementById("finNecesidades") || document.getElementById("finNeeds");
         const elInversion = document.getElementById("finInversion");
