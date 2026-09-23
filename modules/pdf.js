@@ -1,5 +1,5 @@
 export const exportarPresupuestoPDF = async (datos) => {
-    // 1. Carga limpia de la librería jsPDF
+    // 1. Carga de la librería jsPDF
     if (typeof window.jspdf === "undefined") {
         try {
             await import("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js");
@@ -11,21 +11,19 @@ export const exportarPresupuestoPDF = async (datos) => {
 
     const { jsPDF } = window.jspdf;
     
-    // Creación del lienzo A4 en milímetros
     const doc = new jsPDF({
         orientation: "portrait",
         unit: "mm",
         format: "a4"
     });
 
-    // Formateador local de moneda argentina
     const formato = (n) =>
         Number(n || 0).toLocaleString("es-AR", {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2
         });
 
-    // Mapeo de datos recibidos
+    // Mapeo de variables
     const nroPresupuesto = datos.numero || "S/N";
     const fechaPresupuesto = datos.fecha || "";
     const nombreCliente = datos.clienteNombre || "";
@@ -34,18 +32,12 @@ export const exportarPresupuestoPDF = async (datos) => {
     const docTipo = datos.clienteTipoDoc || "CUIL/CUIT";
     const docNum = datos.clienteNumDoc || "";
 
-    // Identificación del prefijo de estado
     const prefijo = String(nroPresupuesto).toUpperCase().charAt(0);
     const esFinalizado = prefijo === "T";
-    const esEnviado = prefijo === "E";
-    const esBorrador = prefijo === "B";
-    const esFactura = datos.esFactura || false; // Switch para emitir Factura C
+    const esFactura = datos.esFactura || false;
 
-    // =========================================================================
-    // CONTROL DE CÁLCULO DE IVA
-    // =========================================================================
+    // Cálculo de IVA
     const aplicarIva = datos.incluirIva !== undefined ? datos.incluirIva : true;
-
     const matNeto = Number(datos.totalMaterialesNeto || 0);
     const matIva = aplicarIva ? Number(datos.ivaMateriales || (matNeto * 0.21)) : 0;
     const matTotal = matNeto + matIva;
@@ -54,14 +46,14 @@ export const exportarPresupuestoPDF = async (datos) => {
     const columnaTotalIva = aplicarIva ? Number(datos.columnaTotalIva || 0) : 0;
     const granTotalFinal = columnaTotalNeto + columnaTotalIva;
 
-    // ==========================================
-    // 1. ENCABEZADO PÁGINA 1
-    // ==========================================
+    // =========================================================================
+    // PÁGINA 1: ENCABEZADO DE PRESUPUESTO / FACTURA
+    // =========================================================================
     if (datos.logo) {
         try {
             doc.addImage(datos.logo, "PNG", 15, 15, 46, 29);
         } catch (e) {
-            console.warn("No se pudo cargar el logo en el PDF", e);
+            console.warn("No se pudo cargar el logo", e);
         }
     }
 
@@ -71,9 +63,7 @@ export const exportarPresupuestoPDF = async (datos) => {
     doc.text("Servicio Técnico Integral", 15, 47);
     doc.text("Resistencia - Chaco", 15, 51);
 
-    // Título dinámico (FACTURA C o PRESUPUESTO)
     if (esFactura) {
-        // Cuadro Recuadro "C" Fiscal
         doc.setLineWidth(0.5);
         doc.setDrawColor(0, 0, 0);
         doc.rect(100, 15, 10, 12);
@@ -101,14 +91,11 @@ export const exportarPresupuestoPDF = async (datos) => {
     doc.setTextColor(0, 0, 0);
     doc.text(`FECHA: ${fechaPresupuesto}`, 195, 40, { align: "right" });
 
-    // Línea de separación superior
     doc.setDrawColor(210, 210, 210);
     doc.setLineWidth(0.3);
     doc.line(15, 55, 195, 55);
 
-    // ==========================================
-    // 2. RECUADRO DE DATOS DEL CLIENTE
-    // ==========================================
+    // DATOS CLIENTE
     doc.setFont("helvetica", "bold");
     doc.setFontSize(9.5);
     doc.text("CLIENTE:", 15, 63);
@@ -127,9 +114,7 @@ export const exportarPresupuestoPDF = async (datos) => {
         doc.text(String(docNum), 152, 63);
     }
 
-    // ==========================================
-    // 3. TABLA DE ITEMS
-    // ==========================================
+    // TABLA DE ITEMS
     let y = 83;
 
     doc.setDrawColor(0, 0, 0);
@@ -201,9 +186,7 @@ export const exportarPresupuestoPDF = async (datos) => {
         doc.line(colX, 83, colX, y + 7.5);
     });
 
-    // ==========================================
-    // 4. TIEMPO Y RECUADRO DE PAGO
-    // ==========================================
+    // TIEMPO Y TOTAL A PAGAR
     y += 12;
     doc.setFont("helvetica", "bold");
     doc.setFontSize(10);
@@ -220,6 +203,27 @@ export const exportarPresupuestoPDF = async (datos) => {
     doc.text(`TOTAL A PAGAR: $ ${formato(granTotalFinal)}`, 19, y + 6);
     doc.setFontSize(10);
     doc.text("ALIAS: GABI.ESPINOSAM (MERCADO PAGO)", 19, y + 11.5);
+
+    // ==========================================
+    // MODIFICACIÓN PRINCIPAL EN EL PRESUPUESTO:
+    // RECUADRO DE OBSERVACIONES Y CONDICIONES TÉCNICAS
+    // ==========================================
+    y += 20;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9.5);
+    doc.text("OBSERVACIONES Y CONDICIONES DEL SERVICIO:", 15, y);
+
+    y += 3;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8.5);
+
+    const textoObs = datos.observaciones || 
+        "• Validez de esta cotización: 15 días corridos a partir de la fecha de emisión.\n" +
+        "• Para el inicio de los trabajos se requiere la entrega de una seña equivalente al 50% del total.\n" +
+        "• La provisión de insumos y materiales quedan sujetos a disponibilidad de acopio en corralón/proveedor.";
+
+    const lineasObs = doc.splitTextToSize(textoObs, 175);
+    doc.text(lineasObs, 15, y + 4);
 
     // Pie de página PÁGINA 1
     const dibujarPieDePagina = () => {
@@ -262,17 +266,17 @@ export const exportarPresupuestoPDF = async (datos) => {
     dibujarPieDePagina();
 
     // =========================================================================
-    // 5. PÁGINA DEDICADA DE GARANTÍAS (SI ESTÁ FINALIZADO O FACTURADO)
+    // PÁGINA 2: GARANTÍAS Y EXCLUSIONES (SEPARADAS)
     // =========================================================================
     if (esFinalizado || esFactura) {
-        doc.addPage(); // Salto de página formal
+        doc.addPage();
 
-        // --- Encabezado idéntico a la Lista de Compras ---
+        // Encabezado idéntico al de Lista de Compras
         if (datos.logo) {
             try {
                 doc.addImage(datos.logo, "PNG", 15, 15, 46, 29);
             } catch (e) {
-                console.warn("No se pudo cargar el logo en la pág 2", e);
+                console.warn("No se pudo cargar el logo en pág 2", e);
             }
         }
 
@@ -297,29 +301,30 @@ export const exportarPresupuestoPDF = async (datos) => {
         doc.setLineWidth(0.3);
         doc.line(15, 55, 195, 55);
 
-        // --- CUERPO DE GARANTÍA ---
         let yGarantia = 65;
 
-        // SECCIÓN 1: CUANDO APLICA
+        // SECCIÓN APLICA
         doc.setFillColor(239, 239, 239);
         doc.rect(15, yGarantia, 180, 7.5, "FD");
         doc.setFont("helvetica", "bold");
         doc.setFontSize(10);
         doc.setTextColor(0, 0, 0);
-        doc.text("1. ALCANCE Y CONDICIONES DE APLICACIÓN DE LA GARANTÍA", 19, yGarantia + 5);
+        doc.text("1. APLICACIÓN Y COBERTURA DE LA GARANTÍA", 19, yGarantia + 5);
 
         yGarantia += 12;
         doc.setFont("helvetica", "normal");
         doc.setFontSize(9);
 
         const textoAplica = datos.garantiaAplica || 
-            "La presente garantía cubre fallas de ejecución, defectos de ensamblado o vicios ocultos derivados exclusivamente de la mano de obra aplicada en los trabajos detallados en el comprobante principal. Esta cobertura posee una validez de 12 meses a partir de la fecha de entrega y conformidad de la obra.";
+            "La presente garantía cubre fallas de ejecución, defectos de instalación o vicios ocultos derivados exclusivamente de la mano de obra aplicada en los trabajos especificados en el comprobante principal.\n\n" +
+            "• Cobertura de mano de obra: 12 meses a partir de la entrega de obra.\n" +
+            "• Vicios ocultos o fallas estructurales directas derivadas de la ejecución realizada por el equipo técnico.";
 
         const lineasAplica = doc.splitTextToSize(textoAplica, 172);
         doc.text(lineasAplica, 19, yGarantia);
 
-        // SECCIÓN 2: EXCLUSIONES
-        yGarantia += (lineasAplica.length * 5) + 12;
+        // SECCIÓN EXCLUSIONES
+        yGarantia += (lineasAplica.length * 4.5) + 10;
 
         doc.setFillColor(239, 239, 239);
         doc.rect(15, yGarantia, 180, 7.5, "FD");
@@ -332,19 +337,17 @@ export const exportarPresupuestoPDF = async (datos) => {
         doc.setFontSize(9);
 
         const textoExclusiones = datos.garantiaExclusiones || 
-            "Quedan expresamente excluidas de la garantía las siguientes situaciones:\n" +
-            "• Intervención o modificación de las instalaciones por parte de terceros no autorizados.\n" +
-            "• Daños provocados por mal uso, sobrecargas eléctricas, humedad ajena a la estructura o factores climáticos extremos.\n" +
-            "• Desgaste natural de insumos y materiales provistos directamente por el cliente.";
+            "La garantía perderá validez de forma automática bajo las siguientes condiciones:\n\n" +
+            "• Intervención, reparación o modificación de las instalaciones por parte de terceros no autorizados.\n" +
+            "• Daños derivados de mal uso, falta de mantenimiento preventivo, sobrecargas en la red eléctrica o factores climáticos extraordinarios.\n" +
+            "• Fallas de fabricación, vicios de origen o deterioro natural de materiales/equipos provistos directamente por el cliente o terceros.";
 
         const lineasExclusiones = doc.splitTextToSize(textoExclusiones, 172);
         doc.text(lineasExclusiones, 19, yGarantia);
 
-        // Dibujar el pie de página exacto en la página 2
         dibujarPieDePagina();
     }
 
-    // Descarga directa del archivo PDF
     const nombreFinalArchivo = `${esFactura ? 'Factura' : 'Presupuesto'}_${nroPresupuesto}_${nombreCliente.replace(/\s+/g, '_')}.pdf`;
     doc.save(nombreFinalArchivo);
 };
