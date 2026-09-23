@@ -792,8 +792,11 @@ export const presupuestos = {
             tiempoUnidadTexto: tiempoUnidad === 'Días' ? 'uno' : tiempoCant,
             tiempoUnidadPlural: tiempoUnidad === 'Días' ? (Number(tiempoCant) === 1 ? 'DIA' : 'DIAS') : tiempoUnidad.toUpperCase(),
             logo: logoPath,
-            observaciones: observacionesInput
-        };
+            observaciones: observacionesInput,
+           esFactura: estadoSel === "Facturado",
+           garantiaAplica: "Texto personalizado de cuando aplica...",
+           garantiaExclusiones: "Texto personalizado de exclusiones..."
+              };
 
         await exportarPresupuestoPDF(paqueteDatos);
     },
