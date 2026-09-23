@@ -169,37 +169,45 @@ class Estadisticas {
     _obtenerManoObra(p) {
         let subMo = 0;
 
-        // 1. Revisar arreglos de ítems desglosados (items, manoObraItems, filas, detalles)
-        const listaItems = p.items || p.manoObraItems || p.filas || p.detalles;
-        
-        if (Array.isArray(listaItems) && listaItems.length > 0) {
-            listaItems.forEach(item => {
+        // 1. PRIMERA PRIORIDAD: Sumar directamente desde manoObraItems
+        if (Array.isArray(p.manoObraItems) && p.manoObraItems.length > 0) {
+            subMo = p.manoObraItems.reduce((acc, item) => {
                 const cant = Number(item.cantidad || item.cant || 1);
-                
-                // Si el ítem explicita un valor de mano de obra
-                if (item.manoDeObra !== undefined || item.manoObra !== undefined || item.mo !== undefined) {
-                    const valMo = this._parseMonto(item.manoDeObra || item.manoObra || item.mo || 0);
-                    subMo += (cant * valMo);
-                } 
-                // Si es un ítem marcado como categoría/tipo Mano de Obra
-                else if (
-                    item.tipo === "manoDeObra" || 
-                    item.tipo === "mo" || 
-                    item.categoria === "manoDeObra" || 
-                    item.rubro === "manoDeObra"
-                ) {
-                    const valItem = this._parseMonto(item.precio || item.precioUnitario || item.valor || item.subtotal || item.monto || item.total || 0);
-                    subMo += (cant * valItem);
-                }
-            });
+                const precio = this._parseMonto(item.precio || item.precioUnitario || item.valor || item.monto || 0);
+                return acc + (cant * precio);
+            }, 0);
         }
 
-        // 2. Si no sumó nada por ítems, verificar si existe una propiedad directa en la raíz del presupuesto
+        // 2. SEGUNDA PRIORIDAD: Si no sumó nada y existe lista general p.items
         if (subMo === 0) {
-            if (p.manoDeObra !== undefined || p.manoObra !== undefined || p.totalManoObra !== undefined || p.moTotal !== undefined) {
-                subMo = this._parseMonto(p.manoDeObra || p.manoObra || p.totalManoObra || p.moTotal || 0);
+            const listaItems = p.items || p.filas || p.detalles || [];
+            if (Array.isArray(listaItems) && listaItems.length > 0) {
+                listaItems.forEach(item => {
+                    const cant = Number(item.cantidad || item.cant || 1);
+                    
+                    const valMoDirecto = this._parseMonto(item.manoDeObra ?? item.manoObra ?? item.mo);
+                    if (valMoDirecto > 0) {
+                        subMo += (cant * valMoDirecto);
+                    } 
+                    else if (
+                        item.tipo === "manoDeObra" || 
+                        item.tipo === "mo" || 
+                        item.categoria === "manoDeObra" || 
+                        item.rubro === "manoDeObra"
+                    ) {
+                        const valItem = this._parseMonto(item.precio || item.precioUnitario || item.valor || item.subtotal || item.monto || item.total || 0);
+                        subMo += (cant * valItem);
+                    }
+                });
+            }
+        }
+
+        // 3. TERCERA PRIORIDAD: Propiedad directa en la raíz del presupuesto
+        if (subMo === 0) {
+            const moRaiz = this._parseMonto(p.manoDeObra ?? p.manoObra ?? p.totalManoObra ?? p.moTotal);
+            if (moRaiz > 0) {
+                subMo = moRaiz;
             } 
-            // 3. Respaldo: Si no hay desglose explícito pero hay total y materiales -> Total - Materiales
             else if (p.totalMateriales !== undefined || p.costoMateriales !== undefined || p.materialesTotal !== undefined) {
                 const tot = this._parseMonto(p.totalGeneral || p.total || 0);
                 const mat = this._parseMonto(p.totalMateriales || p.costoMateriales || p.materialesTotal || 0);
