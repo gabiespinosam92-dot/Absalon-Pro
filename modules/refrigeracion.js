@@ -184,18 +184,22 @@ export const refrigeracion = {
             chkInstalacion.onchange = () => {
                 panelInstalacion.style.display = chkInstalacion.checked ? "grid" : "none";
             };
+            // Sincronizar estado inicial en pantalla
+            panelInstalacion.style.display = chkInstalacion.checked ? "grid" : "none";
         }
 
         if (chkElectrica && panelElectrica) {
             chkElectrica.onchange = () => {
                 panelElectrica.style.display = chkElectrica.checked ? "grid" : "none";
             };
+            panelElectrica.style.display = chkElectrica.checked ? "grid" : "none";
         }
 
         if (chkFuga && panelFuga) {
             chkFuga.onchange = () => {
                 panelFuga.style.display = chkFuga.checked ? "grid" : "none";
             };
+            panelFuga.style.display = chkFuga.checked ? "grid" : "none";
         }
 
         const btnCalcular = document.getElementById("btnCalcularRef");
@@ -248,19 +252,17 @@ export const refrigeracion = {
     calcularPresupuesto() {
         const items = [];
 
-        // 1. CÁLCULO INSTALACIÓN BÁSICA (SI ESTÁ SELECCIONADA)
+        // 1. CÁLCULO INSTALACIÓN BÁSICA
         const chkInst = document.getElementById("chkAgregarInstalacion");
         if (chkInst && chkInst.checked) {
             const capacidad = document.getElementById("refCapacidad")?.value || "3200";
             const metrosCano = parseFloat(document.getElementById("refMetroCano")?.value) || 0;
             const idSoporte = document.getElementById("refSoporte")?.value || "ninguno";
 
-            // Mano de Obra Instalación
             const idMOInst = capacidad === "3200" ? "mo_inst_split_3200" : (capacidad === "4500" ? "mo_inst_split_4500" : "mo_inst_split_6000");
             const precioMOInst = this.obtenerPrecioCatalogo(idMOInst, 140000);
             items.push({ concepto: `Mano de Obra Instalación Split (${capacidad} frig)`, cant: 1, precio: precioMOInst });
 
-            // Caños y Materiales de Interconexión (Selección de diámetro según frigocalorías)
             const idCanoA = capacidad === "6000" ? "caño_cobre_38" : "caño_cobre_14";
             const idCanoB = capacidad === "6000" ? "caño_cobre_58" : "caño_cobre_38";
             
@@ -308,7 +310,6 @@ export const refrigeracion = {
                 items.push({ concepto: "Protección Térmica Bipolar 16A/20A", cant: 1, precio: precioTermica });
             }
 
-            // Mano de obra acometida eléctrica
             const precioMOElec = this.obtenerPrecioCatalogo("mo_punto_caja", 8500);
             items.push({ concepto: "Mano de Obra Acometida y Cableado Eléctrico", cant: 1, precio: precioMOElec * 2 });
         }
@@ -340,10 +341,9 @@ export const refrigeracion = {
             }
         }
 
-        // GUARDAR LISTA EN PROPIEDAD LOCAL
+        // GUARDAR Y RENDERIZAR RESULTADOS
         this.itemsCalculadosActuales = items;
 
-        // MOSTRAR TABLA DE RESULTADOS
         const tbody = document.getElementById("tbodyResultado");
         const resDiv = document.getElementById("resultadoCalculo");
 
