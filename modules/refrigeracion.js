@@ -1,249 +1,387 @@
 /* ==========================================================
-   ABSALON PRO - MÓDULO REFRIGERACIÓN
-   modules/refrigeracion.js
+   ABSALON PRO - MÓDULO REFRIGERACIÓN Y CLIMATIZACIÓN
+   Calculador Modular de Instalación, Eléctrica y Reparaciones
 ========================================================== */
 
-const refrigeracion = {
-    // Estado interno para almacenar la última cotización generada
+import { getAll, save } from "./storage.js";
+
+export const refrigeracion = {
+    catalogos: [],
     itemsCalculadosActuales: [],
 
-    // Precios de referencia base (se pueden ajustar según necesidad)
-    precios: {
-        nitrógeno: 15000,
-        manoObraDeteccionVacio: 150000,
-        refrigeranteR410a: 18000, // Precio por Kg
-        ovuloValvula: 3500
+    async iniciar() {
+        await this.cargarCatalogos();
+        this.renderEstructura();
+        this.registrarEventos();
     },
 
-    iniciar() {
-        this.render();
-        this.vincularEventos();
+    async cargarCatalogos() {
+        try {
+            this.catalogos = await getAll("catalogos");
+        } catch (error) {
+            console.error("Error cargando catálogo para refrigeración:", error);
+            this.catalogos = [];
+        }
     },
 
-    render() {
-        const main = document.getElementById("workspace");
-        if (!main) return;
+    renderEstructura() {
+        const workspace = document.getElementById("workspace");
+        if (!workspace) return;
 
-        main.innerHTML = `
-            <div class="workspace">
-                <div class="welcome-card" style="border-left: 5px solid #0284c7;">
-                    <h2>❄️ Calculador de Servicios de Refrigeración</h2>
-                    <p>Elegí y combiná los módulos para calcular costos de instalación, mantenimiento o carga de gas.</p>
+        workspace.innerHTML = `
+        <div class="refrigeracion-container" style="padding: 15px; max-width: 1100px; margin: auto;">
+            <div class="card" style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                <h2>❄️ Calculador de Servicios de Refrigeración</h2>
+                <p style="color: gray; font-size: 14px;">Elegí y combiná solo los módulos que vas a realizar para tu presupuesto.</p>
+                <hr style="margin: 15px 0;">
+
+                <!-- SECCIÓN 1: INSTALACIÓN BÁSICA DE SPLIT -->
+                <div style="background: #f9f9f9; padding: 15px; border-radius: 6px; margin-bottom: 20px; border-left: 4px solid #0284c7;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <h3 style="margin:0; color: #0284c7;">1. Instalación Básica de Split</h3>
+                        <label style="cursor:pointer; font-weight:bold;">
+                            <input type="checkbox" id="chkAgregarInstalacion" checked> Incluir Instalación Básica
+                        </label>
+                    </div>
+
+                    <div id="panelInstalacion" style="display: grid; margin-top: 15px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px;">
+                        <div>
+                            <label><b>Capacidad del Equipo:</b></label>
+                            <select id="refCapacidad" style="width: 100%; padding: 8px; margin-top: 5px;">
+                                <option value="3200">Hasta 3200 frig / 3500W</option>
+                                <option value="4500">Hasta 4500 frig / 5200W</option>
+                                <option value="6000">Hasta 6000 frig / 7000W</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label><b>Metros de Cañería (Cobre):</b></label>
+                            <input type="number" id="refMetroCano" value="3" min="1" step="0.5" style="width: 100%; padding: 8px; margin-top: 5px;">
+                        </div>
+                        <div>
+                            <label><b>Soportes / Ménsulas:</b></label>
+                            <select id="refSoporte" style="width: 100%; padding: 8px; margin-top: 5px;">
+                                <option value="soporte_split_40">Ménsulas 40 cm (Hasta 3000 frig)</option>
+                                <option value="soporte_split_50">Ménsulas 50 cm (Hasta 4500 frig)</option>
+                                <option value="soporte_split_60">Ménsulas 60 cm (+6000 frig)</option>
+                                <option value="ninguno">Sin Ménsulas (Piso / Piso Técnico)</option>
+                            </select>
+                        </div>
+                    </div>
                 </div>
 
-                <div style="display: grid; grid-template-columns: 1fr; gap: 20px; margin-top: 20px;">
-                    
-                    <!-- Opción 1: Instalación Básica -->
-                    <div class="dashboard-card" style="border: 1px solid #e5e7eb;">
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <h3 style="color:#0284c7; margin:0;">1. Instalación Básica de Split</h3>
-                            <label style="font-weight:bold; cursor:pointer;">
-                                <input type="checkbox" id="chk-instalacion-basica"> Incluir Instalación Básica
-                            </label>
-                        </div>
+                <!-- SECCIÓN 2: ADICIONAL ADAPTACIÓN / CONEXIÓN ELÉCTRICA -->
+                <div style="background: #f9f9f9; padding: 15px; border-radius: 6px; margin-bottom: 20px; border-left: 4px solid #104E2E;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <h3 style="margin:0; color: #104E2E;">2. Adicional Alimentación y Conexión Eléctrica</h3>
+                        <label style="cursor:pointer; font-weight:bold;">
+                            <input type="checkbox" id="chkAgregarElectrica"> Incluir Trabajo Eléctrico
+                        </label>
                     </div>
 
-                    <!-- Opción 2: Adicional Eléctrico -->
-                    <div class="dashboard-card" style="border: 1px solid #e5e7eb;">
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <h3 style="color:#16a34a; margin:0;">2. Adicional Alimentación y Conexión Eléctrica</h3>
-                            <label style="font-weight:bold; cursor:pointer;">
-                                <input type="checkbox" id="chk-instalacion-electrica"> Incluir Trabajo Eléctrico
-                            </label>
+                    <div id="panelElectrica" style="display: none; margin-top: 15px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                        <div>
+                            <label><b>Metros de Cable Tipo Taller:</b></label>
+                            <input type="number" id="elecMetrosCable" value="5" min="0" step="1" style="width: 100%; padding: 8px; margin-top: 5px;">
+                        </div>
+                        <div>
+                            <label><b>Metros de Cablecanal:</b></label>
+                            <input type="number" id="elecMetrosCablecanal" value="0" min="0" step="1" style="width: 100%; padding: 8px; margin-top: 5px;">
+                        </div>
+                        <div>
+                            <label><b>Tomacorriente / Caja Externa:</b></label>
+                            <select id="elecTomaTipo" style="width: 100%; padding: 8px; margin-top: 5px;">
+                                <option value="ninguno">Ninguno (Ya existe toma)</option>
+                                <option value="toma_exterior_20a">Caja Exterior + Toma 20A</option>
+                                <option value="toma_embutir">Módulo Toma 20A Embutir</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label><b>Protección en Tablero:</b></label>
+                            <select id="elecTermica" style="width: 100%; padding: 8px; margin-top: 5px;">
+                                <option value="ninguno">Ninguna</option>
+                                <option value="termica_2x16">Térmica Bipolar 16A / 20A</option>
+                            </select>
                         </div>
                     </div>
-
-                    <!-- Opción 3: Diagnóstico, Fuga y Carga -->
-                    <div class="dashboard-card" style="border: 1px solid #e5e7eb;">
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-                            <h3 style="color:#ea580c; margin:0;">3. Diagnóstico, Fuga y Carga de Refrigerante</h3>
-                            <label style="font-weight:bold; cursor:pointer;">
-                                <input type="checkbox" id="chk-reparacion-carga" checked> Incluir Reparación / Carga
-                            </label>
-                        </div>
-
-                        <div id="panel-reparacion" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:15px; background:#f9fafb; padding:15px; border-radius:6px;">
-                            <div>
-                                <label style="display:block; font-size:12px; font-weight:bold; margin-bottom:4px;">Presurización con Nitrógeno:</label>
-                                <select id="ref-presurizacion" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;">
-                                    <option value="si">Sí (Prueba de fuga + Nitrógeno)</option>
-                                    <option value="no">No</option>
-                                </select>
-                            </div>
-
-                            <div>
-                                <label style="display:block; font-size:12px; font-weight:bold; margin-bottom:4px;">Tipo de Refrigerante:</label>
-                                <select id="ref-tipo-gas" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;">
-                                    <option value="R410a">R410a</option>
-                                    <option value="R22">R22</option>
-                                    <option value="R32">R32</option>
-                                </select>
-                            </div>
-
-                            <div>
-                                <label style="display:block; font-size:12px; font-weight:bold; margin-bottom:4px;">Cantidad de Gas (Kg):</label>
-                                <input type="number" id="ref-cant-gas" step="0.1" value="1.5" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;">
-                            </div>
-
-                            <div>
-                                <label style="display:block; font-size:12px; font-weight:bold; margin-bottom:4px;">Cambio de Óvulos / Válvulas:</label>
-                                <input type="number" id="ref-cant-ovulos" value="1" min="0" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;">
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Botones de Acción -->
-                    <div style="display:flex; gap:15px; justify-content:flex-end;">
-                        <button id="btnCalcularPantalla" style="background:#0284c7; color:white; border:none; padding:12px 20px; border-radius:6px; cursor:pointer; font-weight:bold;">📊 Calcular en Pantalla</button>
-                        <button id="btnGuardarPresupuesto" style="background:#15803d; color:white; border:none; padding:12px 20px; border-radius:6px; cursor:pointer; font-weight:bold;">💼 Exportar a Presupuesto</button>
-                    </div>
-
-                    <!-- Tabla de Desglose -->
-                    <div class="dashboard-card" style="margin-top:10px;">
-                        <h3 style="margin-bottom:15px;">📄 Desglose de Cómputo y Presupuesto</h3>
-                        <div style="overflow-x:auto;">
-                            <table style="width:100%; border-collapse:collapse; text-align:left;">
-                                <thead>
-                                    <tr style="border-bottom:2px solid #e5e7eb; background:#f9fafb;">
-                                        <th style="padding:10px;">Concepto / Insumo</th>
-                                        <th style="padding:10px; text-align:center;">Cantidad</th>
-                                        <th style="padding:10px; text-align:right;">Precio U. ($)</th>
-                                        <th style="padding:10px; text-align:right;">Subtotal ($)</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="tabla-desglose-refrigeracion">
-                                    <tr>
-                                        <td colspan="4" style="padding:20px; text-align:center; color:#6b7280;">Hacé clic en "Calcular en Pantalla" para generar el desglose.</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                        <div style="text-align:right; margin-top:15px; font-size:18px; font-weight:bold; color:#15803d;">
-                            Total Materiales + Mano de Obra: $<span id="lbl-total-refrigeracion">0.00</span>
-                        </div>
-                    </div>
-
                 </div>
+
+                <!-- SECCIÓN 3: DETECCIÓN DE FUGAS, REPARACIÓN Y CARGA DE GAS -->
+                <div style="background: #f9f9f9; padding: 15px; border-radius: 6px; margin-bottom: 20px; border-left: 4px solid #d97706;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <h3 style="margin:0; color: #d97706;">3. Diagnóstico, Fuga y Carga de Refrigerante</h3>
+                        <label style="cursor:pointer; font-weight:bold;">
+                            <input type="checkbox" id="chkAgregarFuga"> Incluir Reparación / Carga
+                        </label>
+                    </div>
+
+                    <div id="panelFuga" style="display: none; margin-top: 15px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                        <div>
+                            <label><b>Presurización con Nitrógeno:</b></label>
+                            <select id="fugaNitrogeno" style="width: 100%; padding: 8px; margin-top: 5px;">
+                                <option value="si">Sí (Prueba de fuga + Nitrógeno)</option>
+                                <option value="no">No</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label><b>Tipo de Refrigerante:</b></label>
+                            <select id="fugaTipoGas" style="width: 100%; padding: 8px; margin-top: 5px;">
+                                <option value="gas_r410a">R410a</option>
+                                <option value="gas_r22">R22</option>
+                                <option value="gas_r32">R32</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label><b>Cantidad de Gas (Kg):</b></label>
+                            <input type="number" id="fugaCantGas" value="1.0" min="0.1" step="0.1" style="width: 100%; padding: 8px; margin-top: 5px;">
+                        </div>
+                        <div>
+                            <label><b>Cambio de Óvulos / Válvulas:</b></label>
+                            <input type="number" id="fugaOvulos" value="0" min="0" step="1" style="width: 100%; padding: 8px; margin-top: 5px;">
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 10px; margin-top: 15px;">
+                    <button id="btnCalcularRef" style="flex: 1; padding: 12px; font-size: 16px; font-weight: bold; background: #0284c7; color: white; border: none; border-radius: 5px; cursor: pointer;">🧮 Calcular en Pantalla</button>
+                    <button id="btnGuardarPresupuesto" style="flex: 1; padding: 12px; font-size: 16px; font-weight: bold; background: #104E2E; color: white; border: none; border-radius: 5px; cursor: pointer; display: none;">💾 Guardar en Presupuestos</button>
+                </div>
+
+                <!-- RESULTADOS -->
+                <div id="resultadoCalculo" style="margin-top: 25px; display: none;">
+                    <h3>📋 Desglose de Cómputo y Presupuesto</h3>
+                    <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+                        <thead>
+                            <tr style="background: #eee; text-align: left;">
+                                <th style="padding: 8px;">Concepto / Insumo</th>
+                                <th style="padding: 8px;">Cantidad</th>
+                                <th style="padding: 8px;">Precio U. ($)</th>
+                                <th style="padding: 8px; text-align: right;">Subtotal ($)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbodyResultado"></tbody>
+                    </table>
+                    <div style="text-align: right; margin-top: 15px; font-size: 18px;">
+                        <b>Total Materiales + Mano de Obra: <span id="totalGeneral" style="color: #104E2E;">$ 0.00</span></b>
+                    </div>
+                </div>
+
             </div>
+        </div>
         `;
-
-        this.ejecutarCalculo();
     },
 
-    vincularEventos() {
-        document.getElementById("btnCalcularPantalla")?.addEventListener("click", () => this.ejecutarCalculo());
-        document.getElementById("btnGuardarPresupuesto")?.addEventListener("click", () => this.exportarAPresupuesto());
+    registrarEventos() {
+        const chkInstalacion = document.getElementById("chkAgregarInstalacion");
+        const panelInstalacion = document.getElementById("panelInstalacion");
+
+        const chkElectrica = document.getElementById("chkAgregarElectrica");
+        const panelElectrica = document.getElementById("panelElectrica");
         
-        document.getElementById("chk-reparacion-carga")?.addEventListener("change", (e) => {
-            const panel = document.getElementById("panel-reparacion");
-            if (panel) panel.style.display = e.target.checked ? "grid" : "none";
-        });
+        const chkFuga = document.getElementById("chkAgregarFuga");
+        const panelFuga = document.getElementById("panelFuga");
+
+        if (chkInstalacion && panelInstalacion) {
+            chkInstalacion.onchange = () => {
+                panelInstalacion.style.display = chkInstalacion.checked ? "grid" : "none";
+            };
+        }
+
+        if (chkElectrica && panelElectrica) {
+            chkElectrica.onchange = () => {
+                panelElectrica.style.display = chkElectrica.checked ? "grid" : "none";
+            };
+        }
+
+        if (chkFuga && panelFuga) {
+            chkFuga.onchange = () => {
+                panelFuga.style.display = chkFuga.checked ? "grid" : "none";
+            };
+        }
+
+        const btnCalcular = document.getElementById("btnCalcularRef");
+        if (btnCalcular) {
+            btnCalcular.onclick = () => {
+                this.calcularPresupuesto();
+                const btnGuardar = document.getElementById("btnGuardarPresupuesto");
+                if (btnGuardar) {
+                    btnGuardar.style.display = this.itemsCalculadosActuales.length > 0 ? "block" : "none";
+                }
+            };
+        }
+
+        const btnGuardar = document.getElementById("btnGuardarPresupuesto");
+        if (btnGuardar) {
+            btnGuardar.onclick = async () => {
+                if (!this.itemsCalculadosActuales || this.itemsCalculadosActuales.length === 0) return;
+
+                const nombreCliente = prompt("Ingresá el nombre o referencia del cliente para este presupuesto:") || "Cliente Sin Nombre";
+                
+                const totalPresupuesto = this.itemsCalculadosActuales.reduce((acc, item) => acc + (item.cant * item.precio), 0);
+
+                const nuevoPresupuesto = {
+                    id: String(Date.now()),
+                    fecha: new Date().toLocaleDateString("es-AR"),
+                    cliente: nombreCliente,
+                    rubro: "Refrigeración",
+                    items: this.itemsCalculadosActuales,
+                    total: totalPresupuesto,
+                    estado: "Pendiente"
+                };
+
+                try {
+                    await save("presupuestos", nuevoPresupuesto);
+                    alert("✅ Presupuesto guardado exitosamente en el módulo de Presupuestos.");
+                } catch (error) {
+                    console.error("Error al guardar presupuesto:", error);
+                    alert("❌ Hubo un error al intentar guardar el presupuesto.");
+                }
+            };
+        }
     },
 
-    ejecutarCalculo() {
-        this.itemsCalculadosActuales = [];
-        let totalGeneral = 0;
+    obtenerPrecioCatalogo(idItem, precioDefecto = 0) {
+        if (!Array.isArray(this.catalogos)) return precioDefecto;
+        const encontrado = this.catalogos.find(i => String(i.id).toLowerCase() === String(idItem).toLowerCase());
+        return encontrado && !isNaN(parseFloat(encontrado.precio)) ? parseFloat(encontrado.precio) : precioDefecto;
+    },
 
-        const chkReparacion = document.getElementById("chk-reparacion-carga")?.checked;
+    calcularPresupuesto() {
+        const items = [];
 
-        if (chkReparacion) {
-            const presurizacion = document.getElementById("ref-presurizacion")?.value;
-            const cantGas = parseFloat(document.getElementById("ref-cant-gas")?.value) || 0;
-            const cantOvulos = parseInt(document.getElementById("ref-cant-ovulos")?.value) || 0;
-            const tipoGas = document.getElementById("ref-tipo-gas")?.value || "R410a";
+        // 1. CÁLCULO INSTALACIÓN BÁSICA (SI ESTÁ SELECCIONADA)
+        const chkInst = document.getElementById("chkAgregarInstalacion");
+        if (chkInst && chkInst.checked) {
+            const capacidad = document.getElementById("refCapacidad")?.value || "3200";
+            const metrosCano = parseFloat(document.getElementById("refMetroCano")?.value) || 0;
+            const idSoporte = document.getElementById("refSoporte")?.value || "ninguno";
 
-            if (presurizacion === "si") {
-                this.itemsCalculadosActuales.push({
-                    concepto: "Insumo Nitrógeno Seco (Presurización / Estanqueidad)",
-                    cantidad: 1,
-                    precioUnitario: this.precios.nitrógeno,
-                    subtotal: this.precios.nitrógeno
-                });
+            // Mano de Obra Instalación
+            const idMOInst = capacidad === "3200" ? "mo_inst_split_3200" : (capacidad === "4500" ? "mo_inst_split_4500" : "mo_inst_split_6000");
+            const precioMOInst = this.obtenerPrecioCatalogo(idMOInst, 140000);
+            items.push({ concepto: `Mano de Obra Instalación Split (${capacidad} frig)`, cant: 1, precio: precioMOInst });
+
+            // Caños y Materiales de Interconexión (Selección de diámetro según frigocalorías)
+            const idCanoA = capacidad === "6000" ? "caño_cobre_38" : "caño_cobre_14";
+            const idCanoB = capacidad === "6000" ? "caño_cobre_58" : "caño_cobre_38";
+            
+            const precioCanoA = this.obtenerPrecioCatalogo(idCanoA, 6500);
+            const precioCanoB = this.obtenerPrecioCatalogo(idCanoB, 8900);
+            const precioAislante = this.obtenerPrecioCatalogo("aislant_fita", 1200);
+            const precioCinta = this.obtenerPrecioCatalogo("cinta_empaque", 2800);
+
+            items.push({ concepto: `Caño de Cobre (${capacidad === "6000" ? '3/8"' : '1/4"'})`, cant: metrosCano, precio: precioCanoA });
+            items.push({ concepto: `Caño de Cobre (${capacidad === "6000" ? '5/8"' : '3/8"'})`, cant: metrosCano, precio: precioCanoB });
+            items.push({ concepto: "Aislante Térmico (Metro)", cant: metrosCano * 2, precio: precioAislante });
+            items.push({ concepto: "Cinta PVC de Empaque (Rollos)", cant: Math.ceil(metrosCano / 3), precio: precioCinta });
+
+            if (idSoporte !== "ninguno") {
+                const precioSoporte = this.obtenerPrecioCatalogo(idSoporte, 8500);
+                items.push({ concepto: "Juego Ménsulas / Soportes Exterior", cant: 1, precio: precioSoporte });
+            }
+        }
+
+        // 2. CÁLCULO TRABAJO ELÉCTRICO ADICIONAL
+        const chkElec = document.getElementById("chkAgregarElectrica");
+        if (chkElec && chkElec.checked) {
+            const metrosCable = parseFloat(document.getElementById("elecMetrosCable")?.value) || 0;
+            const metrosCablecanal = parseFloat(document.getElementById("elecMetrosCablecanal")?.value) || 0;
+            const tipoToma = document.getElementById("elecTomaTipo")?.value || "ninguno";
+            const tipoTermica = document.getElementById("elecTermica")?.value || "ninguno";
+
+            if (metrosCable > 0) {
+                const precioCable = this.obtenerPrecioCatalogo("cable_taller_5x15", 2400);
+                items.push({ concepto: "Cable Alimentación Eléctrica (Metro)", cant: metrosCable, precio: precioCable });
             }
 
-            // Mano de obra básica
-            this.itemsCalculadosActuales.push({
-                concepto: "Mano de Obra Detección de Fuga y Vacío de Sistema",
-                cantidad: 1,
-                precioUnitario: this.precios.manoObraDeteccionVacio,
-                subtotal: this.precios.manoObraDeteccionVacio
-            });
+            if (metrosCablecanal > 0) {
+                const precioCablecanal = this.obtenerPrecioCatalogo("cablecanal_2010", 3200);
+                items.push({ concepto: "Cablecanal Rígido 20x10 (Metro)", cant: metrosCablecanal, precio: precioCablecanal });
+            }
+
+            if (tipoToma !== "ninguno") {
+                const precioToma = this.obtenerPrecioCatalogo(tipoToma, 4500);
+                items.push({ concepto: "Caja Exterior / Módulo Tomacorriente 20A", cant: 1, precio: precioToma });
+            }
+
+            if (tipoTermica !== "ninguno") {
+                const precioTermica = this.obtenerPrecioCatalogo(tipoTermica, 7500);
+                items.push({ concepto: "Protección Térmica Bipolar 16A/20A", cant: 1, precio: precioTermica });
+            }
+
+            // Mano de obra acometida eléctrica
+            const precioMOElec = this.obtenerPrecioCatalogo("mo_punto_caja", 8500);
+            items.push({ concepto: "Mano de Obra Acometida y Cableado Eléctrico", cant: 1, precio: precioMOElec * 2 });
+        }
+
+        // 3. CÁLCULO DE DETECCIÓN DE FUGA Y CARGA DE GAS
+        const chkFuga = document.getElementById("chkAgregarFuga");
+        if (chkFuga && chkFuga.checked) {
+            const presurizaNitrogeno = document.getElementById("fugaNitrogeno")?.value === "si";
+            const tipoGas = document.getElementById("fugaTipoGas")?.value || "gas_r410a";
+            const cantGas = parseFloat(document.getElementById("fugaCantGas")?.value) || 0;
+            const cantOvulos = parseInt(document.getElementById("fugaOvulos")?.value, 10) || 0;
+
+            if (presurizaNitrogeno) {
+                const precioNitrogeno = this.obtenerPrecioCatalogo("carga_nitrogeno", 15000);
+                items.push({ concepto: "Insumo Nitrógeno Seco (Presurización / Estanqueidad)", cant: 1, precio: precioNitrogeno });
+
+                const precioMODet = this.obtenerPrecioCatalogo("mo_deteccion_fuga_carga", 150000);
+                items.push({ concepto: "Mano de Obra Detección de Fuga y Vacío de Sistema", cant: 1, precio: precioMODet });
+            }
 
             if (cantGas > 0) {
-                const subTotalGas = cantGas * this.precios.refrigeranteR410a;
-                this.itemsCalculadosActuales.push({
-                    concepto: `Refrigerante (${tipoGas}) - Kg`,
-                    cantidad: cantGas,
-                    precioUnitario: this.precios.refrigeranteR410a,
-                    subtotal: subTotalGas
-                });
+                const precioGas = this.obtenerPrecioCatalogo(tipoGas, 18000);
+                items.push({ concepto: `Refrigerante (${tipoGas.replace('gas_', '').toUpperCase()}) - Kg`, cant: cantGas, precio: precioGas });
             }
 
             if (cantOvulos > 0) {
-                const subTotalOvulos = cantOvulos * this.precios.ovuloValvula;
-                this.itemsCalculadosActuales.push({
-                    concepto: "Reemplazo de Óvulo / Núcleo de Válvula",
-                    cantidad: cantOvulos,
-                    precioUnitario: this.precios.ovuloValvula,
-                    subtotal: subTotalOvulos
-                });
+                const precioOvulo = this.obtenerPrecioCatalogo("orring_robinete", 3500);
+                items.push({ concepto: "Reemplazo de Óvulo / Núcleo de Válvula", cant: cantOvulos, precio: precioOvulo });
             }
         }
 
-        this.renderTablaResultados();
-    },
+        // GUARDAR LISTA EN PROPIEDAD LOCAL
+        this.itemsCalculadosActuales = items;
 
-    renderTablaResultados() {
-        const tbody = document.getElementById("tabla-desglose-refrigeracion");
-        const lblTotal = document.getElementById("lbl-total-refrigeracion");
+        // MOSTRAR TABLA DE RESULTADOS
+        const tbody = document.getElementById("tbodyResultado");
+        const resDiv = document.getElementById("resultadoCalculo");
 
-        if (!tbody) return;
+        if (!tbody || !resDiv) return items;
 
-        if (this.itemsCalculadosActuales.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="4" style="padding:20px; text-align:center; color:#6b7280;">No hay ítems seleccionados.</td></tr>`;
-            if (lblTotal) lblTotal.textContent = "0.00";
-            return;
+        tbody.innerHTML = "";
+
+        if (items.length === 0) {
+            alert("Seleccioná al menos uno de los 3 módulos (Instalación, Eléctrica o Reparación) para poder calcular.");
+            resDiv.style.display = "none";
+            return [];
         }
 
-        let html = "";
-        let sumaTotal = 0;
+        let totalGeneral = 0;
 
-        this.itemsCalculadosActuales.forEach(item => {
-            sumaTotal += item.subtotal;
-            html += `
-                <tr style="border-bottom:1px solid #e5e7eb;">
-                    <td style="padding:10px;"><b>${item.concepto}</b></td>
-                    <td style="padding:10px; text-align:center;">${item.cantidad}</td>
-                    <td style="padding:10px; text-align:right;">$ ${item.precioUnitario.toLocaleString("es-AR")}</td>
-                    <td style="padding:10px; text-align:right; font-weight:bold;">$ ${item.subtotal.toLocaleString("es-AR")}</td>
-                </tr>
+        items.forEach(item => {
+            const subtotal = item.cant * item.precio;
+            totalGeneral += subtotal;
+
+            const tr = document.createElement("tr");
+            tr.style.borderBottom = "1px solid #ddd";
+            tr.innerHTML = `
+                <td style="padding: 8px;">${item.concepto}</td>
+                <td style="padding: 8px;">${item.cant}</td>
+                <td style="padding: 8px;">$ ${item.precio.toLocaleString("es-AR")}</td>
+                <td style="padding: 8px; text-align: right; font-weight: bold;">$ ${subtotal.toLocaleString("es-AR")}</td>
             `;
+            tbody.appendChild(tr);
         });
 
-        tbody.innerHTML = html;
-        if (lblTotal) lblTotal.textContent = sumaTotal.toLocaleString("es-AR");
-    },
-
-    exportarAPresupuesto() {
-        if (!this.itemsCalculadosActuales || this.itemsCalculadosActuales.length === 0) {
-            alert("Primero calculá los ítems antes de exportar.");
-            return;
+        const totalElem = document.getElementById("totalGeneral");
+        if (totalElem) {
+            totalElem.textContent = `$ ${totalGeneral.toLocaleString("es-AR", { minimumFractionDigits: 2 })}`;
         }
 
-        // 1. Guardamos la lista en localStorage exactamente igual a Construcción en Seco
-        localStorage.setItem("materiales_computados", JSON.stringify(this.itemsCalculadosActuales));
-        localStorage.setItem("origen_computo", "refrigeracion");
+        resDiv.style.display = "block";
 
-        // 2. Redirigimos automáticamente al módulo de Presupuestos
-        const btnPresupuestos = document.querySelector('[data-view="presupuestos"]') || 
-                                document.querySelector('[data-module="presupuestos"]') ||
-                                document.getElementById("nav-presupuestos");
-
-        if (btnPresupuestos) {
-            btnPresupuestos.click();
-        } else {
-            alert("Insumos exportados con éxito. Abrí el menú 'Presupuestos' para editarlos.");
-        }
+        return items;
     }
 };
 
