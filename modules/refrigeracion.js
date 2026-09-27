@@ -1,6 +1,6 @@
 /* ==========================================================
    ABSALON PRO - MÓDULO REFRIGERACIÓN Y CLIMATIZACIÓN
-   Calculador Integral de Instalación, Eléctrica y Reparaciones
+   Calculador Modular de Instalación, Eléctrica y Reparaciones
 ========================================================== */
 
 import { getAll, save } from "./storage.js";
@@ -30,13 +30,19 @@ export const refrigeracion = {
         <div class="refrigeracion-container" style="padding: 15px; max-width: 1100px; margin: auto;">
             <div class="card" style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
                 <h2>❄️ Calculador de Servicios de Refrigeración</h2>
-                <p style="color: gray; font-size: 14px;">Configurá los detalles de la instalación, adicionales eléctricos y reparaciones para no perder ningún insumo.</p>
+                <p style="color: gray; font-size: 14px;">Elegí y combiná solo los módulos que vas a realizar para tu presupuesto.</p>
                 <hr style="margin: 15px 0;">
 
                 <!-- SECCIÓN 1: INSTALACIÓN BÁSICA DE SPLIT -->
                 <div style="background: #f9f9f9; padding: 15px; border-radius: 6px; margin-bottom: 20px; border-left: 4px solid #0284c7;">
-                    <h3 style="margin-top:0; color: #0284c7;">1. Instalación Básica de Split</h3>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <h3 style="margin:0; color: #0284c7;">1. Instalación Básica de Split</h3>
+                        <label style="cursor:pointer; font-weight:bold;">
+                            <input type="checkbox" id="chkAgregarInstalacion" checked> Incluir Instalación Básica
+                        </label>
+                    </div>
+
+                    <div id="panelInstalacion" style="display: grid; margin-top: 15px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px;">
                         <div>
                             <label><b>Capacidad del Equipo:</b></label>
                             <select id="refCapacidad" style="width: 100%; padding: 8px; margin-top: 5px;">
@@ -83,7 +89,7 @@ export const refrigeracion = {
                             <label><b>Tomacorriente / Caja Externa:</b></label>
                             <select id="elecTomaTipo" style="width: 100%; padding: 8px; margin-top: 5px;">
                                 <option value="ninguno">Ninguno (Ya existe toma)</option>
-                                <option value="toma_exterior">Caja Exterior + Toma 20A</option>
+                                <option value="toma_exterior_20a">Caja Exterior + Toma 20A</option>
                                 <option value="toma_embutir">Módulo Toma 20A Embutir</option>
                             </select>
                         </div>
@@ -163,11 +169,18 @@ export const refrigeracion = {
     },
 
     registrarEventos() {
+        const chkInstalacion = document.getElementById("chkAgregarInstalacion");
+        const panelInstalacion = document.getElementById("panelInstalacion");
+
         const chkElectrica = document.getElementById("chkAgregarElectrica");
         const panelElectrica = document.getElementById("panelElectrica");
         
         const chkFuga = document.getElementById("chkAgregarFuga");
         const panelFuga = document.getElementById("panelFuga");
+
+        chkInstalacion.onchange = () => {
+            panelInstalacion.style.display = chkInstalacion.checked ? "grid" : "none";
+        };
 
         chkElectrica.onchange = () => {
             panelElectrica.style.display = chkElectrica.checked ? "grid" : "none";
@@ -181,6 +194,8 @@ export const refrigeracion = {
             this.calcularPresupuesto();
             if (this.itemsCalculadosActuales.length > 0) {
                 document.getElementById("btnGuardarPresupuesto").style.display = "block";
+            } else {
+                document.getElementById("btnGuardarPresupuesto").style.display = "none";
             }
         };
 
@@ -219,30 +234,32 @@ export const refrigeracion = {
     calcularPresupuesto() {
         const items = [];
 
-        // 1. CÁLCULO INSTALACIÓN BÁSICA
-        const capacidad = document.getElementById("refCapacidad").value;
-        const metrosCano = parseFloat(document.getElementById("refMetroCano").value) || 0;
-        const idSoporte = document.getElementById("refSoporte").value;
+        // 1. CÁLCULO INSTALACIÓN BÁSICA (SI ESTÁ SELECCIONADA)
+        if (document.getElementById("chkAgregarInstalacion").checked) {
+            const capacidad = document.getElementById("refCapacidad").value;
+            const metrosCano = parseFloat(document.getElementById("refMetroCano").value) || 0;
+            const idSoporte = document.getElementById("refSoporte").value;
 
-        // Mano de Obra Instalación
-        const idMOInst = capacidad === "3200" ? "mo_inst_split_3200" : (capacidad === "4500" ? "mo_inst_split_4500" : "mo_inst_split_6000");
-        const precioMOInst = this.obtenerPrecioCatalogo(idMOInst, 140000);
-        items.push({ concepto: `Mano de Obra Instalación Split (${capacidad} frig)`, cant: 1, precio: precioMOInst });
+            // Mano de Obra Instalación
+            const idMOInst = capacidad === "3200" ? "mo_inst_split_3200" : (capacidad === "4500" ? "mo_inst_split_4500" : "mo_inst_split_6000");
+            const precioMOInst = this.obtenerPrecioCatalogo(idMOInst, 140000);
+            items.push({ concepto: `Mano de Obra Instalación Split (${capacidad} frig)`, cant: 1, precio: precioMOInst });
 
-        // Caños y Materiales de Interconexión
-        const precioCano14 = this.obtenerPrecioCatalogo("caño_cobre_14", 6500);
-        const precioCano38 = this.obtenerPrecioCatalogo("caño_cobre_38", 8900);
-        const precioAislante = this.obtenerPrecioCatalogo("aislant_fita", 1200);
-        const precioCinta = this.obtenerPrecioCatalogo("cinta_empaque", 2800);
+            // Caños y Materiales de Interconexión
+            const precioCano14 = this.obtenerPrecioCatalogo("caño_cobre_14", 6500);
+            const precioCano38 = this.obtenerPrecioCatalogo("caño_cobre_38", 8900);
+            const precioAislante = this.obtenerPrecioCatalogo("aislant_fita", 1200);
+            const precioCinta = this.obtenerPrecioCatalogo("cinta_empaque", 2800);
 
-        items.push({ concepto: 'Caño de Cobre 1/4"', cant: metrosCano, precio: precioCano14 });
-        items.push({ concepto: 'Caño de Cobre 3/8"', cant: metrosCano, precio: precioCano38 });
-        items.push({ concepto: "Aislante Térmico (Metro)", cant: metrosCano * 2, precio: precioAislante });
-        items.push({ concepto: "Cinta PVC de Empaque (Rollos)", cant: Math.ceil(metrosCano / 3), precio: precioCinta });
+            items.push({ concepto: 'Caño de Cobre 1/4"', cant: metrosCano, precio: precioCano14 });
+            items.push({ concepto: 'Caño de Cobre 3/8"', cant: metrosCano, precio: precioCano38 });
+            items.push({ concepto: "Aislante Térmico (Metro)", cant: metrosCano * 2, precio: precioAislante });
+            items.push({ concepto: "Cinta PVC de Empaque (Rollos)", cant: Math.ceil(metrosCano / 3), precio: precioCinta });
 
-        if (idSoporte !== "ninguno") {
-            const precioSoporte = this.obtenerPrecioCatalogo(idSoporte, 8500);
-            items.push({ concepto: "Juego Ménsulas / Soportes Exterior", cant: 1, precio: precioSoporte });
+            if (idSoporte !== "ninguno") {
+                const precioSoporte = this.obtenerPrecioCatalogo(idSoporte, 8500);
+                items.push({ concepto: "Juego Ménsulas / Soportes Exterior", cant: 1, precio: precioSoporte });
+            }
         }
 
         // 2. CÁLCULO TRABAJO ELÉCTRICO ADICIONAL
@@ -258,16 +275,18 @@ export const refrigeracion = {
             }
 
             if (metrosCablecanal > 0) {
-                items.push({ concepto: "Cablecanal Rígido (Metro)", cant: metrosCablecanal, precio: 3200 });
+                const precioCablecanal = this.obtenerPrecioCatalogo("cablecanal_2010", 3200);
+                items.push({ concepto: "Cablecanal Rígido 20x10 (Metro)", cant: metrosCablecanal, precio: precioCablecanal });
             }
 
             if (tipoToma !== "ninguno") {
-                items.push({ concepto: "Caja Exterior / Módulo Tomacorriente 20A", cant: 1, precio: 4500 });
+                const precioToma = this.obtenerPrecioCatalogo(tipoToma, 4500);
+                items.push({ concepto: "Caja Exterior / Módulo Tomacorriente 20A", cant: 1, precio: precioToma });
             }
 
             if (tipoTermica !== "ninguno") {
                 const precioTermica = this.obtenerPrecioCatalogo(tipoTermica, 7500);
-                items.push({ concepto: "Protección Térmica Bipolar", cant: 1, precio: precioTermica });
+                items.push({ concepto: "Protección Térmica Bipolar 16A/20A", cant: 1, precio: precioTermica });
             }
 
             // Mano de obra acometida eléctrica
@@ -283,7 +302,9 @@ export const refrigeracion = {
             const cantOvulos = parseInt(document.getElementById("fugaOvulos").value) || 0;
 
             if (presurizaNitrogeno) {
-                items.push({ concepto: "Carga / Prueba de Presurización con Nitrógeno", cant: 1, precio: 15000 });
+                const precioNitrogeno = this.obtenerPrecioCatalogo("carga_nitrogeno", 15000);
+                items.push({ concepto: "Insumo Nitrógeno Seco (Presurización / Estanqueidad)", cant: 1, precio: precioNitrogeno });
+
                 const precioMODet = this.obtenerPrecioCatalogo("mo_deteccion_fuga_carga", 150000);
                 items.push({ concepto: "Mano de Obra Detección de Fuga y Vacío de Sistema", cant: 1, precio: precioMODet });
             }
@@ -305,6 +326,13 @@ export const refrigeracion = {
         // MOSTRAR TABLA DE RESULTADOS
         const tbody = document.getElementById("tbodyResultado");
         tbody.innerHTML = "";
+
+        if (items.length === 0) {
+            alert("Seleccioná al menos uno de los 3 módulos (Instalación, Eléctrica o Reparación) para poder calcular.");
+            document.getElementById("resultadoCalculo").style.display = "none";
+            return [];
+        }
+
         let totalGeneral = 0;
 
         items.forEach(item => {
