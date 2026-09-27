@@ -61,15 +61,28 @@ export const catalogos = {
                 { id: "ladrillo_18", nombre: "Ladrillo Hueco 18x18x33 (x Unidad)", precio: 620, tipo: "material", especialidad: "Albañilería", unidad: "Unidad", descripcion: "Ladrillo para pared exterior" },
                 { id: "membrana_liquida", nombre: "Membrana Líquida Impermeabilizante (20kg)", precio: 45000, tipo: "material", especialidad: "Albañilería", unidad: "Bulto Comercial", descripcion: "Recubrimiento elástico impermeabilizante" },
 
-                // --- REFRIGERACIÓN ---
+                // --- REFRIGERACIÓN Y CLIMATIZACIÓN (MATERIALES E INSUMOS) ---
                 { id: "gas_r410a", nombre: "Refrigerante R410a (Garrafa x Kg)", precio: 18000, tipo: "material", especialidad: "Refrigeración", unidad: "Bulto Comercial", descripcion: "Gas ecológico para aires split" },
                 { id: "gas_r22", nombre: "Refrigerante R22 (Garrafa x Kg)", precio: 22000, tipo: "material", especialidad: "Refrigeración", unidad: "Bulto Comercial", descripcion: "Gas para equipos tradicionales" },
+                { id: "gas_r32", nombre: "Refrigerante R32 (Garrafa x Kg)", precio: 25000, tipo: "material", especialidad: "Refrigeración", unidad: "Bulto Comercial", descripcion: "Gas ecológico de nueva generación" },
                 { id: "caño_cobre_14", nombre: "Caño de Cobre 1/4\" (por metro)", precio: 6500, tipo: "material", especialidad: "Refrigeración", unidad: "Metro Lineal", descripcion: "Tubo de alta presión" },
                 { id: "caño_cobre_38", nombre: "Caño de Cobre 3/8\" (por metro)", precio: 8900, tipo: "material", especialidad: "Refrigeración", unidad: "Metro Lineal", descripcion: "Tubo de interconexión" },
                 { id: "caño_cobre_12", nombre: "Caño de Cobre 1/2\" (por metro)", precio: 11500, tipo: "material", especialidad: "Refrigeración", unidad: "Metro Lineal", descripcion: "Tubo de succión" },
-                { id: "aislant_fita", nombre: "Aislante Térmico / Mamba (x Metro)", precio: 1200, tipo: "material", especialidad: "Refrigeración", unidad: "Metro Lineal", descripcion: "Aislamiento para cañería" },
-                { id: "soporte_split", nombre: "Ménsula / Soporte Exterior 45cm", precio: 8500, tipo: "material", especialidad: "Refrigeración", unidad: "Unidad", descripcion: "Juego de soportes reforzados" },
-                { id: "capacitor_35uf", nombre: "Capacitor de Marcha 35 uF", precio: 4200, tipo: "material", especialidad: "Refrigeración", unidad: "Unidad", descripcion: "Repuesto para compresor" },
+                { id: "caño_cobre_58", nombre: "Caño de Cobre 5/8\" (por metro)", precio: 15500, tipo: "material", especialidad: "Refrigeración", unidad: "Metro Lineal", descripcion: "Tubo de succión para 6000 kcal +" },
+                { id: "aislant_fita", nombre: "Aislante Térmico Aislaflex (x Metro)", precio: 1200, tipo: "material", especialidad: "Refrigeración", unidad: "Metro Lineal", descripcion: "Aislamiento de caucho elastomérico para cañería" },
+                { id: "cinta_empaque", nombre: "Cinta PVC Venceflex / Empaque", precio: 2800, tipo: "material", especialidad: "Refrigeración", unidad: "Unidad", descripcion: "Rollo de cinta para encintado de cañería sin adhesivo" },
+                { id: "cable_taller_5x15", nombre: "Cable Taller 5x1.5 mm² (por metro)", precio: 2400, tipo: "material", especialidad: "Refrigeración", unidad: "Metro Lineal", descripcion: "Cable de interconexión eléctrica para split" },
+                { id: "manguera_condensado", nombre: "Manguera Condensado Ø 5/8 (por metro)", precio: 950, tipo: "material", especialidad: "Refrigeración", unidad: "Metro Lineal", descripcion: "Manguera cristal/reforzada para drenaje de agua" },
+                { id: "soporte_split_40", nombre: "Juego Ménsulas 40cm (Hasta 3000 frig)", precio: 8500, tipo: "material", especialidad: "Refrigeración", unidad: "Unidad", descripcion: "Juego de soportes reforzados exterior 40cm" },
+                { id: "soporte_split_50", nombre: "Juego Ménsulas 50cm (Hasta 4500 frig)", precio: 10500, tipo: "material", especialidad: "Refrigeración", unidad: "Unidad", descripcion: "Juego de soportes reforzados exterior 50cm" },
+                { id: "soporte_split_60", nombre: "Juego Ménsulas 60cm (+6000 frig)", precio: 14000, tipo: "material", especialidad: "Refrigeración", unidad: "Unidad", descripcion: "Juego de soportes reinforced exterior 60cm" },
+                { id: "tacos_goma", nombre: "Tacos Antivibratorios Goma (Juego x 4)", precio: 3200, tipo: "material", especialidad: "Refrigeración", unidad: "Unidad", descripcion: "Juego de tacos de goma antivibración" },
+                { id: "tirafondos_10", nombre: "Tirafondos con Tarugos N°10 (Juego x 6)", precio: 2500, tipo: "material", especialidad: "Refrigeración", unidad: "Unidad", descripcion: "Fijaciones para ménsula exterior" },
+                { id: "capacitor_35uf", nombre: "Capacitor de Marcha 35 uF", precio: 70000, tipo: "material", especialidad: "Refrigeración", unidad: "Unidad", descripcion: "Repuesto/Cambio de capacitor de marcha" },
+                { id: "plaqueta_universal", nombre: "Plaqueta Electrónica Universal Split", precio: 110000, tipo: "material", especialidad: "Refrigeración", unidad: "Unidad", descripcion: "Plaqueta universal de repuesto" },
+                { id: "sensores_split", nombre: "Juego de Sensores de Temperatura/Pozo", precio: 90000, tipo: "material", especialidad: "Refrigeración", unidad: "Unidad", descripcion: "Reemplazo de sensores de ambiente y serpentina" },
+                { id: "orring_robinete", nombre: "Orring de Robinete / Kit de Sellos", precio: 160000, tipo: "material", especialidad: "Refrigeración", unidad: "Unidad", descripcion: "Reparación y cambio de orrings de robinete" },
+                { id: "valvula_inversora", nombre: "Válvula Inversora / 4 Vías", precio: 220000, tipo: "material", especialidad: "Refrigeración", unidad: "Unidad", descripcion: "Repuesto de válvula inversora frío/calor" },
 
                 // --- ELECTRICIDAD ---
                 { id: "cable_15", nombre: "Cable Unipolar 1.5 mm² (Rollo 100m)", precio: 28000, tipo: "material", especialidad: "Electricidad", unidad: "Bulto Comercial", descripcion: "Cable para circuitos de iluminación" },
@@ -81,20 +94,45 @@ export const catalogos = {
                 { id: "caja_mignon", nombre: "Caja Rectangular 5x10 (Mignon)", precio: 500, tipo: "material", especialidad: "Electricidad", unidad: "Unidad", descripcion: "Caja de embutir para llaves y tomas" },
                 { id: "cano_corrugado_34", nombre: "Caño Corrugado Blanco / Gris 3/4\" (Rollo 25m)", precio: 9500, tipo: "material", especialidad: "Electricidad", unidad: "Bulto Comercial", descripcion: "Canalización de embutir flexible" },
 
-                // --- MANO DE OBRA ---
+                // --- MANO DE OBRA (ALBAÑILERÍA) ---
                 { id: "mo_muro_12", nombre: "Elevación de Muro Ladrillo Hueco (m²)", precio: 8500, tipo: "mano_obra", especialidad: "Albañilería", unidad: "M2", descripcion: "Levantado de mampostería sin revoque" },
                 { id: "mo_revoque_grueso", nombre: "Revoque Grueso / Proyectado (m²)", precio: 6000, tipo: "mano_obra", especialidad: "Albañilería", unidad: "M2", descripcion: "Capa base de emparejamiento sobre mampostería" },
                 { id: "mo_revoque_fino", nombre: "Revoque Fino / Enlucido (m²)", precio: 4500, tipo: "mano_obra", especialidad: "Albañilería", unidad: "M2", descripcion: "Terminación fina para pintar" },
                 { id: "mo_contrapiso", nombre: "Contrapiso H30 H=8cm (m²)", precio: 7500, tipo: "mano_obra", especialidad: "Albañilería", unidad: "M2", descripcion: "Base de hormigón pobre para piso o losa" },
                 { id: "mo_impermeab", nombre: "Aplicación de Membrana Líquida (m²)", precio: 3500, tipo: "mano_obra", especialidad: "Albañilería", unidad: "M2", descripcion: "Limpieza y 3 manos de impermeabilizante" },
+
+                // --- MANO DE OBRA (CONSTRUCCIÓN EN SECO) ---
                 { id: "mo_cielorraso_durlock", nombre: "Mano de Obra Cielorraso Junta Tomada (m²)", precio: 7000, tipo: "mano_obra", especialidad: "Construcción Seco", unidad: "M2", descripcion: "Estructura, emplacado y tomado de juntas" },
                 { id: "mo_tabique_durlock", nombre: "Mano de Obra Tabique Durlock Doble Cara (m²)", precio: 8500, tipo: "mano_obra", especialidad: "Construcción Seco", unidad: "M2", descripcion: "Armado de estructura y doble emplacado" },
                 { id: "mo_desmontable", nombre: "Mano de Obra Cielorraso Desmontable (m²)", precio: 6000, tipo: "mano_obra", especialidad: "Construcción Seco", unidad: "M2", descripcion: "Estructura vista y colocación de placas 60x60" },
                 { id: "mo_pvc", nombre: "Mano de Obra Cielorraso PVC (m²)", precio: 6500, tipo: "mano_obra", especialidad: "Construcción Seco", unidad: "M2", descripcion: "Estructura e instalación de tablillas PVC" },
-                { id: "mo_inst_split_3000", nombre: "Instalación Split hasta 3000 Fg", precio: 45000, tipo: "mano_obra", especialidad: "Refrigeración", unidad: "Global", descripcion: "Instalación básica hasta 3 metros de cañería" },
-                { id: "mo_inst_split_4500", nombre: "Instalación Split 4500 / 6000 Fg", precio: 60000, tipo: "mano_obra", especialidad: "Refrigeración", unidad: "Global", descripcion: "Instalación de equipo mediano/grande" },
-                { id: "mo_mantenimiento_ac", nombre: "Mantenimiento Preventivo / Limpieza Integral", precio: 25000, tipo: "mano_obra", especialidad: "Refrigeración", unidad: "Global", descripcion: "Desarme, turbina, serpentina e higienización" },
-                { id: "mo_carga_gas", nombre: "Carga Completa de Gas Refrigerante", precio: 30000, tipo: "mano_obra", especialidad: "Refrigeración", unidad: "Global", descripcion: "Presurización, vacío y carga por balanza" },
+
+                // --- MANO DE OBRA (REFRIGERACIÓN Y CLIMATIZACIÓN) ---
+                { id: "mo_visita_tecnica", nombre: "Visita Técnica / Diagnóstico Refrigeración", precio: 20000, tipo: "mano_obra", especialidad: "Refrigeración", unidad: "Global", descripcion: "Revisión técnica en domicilio" },
+                { id: "mo_inst_split_3200", nombre: "Instalación Split hasta 3200 kcal", precio: 140000, tipo: "mano_obra", especialidad: "Refrigeración", unidad: "Global", descripcion: "Mano de obra de instalación básica sin materiales" },
+                { id: "mo_inst_split_4500", nombre: "Instalación Split hasta 4500 kcal", precio: 160000, tipo: "mano_obra", especialidad: "Refrigeración", unidad: "Global", descripcion: "Mano de obra de instalación equipo mediano" },
+                { id: "mo_inst_split_6000", nombre: "Instalación Split hasta 6000 kcal", precio: 180000, tipo: "mano_obra", especialidad: "Refrigeración", unidad: "Global", descripcion: "Mano de obra de instalación equipo grande" },
+                { id: "mo_inst_split_8000", nombre: "Instalación Split hasta 8000 kcal", precio: 240000, tipo: "mano_obra", especialidad: "Refrigeración", unidad: "Global", descripcion: "Mano de obra de instalación equipo alta capacidad" },
+                { id: "mo_inst_piso_techo_9000", nombre: "Instalación Piso Techo 9000 kcal", precio: 270000, tipo: "mano_obra", especialidad: "Refrigeración", unidad: "Global", descripcion: "Mano de obra para comercial/piso techo" },
+                { id: "mo_inst_piso_techo_15000", nombre: "Instalación Piso Techo 15000 kcal", precio: 350000, tipo: "mano_obra", especialidad: "Refrigeración", unidad: "Global", descripcion: "Mano de obra para comercial/piso techo" },
+                { id: "mo_inst_piso_techo_18000", nombre: "Instalación Piso Techo 18000 kcal", precio: 380000, tipo: "mano_obra", especialidad: "Refrigeración", unidad: "Global", descripcion: "Mano de obra para comercial/piso techo" },
+                { id: "mo_desinst_3200", nombre: "Desinstalación Split hasta 3200 kcal", precio: 70000, tipo: "mano_obra", especialidad: "Refrigeración", unidad: "Global", descripcion: "Retiro de equipo conservando carga de gas" },
+                { id: "mo_desinst_4500", nombre: "Desinstalación Split hasta 4500 kcal", precio: 80000, tipo: "mano_obra", especialidad: "Refrigeración", unidad: "Global", descripcion: "Retiro de equipo conservando carga de gas" },
+                { id: "mo_desinst_6000", nombre: "Desinstalación Split hasta 6000 kcal", precio: 90000, tipo: "mano_obra", especialidad: "Refrigeración", unidad: "Global", descripcion: "Retiro de equipo conservando carga de gas" },
+                { id: "mo_cambio_compresor_4500", nombre: "Cambio de Compresor hasta 4500 kcal", precio: 200000, tipo: "mano_obra", especialidad: "Refrigeración", unidad: "Global", descripcion: "Mano de obra, soldadura, limpieza de sistema y vacío" },
+                { id: "mo_cambio_compresor_6000", nombre: "Cambio de Compresor hasta 6000 kcal", precio: 250000, tipo: "mano_obra", especialidad: "Refrigeración", unidad: "Global", descripcion: "Mano de obra, soldadura, limpieza de sistema y vacío" },
+                { id: "mo_perdida_tuercas", nombre: "Solución de Pérdidas Simples en Tuercas", precio: 100000, tipo: "mano_obra", especialidad: "Refrigeración", unidad: "Global", descripcion: "Rehacer pestañas, torque y ajuste" },
+                { id: "mo_deteccion_fuga_carga", nombre: "Detección de Fugas y Carga de Gas (hasta 4500 kcal)", precio: 200000, tipo: "mano_obra", especialidad: "Refrigeración", unidad: "Global", descripcion: "Presurización con Nitrógeno, detección, vacío y carga" },
+                { id: "mo_carga_gas_4500", nombre: "Carga de Gas Refrigerante hasta 4500 kcal", precio: 100000, tipo: "mano_obra", especialidad: "Refrigeración", unidad: "Global", descripcion: "Carga de gas refrigerante por balanza/presión" },
+                { id: "mo_limpieza_4500", nombre: "Limpieza Mantenimiento hasta 4500 kcal", precio: 150000, tipo: "mano_obra", especialidad: "Refrigeración", unidad: "Global", descripcion: "Mantenimiento integral/desarme e higienización" },
+                { id: "mo_limpieza_6000", nombre: "Limpieza Mantenimiento hasta 6000 kcal", precio: 170000, tipo: "mano_obra", especialidad: "Refrigeración", unidad: "Global", descripcion: "Mantenimiento integral/desarme e higienización" },
+                { id: "mo_limpieza_8000", nombre: "Limpieza Mantenimiento hasta 8000 kcal", precio: 200000, tipo: "mano_obra", especialidad: "Refrigeración", unidad: "Global", descripcion: "Mantenimiento integral/desarme e higienización" },
+                { id: "mo_limpieza_9000", nombre: "Limpieza Mantenimiento hasta 9000 kcal", precio: 220000, tipo: "mano_obra", especialidad: "Refrigeración", unidad: "Global", descripcion: "Mantenimiento integral/desarme e higienización" },
+                { id: "mo_limpieza_15000", nombre: "Limpieza Mantenimiento hasta 15000 kcal", precio: 250000, tipo: "mano_obra", especialidad: "Refrigeración", unidad: "Global", descripcion: "Mantenimiento integral/desarme e higienización" },
+                { id: "mo_limpieza_18000", nombre: "Limpieza Mantenimiento hasta 18000 kcal", precio: 300000, tipo: "mano_obra", especialidad: "Refrigeración", unidad: "Global", descripcion: "Mantenimiento integral/desarme e higienización" },
+                { id: "mo_limpieza_central", nombre: "Limpieza Mantenimiento Central", precio: 350000, tipo: "mano_obra", especialidad: "Refrigeración", unidad: "Global", descripcion: "Mantenimiento preventivo/correctivo equipo central" },
+
+                // --- MANO DE OBRA (ELECTRICIDAD) ---
                 { id: "mo_punto_caja", nombre: "Mano de Obra por Centro / Boca Eléctrica", precio: 8500, tipo: "mano_obra", especialidad: "Electricidad", unidad: "Unidad", descripcion: "Cañería, cableado y armado de caja/boca" },
                 { id: "mo_tablero_principal", nombre: "Armado y Cableado de Tablero Principal", precio: 35000, tipo: "mano_obra", especialidad: "Electricidad", unidad: "Global", descripcion: "Montaje de térmicas, disyuntor y peines de distribución" },
                 { id: "mo_colocacion_artefacto", nombre: "Colocación de Artefacto / Velador / Lámpara", precio: 4500, tipo: "mano_obra", especialidad: "Electricidad", unidad: "Unidad", descripcion: "Montaje y conexión de iluminación vista" }
