@@ -143,7 +143,7 @@ export const refrigeracion = {
 
                 <div style="display: flex; gap: 10px; margin-top: 15px;">
                     <button id="btnCalcularRef" style="flex: 1; padding: 12px; font-size: 16px; font-weight: bold; background: #0284c7; color: white; border: none; border-radius: 5px; cursor: pointer;">🧮 Calcular en Pantalla</button>
-                    <button id="btnGuardarPresupuesto" style="flex: 1; padding: 12px; font-size: 16px; font-weight: bold; background: #104E2E; color: white; border: none; border-radius: 5px; cursor: pointer; display: none;">💾 Guardar en Presupuestos</button>
+                    <button id="btnGuardarPresupuesto" style="flex: 1; padding: 12px; font-size: 16px; font-weight: bold; background: #104E2E; color: white; border: none; border-radius: 5px; cursor: pointer;">📤 Exportar a Presupuesto</button>
                 </div>
 
                 <!-- RESULTADOS -->
@@ -173,71 +173,74 @@ export const refrigeracion = {
     registrarEventos() {
         const chkInstalacion = document.getElementById("chkAgregarInstalacion");
         const panelInstalacion = document.getElementById("panelInstalacion");
-
         const chkElectrica = document.getElementById("chkAgregarElectrica");
         const panelElectrica = document.getElementById("panelElectrica");
-        
         const chkFuga = document.getElementById("chkAgregarFuga");
         const panelFuga = document.getElementById("panelFuga");
 
         if (chkInstalacion && panelInstalacion) {
-            chkInstalacion.onchange = () => {
-                panelInstalacion.style.display = chkInstalacion.checked ? "grid" : "none";
-            };
-            // Sincronizar estado inicial en pantalla
+            chkInstalacion.onchange = () => panelInstalacion.style.display = chkInstalacion.checked ? "grid" : "none";
             panelInstalacion.style.display = chkInstalacion.checked ? "grid" : "none";
         }
 
         if (chkElectrica && panelElectrica) {
-            chkElectrica.onchange = () => {
-                panelElectrica.style.display = chkElectrica.checked ? "grid" : "none";
-            };
+            chkElectrica.onchange = () => panelElectrica.style.display = chkElectrica.checked ? "grid" : "none";
             panelElectrica.style.display = chkElectrica.checked ? "grid" : "none";
         }
 
         if (chkFuga && panelFuga) {
-            chkFuga.onchange = () => {
-                panelFuga.style.display = chkFuga.checked ? "grid" : "none";
-            };
+            chkFuga.onchange = () => panelFuga.style.display = chkFuga.checked ? "grid" : "none";
             panelFuga.style.display = chkFuga.checked ? "grid" : "none";
         }
 
         const btnCalcular = document.getElementById("btnCalcularRef");
         if (btnCalcular) {
-            btnCalcular.onclick = () => {
-                this.calcularPresupuesto();
-                const btnGuardar = document.getElementById("btnGuardarPresupuesto");
-                if (btnGuardar) {
-                    btnGuardar.style.display = this.itemsCalculadosActuales.length > 0 ? "block" : "none";
-                }
-            };
+            btnCalcular.onclick = () => this.calcularPresupuesto();
         }
 
         const btnGuardar = document.getElementById("btnGuardarPresupuesto");
         if (btnGuardar) {
             btnGuardar.onclick = async () => {
-                if (!this.itemsCalculadosActuales || this.itemsCalculadosActuales.length === 0) return;
+                // Si aún no se calculó en pantalla, realizamos el cálculo automático
+                let itemsAGuardar = this.itemsCalculadosActuales;
+                if (!itemsAGuardar || itemsAGuardar.length === 0) {
+                    itemsAGuardar = this.calcularPresupuesto();
+                }
 
-                const nombreCliente = prompt("Ingresá el nombre o referencia del cliente para este presupuesto:") || "Cliente Sin Nombre";
-                
-                const totalPresupuesto = this.itemsCalculadosActuales.reduce((acc, item) => acc + (item.cant * item.precio), 0);
+                if (!itemsAGuardar || itemsAGuardar.length === 0) {
+                    alert("Seleccioná al menos un módulo para poder exportar.");
+                    return;
+                }
+
+                const nombreCliente = prompt("Ingresá el nombre o referencia del cliente:") || "Cliente Refrigeración";
+                const totalPresupuesto = itemsAGuardar.reduce((acc, item) => acc + (item.cant * item.precio), 0);
 
                 const nuevoPresupuesto = {
                     id: String(Date.now()),
                     fecha: new Date().toLocaleDateString("es-AR"),
                     cliente: nombreCliente,
                     rubro: "Refrigeración",
-                    items: this.itemsCalculadosActuales,
+                    items: itemsAGuardar,
                     total: totalPresupuesto,
                     estado: "Pendiente"
                 };
 
                 try {
+                    // 1. Guardar en la base de datos
                     await save("presupuestos", nuevoPresupuesto);
-                    alert("✅ Presupuesto guardado exitosamente en el módulo de Presupuestos.");
+                    alert("✅ Presupuesto exportado correctamente.");
+
+                    // 2. Redireccionar automáticamente al módulo de Presupuestos o Historial
+                    // Dispara el evento del menú lateral o la función global de router de app.js
+                    const btnNavPresupuestos = document.querySelector('[data-view="presupuestos"]') || document.querySelector('[data-view="historial"]');
+                    if (btnNavPresupuestos) {
+                        btnNavPresupuestos.click();
+                    } else if (window.cargarVista) {
+                        window.cargarVista("presupuestos");
+                    }
                 } catch (error) {
-                    console.error("Error al guardar presupuesto:", error);
-                    alert("❌ Hubo un error al intentar guardar el presupuesto.");
+                    console.error("Error al exportar presupuesto:", error);
+                    alert("❌ Hubo un error al intentar exportar el presupuesto.");
                 }
             };
         }
@@ -341,7 +344,6 @@ export const refrigeracion = {
             }
         }
 
-        // GUARDAR Y RENDERIZAR RESULTADOS
         this.itemsCalculadosActuales = items;
 
         const tbody = document.getElementById("tbodyResultado");
@@ -352,7 +354,7 @@ export const refrigeracion = {
         tbody.innerHTML = "";
 
         if (items.length === 0) {
-            alert("Seleccioná al menos uno de los 3 módulos (Instalación, Eléctrica o Reparación) para poder calcular.");
+            alert("Seleccioná al menos uno de los módulos para calcular.");
             resDiv.style.display = "none";
             return [];
         }
