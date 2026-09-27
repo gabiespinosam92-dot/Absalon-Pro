@@ -1,253 +1,404 @@
 /* ==========================================================
-   ABSALON PRO - CATÁLOGO GENERAL DE MATERIALES Y MANO DE OBRA
-   modules/catalogo.js
+   ABSALON PRO
+   MÓDULO CATÁLOGOS - CON FILTROS Y BUSCADOR
 ========================================================== */
 
-const catalogo = {
-    // Lista completa de insumos, materiales y servicios precargados
-    items: [
-        // ==========================================================
-        // 1. REFRIGERACIÓN (AGREGADO NUEVO)
-        // ==========================================================
-        { id: "ref-nitro", concepto: "Insumo Nitrógeno Seco (Presurización / Estanqueidad)", rubro: "Refrigeración", unidad: "Unidad", precio: 15000 },
-        { id: "ref-mo-vacio", concepto: "Mano de Obra Detección de Fuga y Vacío de Sistema", rubro: "Refrigeración", unidad: "Servicio", precio: 150000 },
-        { id: "ref-gas-r410a", concepto: "Refrigerante R410a", rubro: "Refrigeración", unidad: "Kg", precio: 18000 },
-        { id: "ref-gas-r22", concepto: "Refrigerante R22", rubro: "Refrigeración", unidad: "Kg", precio: 22000 },
-        { id: "ref-gas-r32", concepto: "Refrigerante R32", rubro: "Refrigeración", unidad: "Kg", precio: 25000 },
-        { id: "ref-ovulo", concepto: "Reemplazo de Óvulo / Núcleo de Válvula", rubro: "Refrigeración", unidad: "Unidad", precio: 3500 },
-        { id: "ref-mo-instalacion", concepto: "Mano de Obra Instalación Básica Split", rubro: "Refrigeración", unidad: "Servicio", precio: 120000 },
-        { id: "ref-mo-electrica", concepto: "Adicional Alimentación y Conexión Eléctrica", rubro: "Refrigeración", unidad: "Servicio", precio: 45000 },
+import { getAll, save } from "./storage.js";
 
-        // ==========================================================
-        // 2. CONSTRUCCIÓN EN SECO
-        // ==========================================================
-        { id: "solera35", concepto: "Solera de 35 mm", rubro: "Construcción en Seco", unidad: "Perfil", precio: 4800 },
-        { id: "montante35", concepto: "Montante de 35 mm", rubro: "Construcción en Seco", unidad: "Perfil", precio: 5200 },
-        { id: "solera70", concepto: "Solera de 70 mm", rubro: "Construcción en Seco", unidad: "Perfil", precio: 6100 },
-        { id: "montante70", concepto: "Montante de 70 mm", rubro: "Construcción en Seco", unidad: "Perfil", precio: 6800 },
-        { id: "perimetral3", concepto: "Perimetral de 3 mts (Desmontable)", rubro: "Construcción en Seco", unidad: "Perfil", precio: 4200 },
-        { id: "larguero366", concepto: "Larguero de 3,66 mts (Desmontable)", rubro: "Construcción en Seco", unidad: "Perfil", precio: 7500 },
-        { id: "travesano060", concepto: "Travesaño de 0,60 mts (Desmontable)", rubro: "Construcción en Seco", unidad: "Perfil", precio: 2100 },
-        { id: "anguloAjuste", concepto: "Ángulo de ajuste", rubro: "Construcción en Seco", unidad: "Perfil", precio: 3100 },
-        { id: "perfilOmega", concepto: "Perfil Omega", rubro: "Construcción en Seco", unidad: "Perfil", precio: 4500 },
-        { id: "montante34", concepto: "Montante de 34 mm", rubro: "Construcción en Seco", unidad: "Perfil", precio: 5000 },
+export const catalogos = {
+    articulos: [],
+    pestanaActual: "material", // 'material' o 'mano_obra'
+    itemEditandoId: null,
+    itemPreCargado: null,
 
-        { id: "placa95", concepto: "Placa de 9,5 mm", rubro: "Construcción en Seco", unidad: "Placa", precio: 12500 },
-        { id: "placa125", concepto: "Placa de 12,5 mm", rubro: "Construcción en Seco", unidad: "Placa", precio: 14200 },
-        { id: "placaNebula60", concepto: "Placa Nebula 60x1,20 (Desmontable)", rubro: "Construcción en Seco", unidad: "Placa", precio: 8900 },
-        { id: "machPVC", concepto: "Mach PVC 14mm 20*200*3.00 Mts", rubro: "Construcción en Seco", unidad: "Placa", precio: 9800 },
-        { id: "bordeJ", concepto: "Borde 'J' PVC", rubro: "Construcción en Seco", unidad: "ML", precio: 1800 },
+    async iniciar() { await this.load(); },
 
-        { id: "masillaPasta", concepto: "Masilla en Pasta", rubro: "Construcción en Seco", unidad: "Comercial", precio: 28000 },
-        { id: "masillaPolvo", concepto: "Masilla en Polvo", rubro: "Construcción en Seco", unidad: "Comercial", precio: 11500 },
-        { id: "cintaPapel", concepto: "Cinta de Papel", rubro: "Construcción en Seco", unidad: "Comercial", precio: 8500 },
-
-        { id: "tarugo8", concepto: "Tarugos nº 8", rubro: "Construcción en Seco", unidad: "Unidad", precio: 80 },
-        { id: "tornillo8", concepto: "Tornillos nº 8", rubro: "Construcción en Seco", unidad: "Unidad", precio: 90 },
-        { id: "tornilloT1A", concepto: "Tornillos T1 punta aguja", rubro: "Construcción en Seco", unidad: "Unidad", precio: 45 },
-        { id: "tornilloT2A", concepto: "Tornillos T2 punta aguja", rubro: "Construcción en Seco", unidad: "Unidad", precio: 50 },
-        { id: "tornilloT1M", concepto: "Tornillos T1 punta mecha", rubro: "Construcción en Seco", unidad: "Unidad", precio: 55 },
-
-        // ==========================================================
-        // 3. ALBAÑILERÍA
-        // ==========================================================
-        { id: "alb-cemento", concepto: "Cemento Avellaneda / Loma Negra (50kg)", rubro: "Albañilería", unidad: "Bolsa", precio: 9500 },
-        { id: "alb-cal", concepto: "Cal Hidratada (25kg)", rubro: "Albañilería", unidad: "Bolsa", precio: 4200 },
-        { id: "alb-arena", concepto: "Arena Gruesa", rubro: "Albañilería", unidad: "M3", precio: 18000 },
-        { id: "alb-piedra", concepto: "Piedra Partida", rubro: "Albañilería", unidad: "M3", precio: 26000 },
-        { id: "alb-ladrillo-12", concepto: "Ladrillo Hueco 12x18x25", rubro: "Albañilería", unidad: "Unidad", precio: 680 },
-        { id: "alb-ladrillo-18", concepto: "Ladrillo Hueco 18x18x25", rubro: "Albañilería", unidad: "Unidad", precio: 920 },
-        { id: "alb-ladrillo-comun", concepto: "Ladrillo Común", rubro: "Albañilería", unidad: "Unidad", precio: 220 },
-        { id: "alb-hierro-8", concepto: "Hierro Aletado del 8mm", rubro: "Albañilería", unidad: "Barra 12m", precio: 12800 },
-        { id: "alb-hierro-10", concepto: "Hierro Aletado del 10mm", rubro: "Albañilería", unidad: "Barra 12m", precio: 19500 },
-
-        // ==========================================================
-        // 4. ELECTRICIDAD
-        // ==========================================================
-        { id: "elec-cable-15", concepto: "Cable Unipolar 1.5 mm²", rubro: "Electricidad", unidad: "Rollo 100m", precio: 32000 },
-        { id: "elec-cable-25", concepto: "Cable Unipolar 2.5 mm²", rubro: "Electricidad", unidad: "Rollo 100m", precio: 48000 },
-        { id: "elec-cable-40", concepto: "Cable Unipolar 4.0 mm²", rubro: "Electricidad", unidad: "Rollo 100m", precio: 75000 },
-        { id: "elec-termica-20", concepto: "Llave Térmica Bipolar 20A", rubro: "Electricidad", unidad: "Unidad", precio: 14500 },
-        { id: "elec-disyuntor", concepto: "Disyuntor Diferencial 40A 30mA", rubro: "Electricidad", unidad: "Unidad", precio: 38000 },
-        { id: "elec-caja-octogonal", concepto: "Caja Octogonal Chapa", rubro: "Electricidad", unidad: "Unidad", precio: 1200 },
-        { id: "elec-caño-corrugado", concepto: "Caño Corrugado Blanco 3/4\"", rubro: "Electricidad", unidad: "Rollo 25m", precio: 11200 }
-    ],
-
-    iniciar() {
-        this.cargarDesdeStorage();
-        this.render();
-        this.vincularEventos();
+    async load() {
+        this.renderEstructura();
+        await this.verificarYPrecargarInsumos();
+        await this.cargarArticulos();
+        this.registrarEventosMódulo();
     },
 
-    cargarDesdeStorage() {
-        const guardados = localStorage.getItem("absalon_catalogo");
-        if (guardados) {
-            try {
-                this.items = JSON.parse(guardados);
-            } catch (e) {
-                console.error("Error al cargar el catálogo desde localStorage:", e);
+    async verificarYPrecargarInsumos() {
+        try {
+            const existentes = await getAll("catalogos");
+            const idsExistentes = new Set(existentes.map(item => item.id));
+
+            const insumosBase = [
+                // --- CONSTRUCCIÓN EN SECO ---
+                { id: "solera35", nombre: "Solera de 35 mm Perfil Galvanizado", precio: 1000, tipo: "material", especialidad: "Construcción Seco", unidad: "Perfil", descripcion: "Perfil guía para estructura de cielorraso" },
+                { id: "montante35", nombre: "Montante de 35 mm Perfil Galvanizado", precio: 1000, tipo: "material", especialidad: "Construcción Seco", unidad: "Perfil", descripcion: "Perfil montante estructural para cielorraso" },
+                { id: "solera70", nombre: "Solera de 70 mm Perfil Galvanizado", precio: 1000, tipo: "material", especialidad: "Construcción Seco", unidad: "Perfil", descripcion: "Perfil guía para estructura de tabique" },
+                { id: "montante70", nombre: "Montante de 70 mm Perfil Galvanizado", precio: 1000, tipo: "material", especialidad: "Construcción Seco", unidad: "Perfil", descripcion: "Perfil montante estructural para tabique" },
+                { id: "perimetral3", nombre: "Perfil Perimetral de 3 mts", precio: 1000, tipo: "material", especialidad: "Construcción Seco", unidad: "Perfil", descripcion: "Perfil perimetral para cielorraso desmontable" },
+                { id: "larguero366", nombre: "Perfil Larguero de 3,66 mts", precio: 1000, tipo: "material", especialidad: "Construcción Seco", unidad: "Perfil", descripcion: "Componente estructural desmontable principal" },
+                { id: "travesano060", nombre: "Perfil Travesaño de 0,60 mts", precio: 1000, tipo: "material", especialidad: "Construcción Seco", unidad: "Perfil", descripcion: "Perfil travesaño para modulación 60x60" },
+                { id: "anguloAjuste", nombre: "Ángulo de ajuste estructural", precio: 1000, tipo: "material", especialidad: "Construcción Seco", unidad: "Perfil", descripcion: "Ángulo de terminación y ajuste" },
+                { id: "perfilOmega", nombre: "Perfil Omega Galvanizado", precio: 1000, tipo: "material", especialidad: "Construcción Seco", unidad: "Perfil", descripcion: "Perfil omega para revestimiento directo de paredes" },
+                { id: "montante34", nombre: "Montante de 34 mm (PVC / Estructural)", precio: 1000, tipo: "material", especialidad: "Construcción Seco", unidad: "Perfil", descripcion: "Perfil montante para soporte de tablillas" },
+                { id: "placa95", nombre: "Placa de Yeso 9,5 mm (Cielorraso)", precio: 1000, tipo: "material", especialidad: "Construcción Seco", unidad: "Placa", descripcion: "Placa estándar para cielorrasos junta tomada" },
+                { id: "placa125", nombre: "Placa de Yeso 12,5 mm (Tabique/Revestimiento)", precio: 1000, tipo: "material", especialidad: "Construcción Seco", unidad: "Placa", descripcion: "Placa estándar de alta resistencia para tabiques" },
+                { id: "placaNebula60", nombre: "Placa Nebula Desmontable 60x1,20", precio: 1000, tipo: "material", especialidad: "Construcción Seco", unidad: "Placa", descripcion: "Placa acústica/térmica para cielorraso desmontable" },
+                { id: "machPVC", nombre: "Machimbre PVC 14mm (20x200x3000 Mts)", precio: 1000, tipo: "material", especialidad: "Construcción Seco", unidad: "Placa", descripcion: "Tablilla plástica para cielorraso PVC" },
+                { id: "bordeJ", nombre: "Perfil de terminación Borde 'J'", precio: 1000, tipo: "material", especialidad: "Construcción Seco", unidad: "Metro Lineal", descripcion: "Perfil J plástico de terminación" },
+                { id: "masillaPasta", nombre: "Masilla en Pasta (Baldes Comerciales)", precio: 1000, tipo: "material", especialidad: "Construcción Seco", unidad: "Bulto Comercial", descripcion: "Masilla lista para tomar juntas" },
+                { id: "masillaPolvo", nombre: "Masilla en Polvo (Bolsas Comerciales)", precio: 1000, tipo: "material", especialidad: "Construcción Seco", unidad: "Bulto Comercial", descripcion: "Masilla de secado rápido en polvo" },
+                { id: "cintaPapel", nombre: "Cinta de Papel Microperforada (Rollos)", precio: 1000, tipo: "material", especialidad: "Construcción Seco", unidad: "Bulto Comercial", descripcion: "Cinta de celulosa para uniones de placas" },
+                { id: "tarugo8", nombre: "Tarugos N° 8 con tope", precio: 10, tipo: "material", especialidad: "Construcción Seco", unidad: "Unidad", descripcion: "Tarugo expansivo de nylon para fijación" },
+                { id: "tornillo8", nombre: "Tornillos de Fijación N° 8", precio: 10, tipo: "material", especialidad: "Construcción Seco", unidad: "Unidad", descripcion: "Tornillo de rosca para fijar soleras" },
+                { id: "tornilloT1A", nombre: "Tornillos T1 Punta Aguja", precio: 10, tipo: "material", especialidad: "Construcción Seco", unidad: "Unidad", descripcion: "Fijación metal con metal entre perfiles" },
+                { id: "tornilloT1M", nombre: "Tornillos T1 Punta Mecha", precio: 10, tipo: "material", especialidad: "Construcción Seco", unidad: "Unidad", descripcion: "Tornillo punta mecha autoperforante" },
+                { id: "tornilloT2A", nombre: "Tornillos T2 Punta Aguja", precio: 10, tipo: "material", especialidad: "Construcción Seco", unidad: "Unidad", descripcion: "Fijación de placa a perfil" },
+
+                // --- ALBAÑILERÍA ---
+                { id: "cemento_50kg", nombre: "Cemento Portland (Bolsa 50kg)", precio: 8500, tipo: "material", especialidad: "Albañilería", unidad: "Bulto Comercial", descripcion: "Cemento de uso general" },
+                { id: "cal_25kg", nombre: "Cal Hidratada (Bolsa 25kg)", precio: 4200, tipo: "material", especialidad: "Albañilería", unidad: "Bulto Comercial", descripcion: "Cal para revoques y mezclas" },
+                { id: "arena_m3", nombre: "Arena Fina (por m³)", precio: 15000, tipo: "material", especialidad: "Albañilería", unidad: "Metro Lineal", descripcion: "Arena para revoques y contrapisos" },
+                { id: "piedra_m3", nombre: "Piedra Partida (por m³)", precio: 22000, tipo: "material", especialidad: "Albañilería", unidad: "Metro Lineal", descripcion: "Agregado grueso para hormigón" },
+                { id: "ladrillo_comun", nombre: "Ladrillo Común (x Unidad)", precio: 180, tipo: "material", especialidad: "Albañilería", unidad: "Unidad", descripcion: "Ladrillo cerámico macizo" },
+                { id: "ladrillo_12", nombre: "Ladrillo Hueco 12x18x33 (x Unidad)", precio: 450, tipo: "material", especialidad: "Albañilería", unidad: "Unidad", descripcion: "Ladrillo cerámico para tabiques" },
+                { id: "ladrillo_18", nombre: "Ladrillo Hueco 18x18x33 (x Unidad)", precio: 620, tipo: "material", especialidad: "Albañilería", unidad: "Unidad", descripcion: "Ladrillo para pared exterior" },
+                { id: "membrana_liquida", nombre: "Membrana Líquida Impermeabilizante (20kg)", precio: 45000, tipo: "material", especialidad: "Albañilería", unidad: "Bulto Comercial", descripcion: "Recubrimiento elástico impermeabilizante" },
+
+                // --- REFRIGERACIÓN Y CLIMATIZACIÓN (MATERIALES E INSUMOS) ---
+                { id: "gas_r410a", nombre: "Refrigerante R410a (Garrafa x Kg)", precio: 18000, tipo: "material", especialidad: "Refrigeración", unidad: "Bulto Comercial", descripcion: "Gas ecológico para aires split" },
+                { id: "gas_r22", nombre: "Refrigerante R22 (Garrafa x Kg)", precio: 22000, tipo: "material", especialidad: "Refrigeración", unidad: "Bulto Comercial", descripcion: "Gas para equipos tradicionales" },
+                { id: "gas_r32", nombre: "Refrigerante R32 (Garrafa x Kg)", precio: 25000, tipo: "material", especialidad: "Refrigeración", unidad: "Bulto Comercial", descripcion: "Gas ecológico de nueva generación" },
+                { id: "carga_nitrogeno", nombre: "Nitrógeno Seco (Presurización / Servicio)", precio: 15000, tipo: "material", especialidad: "Refrigeración", unidad: "Unidad", descripcion: "Prueba de hermeticidad y presurización de circuito" },
+                { id: "caño_cobre_14", nombre: "Caño de Cobre 1/4\" (por metro)", precio: 6500, tipo: "material", especialidad: "Refrigeración", unidad: "Metro Lineal", descripcion: "Tubo de alta presión" },
+                { id: "caño_cobre_38", nombre: "Caño de Cobre 3/8\" (por metro)", precio: 8900, tipo: "material", especialidad: "Refrigeración", unidad: "Metro Lineal", descripcion: "Tubo de interconexión" },
+                { id: "caño_cobre_12", nombre: "Caño de Cobre 1/2\" (por metro)", precio: 11500, tipo: "material", especialidad: "Refrigeración", unidad: "Metro Lineal", descripcion: "Tubo de succión" },
+                { id: "caño_cobre_58", nombre: "Caño de Cobre 5/8\" (por metro)", precio: 15500, tipo: "material", especialidad: "Refrigeración", unidad: "Metro Lineal", descripcion: "Tubo de succión para 6000 kcal +" },
+                { id: "aislant_fita", nombre: "Aislante Térmico Aislaflex (x Metro)", precio: 1200, tipo: "material", especialidad: "Refrigeración", unidad: "Metro Lineal", descripcion: "Aislamiento de caucho elastomérico para cañería" },
+                { id: "cinta_empaque", nombre: "Cinta PVC Venceflex / Empaque", precio: 2800, tipo: "material", especialidad: "Refrigeración", unidad: "Unidad", descripcion: "Rollo de cinta para encintado de cañería sin adhesivo" },
+                { id: "cable_taller_5x15", nombre: "Cable Taller 5x1.5 mm² (por metro)", precio: 2400, tipo: "material", especialidad: "Refrigeración", unidad: "Metro Lineal", descripcion: "Cable de interconexión eléctrica para split" },
+                { id: "manguera_condensado", nombre: "Manguera Condensado Ø 5/8 (por metro)", precio: 950, tipo: "material", especialidad: "Refrigeración", unidad: "Metro Lineal", descripcion: "Manguera cristal/reforzada para drenaje de agua" },
+                { id: "cablecanal_2010", nombre: "Cablecanal Rígido 20x10 mm (por metro)", precio: 3200, tipo: "material", especialidad: "Refrigeración", unidad: "Metro Lineal", descripcion: "Canaleta plástica de prolijidad exterior" },
+                { id: "toma_exterior_20a", nombre: "Caja Exterior + Tomacorriente 20A", precio: 4500, tipo: "material", especialidad: "Refrigeración", unidad: "Unidad", descripcion: "Tomacorriente reforzado de superficie" },
+                { id: "toma_embutir", nombre: "Módulo Tomacorriente 20A Embutir", precio: 3800, tipo: "material", especialidad: "Refrigeración", unidad: "Unidad", descripcion: "Módulo reforzado para bastidor" },
+                { id: "soporte_split_40", nombre: "Juego Ménsulas 40cm (Hasta 3000 frig)", precio: 8500, tipo: "material", especialidad: "Refrigeración", unidad: "Unidad", descripcion: "Juego de soportes reforzados exterior 40cm" },
+                { id: "soporte_split_50", nombre: "Juego Ménsulas 50cm (Hasta 4500 frig)", precio: 10500, tipo: "material", especialidad: "Refrigeración", unidad: "Unidad", descripcion: "Juego de soportes reforzados exterior 50cm" },
+                { id: "soporte_split_60", nombre: "Juego Ménsulas 60cm (+6000 frig)", precio: 14000, tipo: "material", especialidad: "Refrigeración", unidad: "Unidad", descripcion: "Juego de soportes reinforced exterior 60cm" },
+                { id: "tacos_goma", nombre: "Tacos Antivibratorios Goma (Juego x 4)", precio: 3200, tipo: "material", especialidad: "Refrigeración", unidad: "Unidad", descripcion: "Juego de tacos de goma antivibración" },
+                { id: "tirafondos_10", nombre: "Tirafondos con Tarugos N°10 (Juego x 6)", precio: 2500, tipo: "material", especialidad: "Refrigeración", unidad: "Unidad", descripcion: "Fijaciones para ménsula exterior" },
+                { id: "capacitor_35uf", nombre: "Capacitor de Marcha 35 uF", precio: 70000, tipo: "material", especialidad: "Refrigeración", unidad: "Unidad", descripcion: "Repuesto/Cambio de capacitor de marcha" },
+                { id: "plaqueta_universal", nombre: "Plaqueta Electrónica Universal Split", precio: 110000, tipo: "material", especialidad: "Refrigeración", unidad: "Unidad", descripcion: "Plaqueta universal de repuesto" },
+                { id: "sensores_split", nombre: "Juego de Sensores de Temperatura/Pozo", precio: 90000, tipo: "material", especialidad: "Refrigeración", unidad: "Unidad", descripcion: "Reemplazo de sensores de ambiente y serpentina" },
+                { id: "orring_robinete", nombre: "Orring de Robinete / Óvulo de Carga", precio: 3500, tipo: "material", especialidad: "Refrigeración", unidad: "Unidad", descripcion: "Reparación y cambio de óvulos/orrings de válvulas" },
+                { id: "valvula_inversora", nombre: "Válvula Inversora / 4 Vías", precio: 220000, tipo: "material", especialidad: "Refrigeración", unidad: "Unidad", descripcion: "Repuesto de válvula inversora frío/calor" },
+
+                // --- ELECTRICIDAD ---
+                { id: "cable_15", nombre: "Cable Unipolar 1.5 mm² (Rollo 100m)", precio: 28000, tipo: "material", especialidad: "Electricidad", unidad: "Bulto Comercial", descripcion: "Cable para circuitos de iluminación" },
+                { id: "cable_25", nombre: "Cable Unipolar 2.5 mm² (Rollo 100m)", precio: 42000, tipo: "material", especialidad: "Electricidad", unidad: "Bulto Comercial", descripcion: "Cable para tomacorrientes de uso general" },
+                { id: "cable_40", nombre: "Cable Unipolar 4.0 mm² (Rollo 100m)", precio: 65000, tipo: "material", especialidad: "Electricidad", unidad: "Bulto Comercial", descripcion: "Cable para líneas de mayor consumo o aire acondicionado" },
+                { id: "termica_2x16", nombre: "Llave Térmica Bipolar 16A / 20A", precio: 7500, tipo: "material", especialidad: "Electricidad", unidad: "Unidad", descripcion: "Protección termomagnética DIN" },
+                { id: "disyuntor_2x25", nombre: "Disyuntor Diferencial 2x25A 30mA", precio: 22000, tipo: "material", especialidad: "Electricidad", unidad: "Unidad", descripcion: "Protección contra contactos directos" },
+                { id: "caja_octogonal", nombre: "Caja Octogonal Chapa / Plástico", precio: 650, tipo: "material", especialidad: "Electricidad", unidad: "Unidad", descripcion: "Caja de embutir para techo o pared" },
+                { id: "caja_mignon", nombre: "Caja Rectangular 5x10 (Mignon)", precio: 500, tipo: "material", especialidad: "Electricidad", unidad: "Unidad", descripcion: "Caja de embutir para llaves y tomas" },
+                { id: "cano_corrugado_34", nombre: "Caño Corrugado Blanco / Gris 3/4\" (Rollo 25m)", precio: 9500, tipo: "material", especialidad: "Electricidad", unidad: "Bulto Comercial", descripcion: "Canalización de embutir flexible" },
+
+                // --- MANO DE OBRA (ALBAÑILERÍA) ---
+                { id: "mo_muro_12", nombre: "Elevación de Muro Ladrillo Hueco (m²)", precio: 8500, tipo: "mano_obra", especialidad: "Albañilería", unidad: "M2", descripcion: "Levantado de mampostería sin revoque" },
+                { id: "mo_revoque_grueso", nombre: "Revoque Grueso / Proyectado (m²)", precio: 6000, tipo: "mano_obra", especialidad: "Albañilería", unidad: "M2", descripcion: "Capa base de emparejamiento sobre mampostería" },
+                { id: "mo_revoque_fino", nombre: "Revoque Fino / Enlucido (m²)", precio: 4500, tipo: "mano_obra", especialidad: "Albañilería", unidad: "M2", descripcion: "Terminación fina para pintar" },
+                { id: "mo_contrapiso", nombre: "Contrapiso H30 H=8cm (m²)", precio: 7500, tipo: "mano_obra", especialidad: "Albañilería", unidad: "M2", descripcion: "Base de hormigón pobre para piso o losa" },
+                { id: "mo_impermeab", nombre: "Aplicación de Membrana Líquida (m²)", precio: 3500, tipo: "mano_obra", especialidad: "Albañilería", unidad: "M2", descripcion: "Limpieza y 3 manos de impermeabilizante" },
+
+                // --- MANO DE OBRA (CONSTRUCCIÓN EN SECO) ---
+                { id: "mo_cielorraso_durlock", nombre: "Mano de Obra Cielorraso Junta Tomada (m²)", precio: 7000, tipo: "mano_obra", especialidad: "Construcción Seco", unidad: "M2", descripcion: "Estructura, emplacado y tomado de juntas" },
+                { id: "mo_tabique_durlock", nombre: "Mano de Obra Tabique Durlock Doble Cara (m²)", precio: 8500, tipo: "mano_obra", especialidad: "Construcción Seco", unidad: "M2", descripcion: "Armado de estructura y doble emplacado" },
+                { id: "mo_desmontable", nombre: "Mano de Obra Cielorraso Desmontable (m²)", precio: 6000, tipo: "mano_obra", especialidad: "Construcción Seco", unidad: "M2", descripcion: "Estructura vista y colocación de placas 60x60" },
+                { id: "mo_pvc", nombre: "Mano de Obra Cielorraso PVC (m²)", precio: 6500, tipo: "mano_obra", especialidad: "Construcción Seco", unidad: "M2", descripcion: "Estructura e instalación de tablillas PVC" },
+
+                // --- MANO DE OBRA (REFRIGERACIÓN Y CLIMATIZACIÓN) ---
+                { id: "mo_visita_tecnica", nombre: "Visita Técnica / Diagnóstico Refrigeración", precio: 20000, tipo: "mano_obra", especialidad: "Refrigeración", unidad: "Global", descripcion: "Revisión técnica en domicilio" },
+                { id: "mo_inst_split_3200", nombre: "Instalación Split hasta 3200 kcal", precio: 140000, tipo: "mano_obra", especialidad: "Refrigeración", unidad: "Global", descripcion: "Mano de obra de instalación básica sin materiales" },
+                { id: "mo_inst_split_4500", nombre: "Instalación Split hasta 4500 kcal", precio: 170000, tipo: "mano_obra", especialidad: "Refrigeración", unidad: "Global", descripcion: "Mano de obra de instalación equipo mediano" },
+                { id: "mo_inst_split_6000", nombre: "Instalación Split hasta 6000 kcal", precio: 210000, tipo: "mano_obra", especialidad: "Refrigeración", unidad: "Global", descripcion: "Mano de obra de instalación equipo grande" },
+                { id: "mo_inst_split_8000", nombre: "Instalación Split hasta 8000 kcal", precio: 240000, tipo: "mano_obra", especialidad: "Refrigeración", unidad: "Global", descripcion: "Mano de obra de instalación equipo alta capacidad" },
+                { id: "mo_inst_piso_techo_9000", nombre: "Instalación Piso Techo 9000 kcal", precio: 270000, tipo: "mano_obra", especialidad: "Refrigeración", unidad: "Global", descripcion: "Mano de obra para comercial/piso techo" },
+                { id: "mo_inst_piso_techo_15000", nombre: "Instalación Piso Techo 15000 kcal", precio: 350000, tipo: "mano_obra", especialidad: "Refrigeración", unidad: "Global", descripcion: "Mano de obra para comercial/piso techo" },
+                { id: "mo_inst_piso_techo_18000", nombre: "Instalación Piso Techo 18000 kcal", precio: 380000, tipo: "mano_obra", especialidad: "Refrigeración", unidad: "Global", descripcion: "Mano de obra para comercial/piso techo" },
+                { id: "mo_desinst_3200", nombre: "Desinstalación Split hasta 3200 kcal", precio: 70000, tipo: "mano_obra", especialidad: "Refrigeración", unidad: "Global", descripcion: "Retiro de equipo conservando carga de gas" },
+                { id: "mo_desinst_4500", nombre: "Desinstalación Split hasta 4500 kcal", precio: 80000, tipo: "mano_obra", especialidad: "Refrigeración", unidad: "Global", descripcion: "Retiro de equipo conservando carga de gas" },
+                { id: "mo_desinst_6000", nombre: "Desinstalación Split hasta 6000 kcal", precio: 90000, tipo: "mano_obra", especialidad: "Refrigeración", unidad: "Global", descripcion: "Retiro de equipo conservando carga de gas" },
+                { id: "mo_punto_caja", nombre: "Mano de Obra Acometida / Punto Eléctrico", precio: 8500, tipo: "mano_obra", especialidad: "Refrigeración", unidad: "Unidad", descripcion: "Instalación de tomacorriente o punto de alimentación" },
+                { id: "mo_cambio_compresor_4500", nombre: "Cambio de Compresor hasta 4500 kcal", precio: 200000, tipo: "mano_obra", especialidad: "Refrigeración", unidad: "Global", descripcion: "Mano de obra, soldadura, limpieza de sistema y vacío" },
+                { id: "mo_cambio_compresor_6000", nombre: "Cambio de Compresor hasta 6000 kcal", precio: 250000, tipo: "mano_obra", especialidad: "Refrigeración", unidad: "Global", descripcion: "Mano de obra, soldadura, limpieza de sistema y vacío" },
+                { id: "mo_perdida_tuercas", nombre: "Solución de Pérdidas Simples en Tuercas", precio: 100000, tipo: "mano_obra", especialidad: "Refrigeración", unidad: "Global", descripcion: "Rehacer pestañas, torque y ajuste" },
+                { id: "mo_deteccion_fuga_carga", nombre: "Detección de Fugas y Vacío (hasta 4500 kcal)", precio: 150000, tipo: "mano_obra", especialidad: "Refrigeración", unidad: "Global", descripcion: "Presurización con Nitrógeno, detección y proceso de vacío" },
+                { id: "mo_carga_gas_4500", nombre: "Carga de Gas Refrigerante hasta 4500 kcal", precio: 100000, tipo: "mano_obra", especialidad: "Refrigeración", unidad: "Global", descripcion: "Carga de gas refrigerante por balanza/presión" },
+                { id: "mo_limpieza_4500", nombre: "Limpieza Mantenimiento hasta 4500 kcal", precio: 150000, tipo: "mano_obra", especialidad: "Refrigeración", unidad: "Global", descripcion: "Mantenimiento integral/desarme e higienización" },
+                { id: "mo_limpieza_6000", nombre: "Limpieza Mantenimiento hasta 6000 kcal", precio: 170000, tipo: "mano_obra", especialidad: "Refrigeración", unidad: "Global", descripcion: "Mantenimiento integral/desarme e higienización" },
+                { id: "mo_limpieza_8000", nombre: "Limpieza Mantenimiento hasta 8000 kcal", precio: 200000, tipo: "mano_obra", especialidad: "Refrigeración", unidad: "Global", descripcion: "Mantenimiento integral/desarme e higienización" },
+                { id: "mo_limpieza_9000", nombre: "Limpieza Mantenimiento hasta 9000 kcal", precio: 220000, tipo: "mano_obra", especialidad: "Refrigeración", unidad: "Global", descripcion: "Mantenimiento integral/desarme e higienización" },
+                { id: "mo_limpieza_15000", nombre: "Limpieza Mantenimiento hasta 15000 kcal", precio: 250000, tipo: "mano_obra", especialidad: "Refrigeración", unidad: "Global", descripcion: "Mantenimiento integral/desarme e higienización" },
+                { id: "mo_limpieza_18000", nombre: "Limpieza Mantenimiento hasta 18000 kcal", precio: 300000, tipo: "mano_obra", especialidad: "Refrigeración", unidad: "Global", descripcion: "Mantenimiento integral/desarme e higienización" },
+                { id: "mo_limpieza_central", nombre: "Limpieza Mantenimiento Central", precio: 350000, tipo: "mano_obra", especialidad: "Refrigeración", unidad: "Global", descripcion: "Mantenimiento preventivo/correctivo equipo central" },
+
+                // --- MANO DE OBRA (ELECTRICIDAD) ---
+                { id: "mo_punto_caja", nombre: "Mano de Obra por Centro / Boca Eléctrica", precio: 8500, tipo: "mano_obra", especialidad: "Electricidad", unidad: "Unidad", descripcion: "Cañería, cableado y armado de caja/boca" },
+                { id: "mo_tablero_principal", nombre: "Armado y Cableado de Tablero Principal", precio: 35000, tipo: "mano_obra", especialidad: "Electricidad", unidad: "Global", descripcion: "Montaje de térmicas, disyuntor y peines de distribución" },
+                { id: "mo_colocacion_artefacto", nombre: "Colocación de Artefacto / Velador / Lámpara", precio: 4500, tipo: "mano_obra", especialidad: "Electricidad", unidad: "Unidad", descripcion: "Montaje y conexión de iluminación vista" }
+            ];
+
+            let nuevosCargados = 0;
+            for (const insumo of insumosBase) {
+                if (!idsExistentes.has(insumo.id)) {
+                    await save("catalogos", insumo);
+                    nuevosCargados++;
+                }
             }
-        } else {
-            this.guardarEnStorage();
+        } catch (error) {
+            console.error("Error sembrando insumos base:", error);
         }
     },
 
-    guardarEnStorage() {
-        localStorage.setItem("absalon_catalogo", JSON.stringify(this.items));
-    },
-
-    render() {
-        const main = document.getElementById("workspace");
-        if (!main) return;
-
-        main.innerHTML = `
-            <div class="workspace">
-                <div class="welcome-card" style="border-left: 5px solid #0284c7;">
-                    <h2>🏷️ Catálogo de Precios e Insumos</h2>
-                    <p>Administrá los costos base de materiales y mano de obra para todos los módulos de cómputo.</p>
+    renderEstructura() {
+        const workspace = document.getElementById("workspace");
+        workspace.innerHTML = `
+        <div class="catalogos-container" style="padding: 10px;">
+            <div class="card">
+                <h2>📚 Gestión de Catálogos</h2>
+                <p style="color: gray; font-size: 14px;">Administrá tus materiales, repuestos y tarifas de mano de obra por especialidad.</p>
+                <br>
+                
+                <div class="tabs-catalogo" style="display: flex; gap: 10px; margin-bottom: 20px;">
+                    <button id="tabMateriales" class="btn-tab activo" style="flex: 1; padding: 12px; font-weight: bold; cursor: pointer;">📦 Materiales y Repuestos</button>
+                    <button id="tabManoObra" class="btn-tab" style="flex: 1; padding: 12px; font-weight: bold; cursor: pointer;">🛠️ Tarifas Mano de Obra</button>
                 </div>
 
-                <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 20px; margin-top: 20px;">
-                    
-                    <!-- Formulario de Agregar / Editar Ítem -->
-                    <div class="dashboard-card" style="height: fit-content;">
-                        <h3 style="margin-bottom: 15px; color: #0284c7;">➕ Nuevo Insumo / Servicio</h3>
-                        <form id="form-catalogo" style="display: flex; flex-direction: column; gap: 12px;">
-                            <div>
-                                <label style="display:block; font-size:12px; font-weight:bold; margin-bottom:4px;">Concepto / Descripción:</label>
-                                <input type="text" id="cat-concepto" required style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;">
-                            </div>
-
-                            <div>
-                                <label style="display:block; font-size:12px; font-weight:bold; margin-bottom:4px;">Rubro / Categoría:</label>
-                                <select id="cat-rubro" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;">
-                                    <option value="Construcción en Seco">Construcción en Seco</option>
-                                    <option value="Refrigeración">Refrigeración</option>
-                                    <option value="Albañilería">Albañilería</option>
-                                    <option value="Electricidad">Electricidad</option>
-                                    <option value="General">General</option>
-                                </select>
-                            </div>
-
-                            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-                                <div>
-                                    <label style="display:block; font-size:12px; font-weight:bold; margin-bottom:4px;">Unidad:</label>
-                                    <input type="text" id="cat-unidad" placeholder="Perfil, Bolsa, Kg, ML..." required style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;">
-                                </div>
-                                <div>
-                                    <label style="display:block; font-size:12px; font-weight:bold; margin-bottom:4px;">Precio ($):</label>
-                                    <input type="number" id="cat-precio" min="0" step="10" required style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;">
-                                </div>
-                            </div>
-
-                            <button type="submit" style="background:#0284c7; color:white; border:none; padding:10px; border-radius:4px; cursor:pointer; font-weight:bold; margin-top:10px;">💾 Guardar en Catálogo</button>
-                        </form>
+                <!-- 🔍 BARRA DE BÚSQUEDA Y FILTRO POR ESPECIALIDAD -->
+                <div style="display: flex; gap: 15px; margin-bottom: 20px; align-items: center; justify-content: space-between; flex-wrap: wrap;">
+                    <div style="display: flex; gap: 10px; flex: 1; min-width: 280px;">
+                        <input type="text" id="inputBuscarCatalogo" placeholder="🔍 Buscar por nombre o descripción..." style="flex: 2; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px;">
+                        <select id="selectFiltroEspecialidad" style="flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; background: white;">
+                            <option value="TODAS">Todas las especialidades</option>
+                            <option value="Construcción Seco">Construcción Seco</option>
+                            <option value="Albañilería">Albañilería</option>
+                            <option value="Refrigeración">Refrigeración</option>
+                            <option value="Electricidad">Electricidad</option>
+                        </select>
                     </div>
 
-                    <!-- Tabla de Lista de Precios -->
-                    <div class="dashboard-card">
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px;">
-                            <h3 style="margin:0;">📋 Lista de Insumos Registrados</h3>
-                            <input type="text" id="cat-buscar" placeholder="🔍 Buscar..." style="padding:6px 12px; border:1px solid #ccc; border-radius:4px; font-size:13px;">
-                        </div>
+                    <button id="btnAgregarItem" style="padding: 10px 20px; font-weight: bold; background: #104E2E; color: white; border: none; border-radius: 4px; cursor: pointer; height: 42px;">+ Nuevo Artículo</button>
+                </div>
 
-                        <div style="overflow-x: auto;">
-                            <table style="width:100%; border-collapse: collapse; text-align: left;">
-                                <thead>
-                                    <tr style="border-bottom: 2px solid #e5e7eb; background:#f9fafb;">
-                                        <th style="padding:10px;">Rubro</th>
-                                        <th style="padding:10px;">Concepto</th>
-                                        <th style="padding:10px;">Unidad</th>
-                                        <th style="padding:10px; text-align:right;">Precio ($)</th>
-                                        <th style="padding:10px; text-align:center;">Acción</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="tabla-catalogo">
-                                    <!-- Carga dinámica -->
-                                </tbody>
-                            </table>
-                        </div>
+                <table id="tablaArticulos" style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background: #f4f4f4; text-align: left; border-bottom: 2px solid #ccc;">
+                            <th style="padding: 10px;">Nombre / Concepto</th>
+                            <th style="padding: 10px;">Especialidad</th>
+                            <th style="padding: 10px;">Unidad</th>
+                            <th style="padding: 10px;">Precio ($)</th>
+                            <th style="padding: 10px; text-align: center;">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="modalContainer" style="position: fixed; top:0; left:0; width:100vw; height:100vh; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 10000;">
+            <div class="card" style="width: 450px; background: white; padding: 25px; border-radius: 6px; box-shadow: 0px 4px 10px rgba(0,0,0,0.3);">
+                <h3 id="modalTitulo">Agregar Artículo</h3>
+                <br>
+                
+                <label><b>Nombre del Artículo / Tarea</b></label><br>
+                <input type="text" id="artNombre" style="width: 100%; padding: 8px; margin-top: 5px; margin-bottom: 15px;"><br>
+
+                <div style="display: flex; gap: 15px;">
+                    <div style="flex: 1;">
+                        <label><b>Tipo</b></label><br>
+                        <select id="artTipo" style="width: 100%; padding: 8px; margin-top: 5px; margin-bottom: 15px;">
+                            <option value="material">📦 Material</option>
+                            <option value="mano_obra">🛠️ Mano de Obra</option>
+                        </select>
                     </div>
+                    <div style="flex: 1;">
+                        <label><b>Unidad</b></label><br>
+                        <select id="artUnidad" style="width:100%; padding:8px; margin-top:5px; margin-bottom: 15px;">
+                            <option value="M2">M2 (Metro Cuadrado)</option>
+                            <option value="Perfil">Perfil</option>
+                            <option value="Placa">Placa</option>
+                            <option value="Bulto Comercial">Bulto Comercial</option>
+                            <option value="Unidad">Unidad</option>
+                            <option value="Metro Lineal">Metro Lineal</option>
+                            <option value="Global">Global</option>
+                        </select>
+                    </div>
+                </div>
 
+                <div style="display: flex; gap: 15px;">
+                    <div style="flex: 1;">
+                        <label><b>Especialidad</b></label><br>
+                        <select id="artEspecialidad" style="width: 100%; padding: 8px; margin-top: 5px; margin-bottom: 15px;">
+                            <option value="Construcción Seco">Construcción Seco</option>
+                            <option value="Albañilería">Albañilería</option>
+                            <option value="Refrigeración">Refrigeración</option>
+                            <option value="Electricidad">Electricidad</option>
+                        </select>
+                    </div>
+                    <div style="flex: 1;">
+                        <label><b>Precio de Venta ($)</b></label><br>
+                        <input type="number" id="artPrecio" step="0.01" style="width: 100%; padding: 8px; margin-top: 5px; margin-bottom: 15px;">
+                    </div>
+                </div>
+
+                <label><b>Descripción Breve / Notas</b></label><br>
+                <textarea id="artDescripcion" rows="2" style="width: 100%; padding: 8px; margin-top: 5px; margin-bottom: 20px;"></textarea><br>
+
+                <div style="text-align: right; display: flex; justify-content: flex-end; gap: 10px;">
+                    <button id="btnCancelarModal" style="padding: 8px 15px; background: #ccc; border: none; cursor: pointer; font-weight: bold; border-radius:4px;">Cancelar</button>
+                    <button id="btnGuardarArticulo" style="padding: 8px 15px; background: #104E2E; color: white; border: none; cursor: pointer; font-weight: bold; border-radius:4px;">💾 Guardar</button>
                 </div>
             </div>
+        </div>
         `;
-
-        this.renderTabla();
     },
 
-    renderTabla(filtro = "") {
-        const tbody = document.getElementById("tabla-catalogo");
+    async cargarArticulos() {
+        try {
+            const todos = await getAll("catalogos");
+            this.articulos = todos.filter(item => item.tipo === this.pestanaActual);
+            this.aplicarFiltros();
+        } catch (error) {
+            console.error("Error cargando artículos:", error);
+        }
+    },
+
+    // ⚡ APLICA EL BUSCADOR Y EL SELECTOR EN TIEMPO REAL
+    aplicarFiltros() {
+        const tbody = document.querySelector("#tablaArticulos tbody");
         if (!tbody) return;
 
-        const itemsFiltrados = this.items.filter(item => 
-            item.concepto.toLowerCase().includes(filtro.toLowerCase()) ||
-            item.rubro.toLowerCase().includes(filtro.toLowerCase())
-        );
+        const textoBusqueda = (document.getElementById("inputBuscarCatalogo")?.value || "").toLowerCase().trim();
+        const especialidadFiltro = document.getElementById("selectFiltroEspecialidad")?.value || "TODAS";
 
-        if (itemsFiltrados.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="5" style="padding:20px; text-align:center; color:#6b7280;">No se encontraron elementos.</td></tr>`;
+        const filtrados = this.articulos.filter(item => {
+            const coincideTexto = item.nombre.toLowerCase().includes(textoBusqueda) || 
+                                 (item.descripcion && item.descripcion.toLowerCase().includes(textoBusqueda));
+            
+            const coincideEspecialidad = especialidadFiltro === "TODAS" || item.especialidad === especialidadFiltro;
+
+            return coincideTexto && coincideEspecialidad;
+        });
+
+        if (filtrados.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="5" style="padding: 20px; text-align: center; color: gray;">No se encontraron artículos con esos filtros.</td></tr>`;
             return;
         }
 
-        let html = "";
-        itemsFiltrados.forEach(item => {
-            html += `
-                <tr style="border-bottom: 1px solid #e5e7eb;">
-                    <td style="padding:10px;"><span style="background:#f3f4f6; color:#374151; padding:2px 6px; border-radius:4px; font-size:11px; font-weight:bold;">${item.rubro}</span></td>
-                    <td style="padding:10px;"><b>${item.concepto}</b></td>
-                    <td style="padding:10px; color:#6b7280; font-size:13px;">${item.unidad}</td>
-                    <td style="padding:10px; text-align:right; font-weight:bold; color:#15803d;">$ ${Number(item.precio).toLocaleString("es-AR")}</td>
-                    <td style="padding:10px; text-align:center;">
-                        <button onclick="catalogo.eliminarItem('${item.id}')" style="background:#ef4444; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:12px;">🗑️</button>
-                    </td>
-                </tr>
+        tbody.innerHTML = "";
+        filtrados.forEach(item => {
+            const tr = document.createElement("tr");
+            tr.style.borderBottom = "1px solid #ddd";
+
+            tr.innerHTML = `
+                <td style="padding: 10px;"><b>${item.nombre}</b><br><small style="color:gray;">${item.descripcion || ''}</small></td>
+                <td style="padding: 10px;"><span style="background:#f0f0f0; padding:2px 6px; border-radius:4px; font-size:12px;">${item.especialidad}</span></td>
+                <td style="padding: 10px; text-transform: capitalize;">${item.unidad || 'unidad'}</td>
+                <td style="padding: 10px; font-weight: bold; color: #104E2E;">$ ${(item.precio || 0).toLocaleString("es-AR", { minimumFractionDigits: 2 })}</td>
+                <td style="padding: 10px; text-align: center;">
+                    <button class="btn-editar" style="background:#0284c7; color:white; border:none; padding:4px 8px; border-radius:3px; cursor:pointer; font-weight:bold;">✏️ Editar</button>
+                </td>
             `;
-        });
 
-        tbody.innerHTML = html;
-    },
-
-    vincularEventos() {
-        document.getElementById("form-catalogo")?.addEventListener("submit", (e) => {
-            e.preventDefault();
-            this.agregarItem();
-        });
-
-        document.getElementById("cat-buscar")?.addEventListener("input", (e) => {
-            this.renderTabla(e.target.value);
+            tr.querySelector(".btn-editar").onclick = () => this.abrirModalEdicion(item);
+            tbody.appendChild(tr);
         });
     },
 
-    agregarItem() {
-        const concepto = document.getElementById("cat-concepto").value.trim();
-        const rubro = document.getElementById("cat-rubro").value;
-        const unidad = document.getElementById("cat-unidad").value.trim();
-        const precio = parseFloat(document.getElementById("cat-precio").value) || 0;
+    registrarEventosMódulo() {
+        const tabMat = document.getElementById("tabMateriales");
+        const tabMO = document.getElementById("tabManoObra");
+        const modal = document.getElementById("modalContainer");
+        const inputBuscar = document.getElementById("inputBuscarCatalogo");
+        const selectEspecialidad = document.getElementById("selectFiltroEspecialidad");
 
-        if (!concepto || !unidad) return;
+        // Eventos para filtrar mientras se escribe o se cambia la opción
+        inputBuscar.oninput = () => this.aplicarFiltros();
+        selectEspecialidad.onchange = () => this.aplicarFiltros();
 
-        const nuevo = {
-            id: `cat-${Date.now()}`,
-            concepto,
-            rubro,
-            unidad,
-            precio
+        tabMat.onclick = async () => {
+            tabMat.classList.add("activo");
+            tabMO.classList.remove("activo");
+            this.pestanaActual = "material";
+            await this.cargarArticulos();
         };
 
-        this.items.push(nuevo);
-        this.guardarEnStorage();
-        this.renderTabla();
+        tabMO.onclick = async () => {
+            tabMO.classList.add("activo");
+            tabMat.classList.remove("activo");
+            this.pestanaActual = "mano_obra";
+            await this.cargarArticulos();
+        };
 
-        document.getElementById("form-catalogo").reset();
+        document.getElementById("btnAgregarItem").onclick = () => {
+            this.itemEditandoId = null;
+            this.itemPreCargado = null;
+            document.getElementById("modalTitulo").textContent = "Agregar Artículo";
+            document.getElementById("artNombre").value = "";
+            document.getElementById("artPrecio").value = "";
+            document.getElementById("artDescripcion").value = "";
+            document.getElementById("artTipo").value = this.pestanaActual;
+            modal.style.display = "flex";
+        };
+
+        document.getElementById("btnCancelarModal").onclick = () => {
+            modal.style.display = "none";
+        };
+
+        document.getElementById("btnGuardarArticulo").onclick = async () => {
+            const nombre = document.getElementById("artNombre").value.trim();
+            const precio = parseFloat(document.getElementById("artPrecio").value) || 0;
+            const tipo = document.getElementById("artTipo").value;
+            const especialidad = document.getElementById("artEspecialidad").value;
+            const descripcion = document.getElementById("artDescripcion").value.trim();
+            const unidad = document.getElementById("artUnidad").value;
+
+            if (!nombre || precio <= 0) {
+                alert("Por favor, completá el nombre y un precio válido mayor a 0.");
+                return;
+            }
+
+            const datosItem = {
+                id: this.itemEditandoId ? this.itemEditandoId : String(Date.now()),
+                nombre,
+                descripcion,
+                tipo,
+                especialidad,
+                unidad,
+                precio
+            };
+
+            try {
+                await save("catalogos", datosItem);
+                alert(this.itemEditandoId ? "✅ Ítem actualizado con éxito." : "✅ Ítem agregado al catálogo con éxito.");
+                modal.style.display = "none";
+                await this.cargarArticulos();
+            } catch (err) {
+                console.error(err);
+                alert("No se pudo guardar el artículo.");
+            }
+        };
     },
 
-    eliminarItem(id) {
-        if (!confirm("¿Seguro que querés eliminar este ítem del catálogo?")) return;
-        this.items = this.items.filter(item => item.id !== id);
-        this.guardarEnStorage();
-        this.renderTabla();
+    abrirModalEdicion(item) {
+        this.itemEditandoId = item.id;
+        this.itemPreCargado = item;
+        
+        document.getElementById("modalTitulo").textContent = "✏️ Editar Precio / Datos";
+        document.getElementById("artNombre").value = item.nombre;
+        document.getElementById("artPrecio").value = item.precio;
+        document.getElementById("artTipo").value = item.tipo;
+        document.getElementById("artEspecialidad").value = item.especialidad;
+        document.getElementById("artUnidad").value = item.unidad || "Unidad";
+        document.getElementById("artDescripcion").value = item.descripcion || "";
+        
+        document.getElementById("modalContainer").style.display = "flex";
     }
 };
 
-export default catalogo;
+export default catalogos;
