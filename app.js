@@ -152,8 +152,16 @@ const App = {
 
             case "garantias":
                 try {
-                    const { garantias } = await import("./modules/garantias.js");
-                    await garantias.iniciar();
+                    const moduloGarantias = await import("./modules/garantias.js");
+                    const gMod = moduloGarantias.default || moduloGarantias.garantias || moduloGarantias.vistaGarantias;
+                    
+                    if (gMod && typeof gMod.iniciar === "function") {
+                        await gMod.iniciar();
+                    } else if (gMod && typeof gMod.load === "function") {
+                        await gMod.load();
+                    } else {
+                        console.error("El módulo de garantías no expone una función 'iniciar' o 'load'.");
+                    }
                 } catch (err) {
                     console.error("Error al cargar garantías:", err);
                 }
