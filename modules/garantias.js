@@ -1,4 +1,4 @@
-export const exportarPresupuestoPDF = async (datos) => {
+export const exportarPresupuestoPDF = async (datos = {}) => {
     // 1. Carga de la librería jsPDF
     if (typeof window.jspdf === "undefined") {
         try {
@@ -45,6 +45,44 @@ export const exportarPresupuestoPDF = async (datos) => {
     const columnaTotalNeto = Number(datos.columnaTotalNeto || 0);
     const columnaTotalIva = aplicarIva ? Number(datos.columnaTotalIva || 0) : 0;
     const granTotalFinal = columnaTotalNeto + columnaTotalIva;
+
+    // Pie de página reutilizable
+    const dibujarPieDePagina = () => {
+        const yPie = 260; 
+
+        doc.setDrawColor(0, 0, 0);
+        doc.setLineWidth(0.25);
+        doc.line(15, yPie, 195, yPie);
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(9);
+        doc.text("CONDICIONES COMERCIALES:", 15, yPie + 5);
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(8.5);
+        doc.text("RECUERDE QUE LOS PRESUPUESTOS TIENEN UN PLAZO DE 15 DIAS Y PARA CONFIRMAR SE ABONA UNA SEÑA DEL 50%.", 15, yPie + 9);
+
+        doc.setLineWidth(0.5);
+        doc.line(15, yPie + 14, 195, yPie + 14);
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(10);
+        doc.text("GABRIEL ABSALON", 15, yPie + 20);
+        
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9);
+        doc.setTextColor(80, 80, 80);
+        doc.text("Servicios Técnicos Integrales", 15, yPie + 24);
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(9.5);
+        doc.setTextColor(0, 0, 0);
+        doc.text("CEL: 3624884054", 195, yPie + 20, { align: "right" });
+        
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9);
+        doc.text("Carlos Gardel 1420 - Resistencia Chaco", 195, yPie + 24, { align: "right" });
+    };
 
     // =========================================================================
     // PÁGINA 1: ENCABEZADO DE PRESUPUESTO / FACTURA / ORDEN DE TRABAJO
@@ -116,7 +154,7 @@ export const exportarPresupuestoPDF = async (datos) => {
     doc.text("TELÉFONO:", 15, 75);
 
     doc.setFont("helvetica", "normal");
-    doc.text(String(nombreCliente), 35, 63);
+    doc.text(String(nombreCliente), 38, 63);
     doc.text(String(dirCliente), 39, 69);
     doc.text(String(telCliente), 38, 75);
 
@@ -129,6 +167,7 @@ export const exportarPresupuestoPDF = async (datos) => {
 
     // TABLA DE ITEMS
     let y = 83;
+    const yInicioTabla = y;
 
     doc.setDrawColor(0, 0, 0);
     doc.setLineWidth(0.25);
@@ -151,17 +190,17 @@ export const exportarPresupuestoPDF = async (datos) => {
         doc.setFont("helvetica", "normal");
         doc.text(String(cant), 21, y + 5, { align: "center" });
         
-        const descTexto = String(descripcion).length > 48 
-            ? String(descripcion).substring(0, 45) + "..." 
+        const descTexto = String(descripcion).length > 44 
+            ? String(descripcion).substring(0, 41) + "..." 
             : String(descripcion);
             
         doc.text(descTexto, 32, y + 5);
-        doc.text(neto ? `$ ${formato(neto)}` : "", 125, y + 5, { align: "right" });
+        doc.text(neto ? `$ ${formato(neto)}` : "$ 0,00", 125, y + 5, { align: "right" });
         
         const textoIva = aplicarIva ? (iva ? `$ ${formato(iva)}` : "$ 0,00") : "$ 0,00";
         doc.text(textoIva, 158, y + 5, { align: "right" });
         
-        doc.text(total ? `$ ${formato(total)}` : "", 192, y + 5, { align: "right" });
+        doc.text(total ? `$ ${formato(total)}` : "$ 0,00", 192, y + 5, { align: "right" });
     };
 
     if (matNeto > 0) {
@@ -171,12 +210,12 @@ export const exportarPresupuestoPDF = async (datos) => {
     const moItems = datos.manoObraItems || [];
     if (moItems.length > 0) {
         moItems.forEach(item => {
-            const itemNeto = Number(item.total || 0);
+            const itemNeto = Number(item.total || item.precio || 0);
             const itemIva = aplicarIva ? (itemNeto * 0.21) : 0;
             const itemTotal = itemNeto + itemIva;
             
             const cantMostrar = `${item.cantidad || 1}`;
-            const descMostrar = `${item.concepto || item.descripcion}`;
+            const descMostrar = `${item.concepto || item.descripcion || "Servicio técnico"}`;
 
             agregarFilaTabla(cantMostrar, descMostrar, itemNeto, itemIva, itemTotal);
         });
@@ -194,9 +233,10 @@ export const exportarPresupuestoPDF = async (datos) => {
     doc.text(`$ ${formato(columnaTotalIva)}`, 158, y + 5, { align: "right" });
     doc.text(`$ ${formato(granTotalFinal)}`, 192, y + 5, { align: "right" });
 
+    // Líneas divisoras verticales
     const limitesColumnas = [30, 128, 161];
     limitesColumnas.forEach(colX => {
-        doc.line(colX, 83, colX, y + 7.5);
+        doc.line(colX, yInicioTabla, colX, y + 7.5);
     });
 
     // TIEMPO Y TOTAL A PAGAR
@@ -237,44 +277,6 @@ export const exportarPresupuestoPDF = async (datos) => {
     const lineasObs = doc.splitTextToSize(textoObs, 175);
     doc.text(lineasObs, 15, y + 4);
 
-    // Pie de página
-    const dibujarPieDePagina = () => {
-        const yPie = 260; 
-
-        doc.setDrawColor(0, 0, 0);
-        doc.setLineWidth(0.25);
-        doc.line(15, yPie, 195, yPie);
-
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(9);
-        doc.text("CONDICIONES COMERCIALES:", 15, yPie + 5);
-
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(8.5);
-        doc.text("RECUERDE QUE LOS PRESUPUESTOS TIENEN UN PLAZO DE 15 DIAS Y PARA CONFIRMAR SE ABONA UNA SEÑA DEL 50%.", 15, yPie + 9);
-
-        doc.setLineWidth(0.5);
-        doc.line(15, yPie + 14, 195, yPie + 14);
-
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(10);
-        doc.text("GABRIEL ABSALON", 15, yPie + 20);
-        
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(9);
-        doc.setTextColor(80, 80, 80);
-        doc.text("Servicios Técnicos Integrales", 15, yPie + 24);
-
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(9.5);
-        doc.setTextColor(0, 0, 0);
-        doc.text("CEL: 3624884054", 195, yPie + 20, { align: "right" });
-        
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(9);
-        doc.text("Carlos Gardel 1420 - Resistencia Chaco", 195, yPie + 24, { align: "right" });
-    };
-
     dibujarPieDePagina();
 
     // =========================================================================
@@ -314,7 +316,7 @@ export const exportarPresupuestoPDF = async (datos) => {
 
         let yGarantia = 65;
 
-        // Evaluación de textos de garantía (soporta tanto propiedades separadas como un texto de plantilla general)
+        // Evaluación de textos de garantía
         const textoGarantiaGeneral = datos.garantiaTexto || datos.garantiaCompleta || datos.garantia || "";
 
         const textoAplica = datos.garantiaAplica || (
@@ -344,7 +346,7 @@ export const exportarPresupuestoPDF = async (datos) => {
         const lineasAplica = doc.splitTextToSize(textoAplica, 172);
         doc.text(lineasAplica, 19, yGarantia);
 
-        // SECCIÓN 2: EXCLUSIONES (Ajustado dinámicamente según la altura de la sección anterior)
+        // SECCIÓN 2: EXCLUSIONES
         yGarantia += (lineasAplica.length * 4.5) + 10;
 
         doc.setFillColor(239, 239, 239);
@@ -363,7 +365,12 @@ export const exportarPresupuestoPDF = async (datos) => {
         dibujarPieDePagina();
     }
 
+    // Sanitización del nombre de archivo para evitar caracteres inválidos
     const prefijoArchivo = esFactura ? 'Factura' : (esFinalizado ? 'Orden_Trabajo' : 'Presupuesto');
-    const nombreFinalArchivo = `${prefijoArchivo}_${nroPresupuesto}_${nombreCliente.replace(/\s+/g, '_')}.pdf`;
+    const clienteLimpio = nombreCliente.replace(/[^a-zA-Z0-9_-]/g, '_');
+    const nroLimpio = String(nroPresupuesto).replace(/[^a-zA-Z0-9_-]/g, '_');
+    
+    const nombreFinalArchivo = `${prefijoArchivo}_${nroLimpio}_${clienteLimpio}.pdf`;
+    
     doc.save(nombreFinalArchivo);
 };
