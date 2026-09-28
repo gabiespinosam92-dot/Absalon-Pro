@@ -47,7 +47,7 @@ export const exportarPresupuestoPDF = async (datos) => {
     const granTotalFinal = columnaTotalNeto + columnaTotalIva;
 
     // =========================================================================
-    // PÁGINA 1: ENCABEZADO DE PRESUPUESTO / FACTURA
+    // PÁGINA 1: ENCABEZADO DE PRESUPUESTO / FACTURA / ORDEN DE TRABAJO
     // =========================================================================
     if (datos.logo) {
         try {
@@ -63,6 +63,19 @@ export const exportarPresupuestoPDF = async (datos) => {
     doc.text("Servicio Técnico Integral", 15, 47);
     doc.text("Resistencia - Chaco", 15, 51);
 
+    // Lógica dinámica de título y posiciones
+    let tituloDocumento = "PRESUPUESTO";
+    let yPosNumero = 32;
+    let yPosFecha = 40;
+
+    if (esFactura) {
+        tituloDocumento = "FACTURA";
+    } else if (esFinalizado) {
+        tituloDocumento = "ORDEN DE TRABAJO FINALIZADA";
+        yPosNumero = 34;
+        yPosFecha = 41;
+    }
+
     if (esFactura) {
         doc.setLineWidth(0.5);
         doc.setDrawColor(0, 0, 0);
@@ -73,23 +86,24 @@ export const exportarPresupuestoPDF = async (datos) => {
         doc.text("C", 103.2, 23);
 
         doc.setFontSize(22);
-        doc.text("FACTURA", 195, 25, { align: "right" });
+        doc.text(tituloDocumento, 195, 25, { align: "right" });
     } else {
         doc.setFont("helvetica", "bold");
-        doc.setFontSize(24);
+        // Tamaño adaptado por si el título es largo como "ORDEN DE TRABAJO FINALIZADA"
+        doc.setFontSize(esFinalizado ? 15 : 24);
         doc.setTextColor(0, 0, 0); 
-        doc.text("PRESUPUESTO", 195, 25, { align: "right" });
+        doc.text(tituloDocumento, 195, 25, { align: "right" });
     }
 
     doc.setFont("monospace", "bold");
     doc.setFontSize(14);
     doc.setTextColor(50, 50, 50);
-    doc.text(String(nroPresupuesto), 195, 32, { align: "right" });
+    doc.text(String(nroPresupuesto), 195, yPosNumero, { align: "right" });
 
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
     doc.setTextColor(0, 0, 0);
-    doc.text(`FECHA: ${fechaPresupuesto}`, 195, 40, { align: "right" });
+    doc.text(`FECHA: ${fechaPresupuesto}`, 195, yPosFecha, { align: "right" });
 
     doc.setDrawColor(210, 210, 210);
     doc.setLineWidth(0.3);
@@ -205,7 +219,6 @@ export const exportarPresupuestoPDF = async (datos) => {
     doc.text("ALIAS: GABI.ESPINOSAM (MERCADO PAGO)", 19, y + 11.5);
 
     // ==========================================
-    // MODIFICACIÓN PRINCIPAL EN EL PRESUPUESTO:
     // RECUADRO DE OBSERVACIONES Y CONDICIONES TÉCNICAS
     // ==========================================
     y += 20;
@@ -348,6 +361,7 @@ export const exportarPresupuestoPDF = async (datos) => {
         dibujarPieDePagina();
     }
 
-    const nombreFinalArchivo = `${esFactura ? 'Factura' : 'Presupuesto'}_${nroPresupuesto}_${nombreCliente.replace(/\s+/g, '_')}.pdf`;
+    const prefijoArchivo = esFactura ? 'Factura' : (esFinalizado ? 'Orden_Trabajo' : 'Presupuesto');
+    const nombreFinalArchivo = `${prefijoArchivo}_${nroPresupuesto}_${nombreCliente.replace(/\s+/g, '_')}.pdf`;
     doc.save(nombreFinalArchivo);
 };
