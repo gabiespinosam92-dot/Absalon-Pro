@@ -1,161 +1,187 @@
-// =========================================================================
-// MÓDULO DE GARANTÍAS - ABSALON PRO
-// =========================================================================
+import { getAll, save, remove } from "./storage.js";
 
-// 1. LÓGICA PRINCIPAL DEL MÓDULO
-export async function iniciar() {
-    const contenedor = document.getElementById('contenido-principal') 
-                     || document.getElementById('app') 
-                     || document.querySelector('main') 
-                     || document.body;
+export const garantias = {
+    datos: [],
 
-    if (!contenedor) {
-        console.error("No se encontró el contenedor principal en el DOM.");
-        return;
-    }
+    async iniciar() {
+        await this.cargarGarantias();
+        this.render();
+        this.eventos();
+    },
 
-    // Renderizado de la vista de Garantías
-    contenedor.innerHTML = `
-        <div style="padding: 24px; max-width: 1200px; margin: 0 auto; font-family: system-ui, -apple-system, sans-serif;">
-            <header style="margin-bottom: 24px;">
-                <h1 style="font-size: 1.8rem; font-weight: 700; color: #1a1a1a; margin: 0 0 8px 0;">
-                    Gestión de Garantías
-                </h1>
-                <p style="color: #6b7280; font-size: 0.95rem; margin: 0;">
-                    Consulta, reimpresión y estado de cobertura de certificados de garantía emitidos.
-                </p>
-            </header>
-
-            <!-- BÚSQUEDA Y FILTROS -->
-            <div style="background: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin-bottom: 24px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
-                <input 
-                    type="text" 
-                    id="input-busqueda-garantia" 
-                    placeholder="Buscar por N° de Orden (ej: T-0019) o Nombre del cliente..." 
-                    style="width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.95rem; outline: none; box-sizing: border-box;"
-                />
-            </div>
-
-            <!-- CONTENEDOR DE TARJETAS DE GARANTÍA -->
-            <div id="listado-garantias" style="display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));">
-                <!-- Se puebla dinámicamente -->
-            </div>
-        </div>
-    `;
-
-    // Cargar y mostrar datos
-    await renderizarGarantias();
-
-    // Filtro de búsqueda en tiempo real
-    const inputBusqueda = document.getElementById('input-busqueda-garantia');
-    if (inputBusqueda) {
-        inputBusqueda.addEventListener('input', (e) => {
-            renderizarGarantias(e.target.value.trim().toLowerCase());
-        });
-    }
-}
-
-// 2. RENDEREADOR DE REGISTROS Y BOTONES
-async function renderizarGarantias(filtro = '') {
-    const contenedorListado = document.getElementById('listado-garantias');
-    if (!contenedorListado) return;
-
-    let registros = [];
-    try {
-        const dataLocal = localStorage.getItem('absalon_presupuestos') 
-                       || localStorage.getItem('presupuestos')
-                       || localStorage.getItem('ordenes');
-        if (dataLocal) {
-            registros = JSON.parse(dataLocal);
+    async cargarGarantias() {
+        try {
+            this.datos = await getAll("garantias") || [];
+        } catch (error) {
+            console.error("Error al cargar las garantías:", error);
+            this.datos = [];
         }
-    } catch (e) {
-        console.error("Error al leer registros para garantías:", e);
-    }
+    },
 
-    // Filtrar solo las órdenes con prefijo 'T' o estado de finalización
-    let garantias = registros.filter(item => {
-        const num = String(item.numero || '').toUpperCase();
-        return num.startsWith('T') || item.estado === 'Finalizado' || item.esFinalizado;
-    });
+   render() {
+        // Cambiado a "workspace" para unificar con el enrutador de app.js
+        const main = document.getElementById("workspace");
+        if (!main) return;
 
-    if (filtro) {
-        garantias = garantias.filter(item => 
-            String(item.numero || '').toLowerCase().includes(filtro) ||
-            String(item.clienteNombre || '').toLowerCase().includes(filtro)
-        );
-    }
+        main.innerHTML = `
+            <div class="workspace">
+                <div class="welcome-card" style="border-left: 5px solid #104E2E;">
+                    <h2>🛡️ Plantillas de Garantía</h2>
+                    <p>Configurá y administrá los textos de tus garantías por rubro técnico.</p>
+                </div>
 
-    if (garantias.length === 0) {
-        contenedorListado.innerHTML = `
-            <div style="grid-column: 1 / -1; background: #f9fafb; border: 1px dashed #d1d5db; padding: 32px; border-radius: 8px; text-align: center; color: #6b7280;">
-                ${filtro ? 'No se encontraron garantías que coincidan con la búsqueda.' : 'No hay órdenes finalizadas con garantía registradas.'}
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-top: 20px;">
+                    
+                    <!-- Formulario de Alta -->
+                    <div class="dashboard-card" style="height: fit-content;">
+                        <h3 id="form-titulo" style="margin-bottom: 15px; color: #104E2E;">📜 Nueva Plantilla</h3>
+                        <form id="form-garantia" style="display: flex; flex-direction: column; gap: 12px;">
+                            <input type="hidden" id="garantia-id">
+                            
+                            <div>
+                                <label style="display:block; margin-bottom:5px; font-weight:bold;">Título:</label>
+                                <input type="text" id="garantia-titulo" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;" placeholder="Ej: Garantía de Compresor R600a" required>
+                            </div>
+
+                            <div>
+                                <label style="display:block; margin-bottom:5px; font-weight:bold;">Especialidad / Rubro:</label>
+                                <select id="garantia-especialidad" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;" required>
+                                    <option value="">Seleccioná un rubro...</option>
+                                    <option value="Refrigeración">Refrigeración</option>
+                                    <option value="Electricidad">Electricidad</option>
+                                    <option value="Construcción Seco">Construcción Seco</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label style="display:block; margin-bottom:5px; font-weight:bold;">Duración:</label>
+                                <input type="text" id="garantia-duracion" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;" placeholder="Ej: 6 meses / 1 año" required>
+                            </div>
+
+                            <div>
+                                <label style="display:block; margin-bottom:5px; font-weight:bold;">Texto Completo de la Garantía:</label>
+                                <textarea id="garantia-texto" rows="5" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; font-family:sans-serif;" placeholder="Detallá los términos de cobertura técnica..." required></textarea>
+                            </div>
+
+                            <div style="display:flex; gap:10px;">
+                                <button type="submit" class="menu-item" style="background:#104E2E; color:white; border:none; padding:10px; border-radius:4px; cursor:pointer; flex:1; justify-content:center;">Guardar Plantilla</button>
+                                <button type="button" id="btn-cancelar" style="background:#6b7280; color:white; border:none; padding:10px; border-radius:4px; cursor:pointer; display:none;">X</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Listado de Garantías -->
+                    <div class="dashboard-card">
+                        <h3 style="margin-bottom: 15px;">📋 Plantillas Guardadas</h3>
+                        <div style="overflow-x: auto;">
+                            <table style="width:100%; border-collapse: collapse; text-align: left;">
+                                <thead>
+                                    <tr style="border-bottom: 2px solid #e5e7eb; background:#f9fafb;">
+                                        <th style="padding:10px;">Título</th>
+                                        <th style="padding:10px;">Rubro</th>
+                                        <th style="padding:10px;">Tiempo</th>
+                                        <th style="padding:10px; text-align:right;">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="lista-garantias">
+                                    ${this.renderFilas()}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                </div>
             </div>
         `;
-        return;
-    }
+    },
 
-    contenedorListado.innerHTML = garantias.map(item => `
-        <div style="background: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; flex-direction: column; justify-content: space-between;">
-            <div>
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                    <span style="font-family: monospace; font-weight: bold; font-size: 1.05rem; color: #0f5132; background: #d1e7dd; padding: 3px 8px; border-radius: 4px;">
-                        ${item.numero || 'S/N'}
-                    </span>
-                    <span style="font-size: 0.85rem; color: #6c757d;">
-                        ${item.fecha || ''}
-                    </span>
-                </div>
-                <h3 style="font-size: 1.05rem; font-weight: 600; margin: 0 0 6px 0; color: #212529;">
-                    ${item.clienteNombre || 'Cliente sin nombre'}
-                </h3>
-                <p style="font-size: 0.875rem; color: #6c757d; margin: 0 0 16px 0;">
-                    ${item.clienteDireccion ? '📍 ' + item.clienteDireccion : 'Sin dirección especificada'}
-                </p>
-            </div>
+    renderFilas() {
+        if (this.datos.length === 0) {
+            return `<tr><td colspan="4" style="padding:20px; text-align:center; color:#6b7280;">No hay plantillas de garantía creadas.</td></tr>`;
+        }
 
-            <button 
-                data-id="${item.numero}"
-                class="btn-imprimir-garantia"
-                style="width: 100%; background: #0f5132; color: #ffffff; border: none; padding: 10px; border-radius: 6px; font-weight: 600; font-size: 0.875rem; cursor: pointer; transition: background 0.2s;"
-                onmouseover="this.style.background='#0a3622'" 
-                onmouseout="this.style.background='#0f5132'"
-            >
-                📄 Descargar Certificado de Garantía
-            </button>
-        </div>
-    `).join('');
+        return this.datos.map(g => {
+            let colorBadge = "#6b7280";
+            if (g.especialidad === "Refrigeración") colorBadge = "#0284c7";
+            if (g.especialidad === "Electricidad") colorBadge = "#d97706";
+            if (g.especialidad === "Construcción Seco") colorBadge = "#16a34a";
 
-    // Asignación de eventos de impresión de forma segura sin importar módulos externos
-    document.querySelectorAll('.btn-imprimir-garantia').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const num = e.currentTarget.getAttribute('data-id');
-            const orden = garantias.find(g => String(g.numero) === String(num));
+            return `
+                <tr style="border-bottom: 1px solid #e5e7eb;">
+                    <td style="padding:10px;"><b>${g.titulo}</b></td>
+                    <td style="padding:10px;"><span style="background:${colorBadge}; color:white; padding:2px 6px; border-radius:4px; font-size:11px;">${g.especialidad}</span></td>
+                    <td style="padding:10px;">${g.duracion}</td>
+                    <td style="padding:10px; text-align:right;">
+                        <button class="btn-editar" data-id="${g.id}" style="border:none; background:none; cursor:pointer; margin-right:5px;">✏️</button>
+                        <button class="btn-eliminar" data-id="${g.id}" style="border:none; background:none; cursor:pointer;">🗑️</button>
+                    </td>
+                </tr>
+            `;
+        }).join("");
+    },
+    eventos() {
+        const form = document.getElementById("form-garantia");
+        if (!form) return;
+
+        form.onsubmit = async (e) => {
+            e.preventDefault();
             
-            if (orden) {
-                if (typeof window.exportarPresupuestoPDF === 'function') {
-                    window.exportarPresupuestoPDF(orden);
-                } else {
-                    alert("El generador de PDF no está cargado globalmente.");
+            const idInput = document.getElementById("garantia-id").value;
+            const titulo = document.getElementById("garantia-titulo").value.trim();
+            const especialidad = document.getElementById("garantia-especialidad").value;
+            const duracion = document.getElementById("garantia-duracion").value.trim();
+            const textoGarantia = document.getElementById("garantia-texto").value.trim();
+
+            const nuevaGarantia = { titulo, especialidad, duracion, textoGarantia };
+            
+            // Si estamos editando, le pasamos el ID numérico real de IndexedDB
+            if (idInput) {
+                nuevaGarantia.id = Number(idInput);
+            }
+
+            await save("garantias", nuevaGarantia);
+            await this.cargarGarantias();
+            this.render();
+            this.eventos();
+        };
+
+        document.getElementById("lista-garantias").onclick = async (e) => {
+            const btnEditar = e.target.closest(".btn-editar");
+            const btnEliminar = e.target.closest(".btn-eliminar");
+
+            if (btnEditar) {
+                const id = btnEditar.dataset.id;
+                // Buscamos comparando tanto string como número por seguridad
+                const g = this.datos.find(item => item.id == id);
+                if (g) {
+                    document.getElementById("garantia-id").value = g.id;
+                    document.getElementById("garantia-titulo").value = g.titulo;
+                    document.getElementById("garantia-especialidad").value = g.especialidad;
+                    document.getElementById("garantia-duracion").value = g.duracion;
+                    document.getElementById("garantia-texto").value = g.textoGarantia;
+                    document.getElementById("form-titulo").innerText = "✏️ Editar Plantilla";
+                    document.getElementById("btn-cancelar").style.display = "block";
                 }
             }
-        });
-    });
-}
 
-// =========================================================================
-// COMPATIBILIDAD CON EL ENRUTADOR DE APP.JS
-// =========================================================================
+            if (btnEliminar) {
+                if (confirm("¿Borrar esta plantilla de garantía?")) {
+                    const idABorrar = Number(btnEliminar.dataset.id);
+                    await remove("garantias", idABorrar);
+                    await this.cargarGarantias();
+                    this.render();
+                    this.eventos();
+                }
+            }
+        };
 
-export const load = iniciar;
-export const init = iniciar;
-
-export default {
-    iniciar,
-    load,
-    init
+        document.getElementById("btn-cancelar").onclick = () => {
+            form.reset();
+            document.getElementById("garantia-id").value = "";
+            document.getElementById("form-titulo").innerText = "📜 Nueva Plantilla";
+            document.getElementById("btn-cancelar").style.display = "none";
+        };
+    }
 };
 
-if (typeof window !== 'undefined') {
-    window.garantiasModule = { iniciar, load, init };
-    window.iniciarGarantias = iniciar;
-}
+export default garantias;
