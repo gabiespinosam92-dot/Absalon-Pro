@@ -37,8 +37,6 @@ export const exportarPresupuestoPDF = async (datos) => {
     // Identificación del prefijo de estado
     const prefijo = String(nroPresupuesto).toUpperCase().charAt(0);
     const esFinalizado = prefijo === "T";
-    const esEnviado = prefijo === "E";
-    const esBorrador = prefijo === "B";
     const esFactura = datos.esFactura || false; // Switch para emitir Factura C
 
     // =========================================================================
@@ -91,7 +89,7 @@ export const exportarPresupuestoPDF = async (datos) => {
         doc.text("PRESUPUESTO", 195, 25, { align: "right" });
     }
 
-    doc.setFont("monospace", "bold");
+    doc.setFont("helvetica", "bold");
     doc.setFontSize(14);
     doc.setTextColor(50, 50, 50);
     doc.text(String(nroPresupuesto), 195, 32, { align: "right" });
@@ -207,57 +205,7 @@ export const exportarPresupuestoPDF = async (datos) => {
     y += 12;
     doc.setFont("helvetica", "bold");
     doc.setFontSize(10);
-    // --- CUERPO DE GARANTÍA ---
-        let yGarantia = 65;
-
-        // SECCIÓN 1: CUANDO APLICA
-        doc.setFillColor(239, 239, 239);
-        doc.rect(15, yGarantia, 180, 7.5, "FD");
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(10);
-        doc.setTextColor(0, 0, 0);
-        doc.text("1. ALCANCE Y CONDICIONES DE APLICACIÓN DE LA GARANTÍA", 19, yGarantia + 5);
-
-        yGarantia += 12;
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(9);
-
-        const textoAplica = datos.garantiaAplica || 
-            "La presente garantía cubre fallas de ejecución, defectos de ensamblado o vicios ocultos derivados exclusivamente de la mano de obra aplicada en los trabajos detallados en el comprobante principal. Esta cobertura posee una validez de 12 meses a partir de la fecha de entrega y conformidad de la obra.";
-
-        const lineasAplica = doc.splitTextToSize(textoAplica, 172);
-        doc.text(lineasAplica, 19, yGarantia);
-
-        // SECCIÓN 2: EXCLUSIONES (CORREGIDO: usa lineasAplica en vez de lineasObs)
-        yGarantia += (lineasAplica.length * 5) + 12;
-
-        doc.setFillColor(239, 239, 239);
-        doc.rect(15, yGarantia, 180, 7.5, "FD");
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(10);
-        doc.text("2. EXCLUSIONES Y PÉRDIDA DE COBERTURA", 19, yGarantia + 5);
-
-        yGarantia += 12;
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(9);
-
-        const textoExclusiones = datos.garantiaExclusiones || 
-            "Quedan expresamente excluidas de la garantía las siguientes situaciones:\n" +
-            "• Intervención o modificación de las instalaciones por parte de terceros no autorizados.\n" +
-            "• Daños provocados por mal uso, sobrecargas eléctricas, humedad ajena a la estructura o factores climáticos extremos.\n" +
-            "• Desgaste natural de insumos y materiales provistos directamente por el cliente.";
-
-        const lineasExclusiones = doc.splitTextToSize(textoExclusiones, 172);
-        doc.text(lineasExclusiones, 19, yGarantia);
-
-        // Dibujar el pie de página exacto en la página 2
-        dibujarPieDePagina();
-    }
-
-    // Descarga directa del archivo PDF
-    const nombreFinalArchivo = `${esFactura ? 'Factura' : 'Presupuesto'}_${nroPresupuesto}_${nombreCliente.replace(/\s+/g, '_')}.pdf`;
-    doc.save(nombreFinalArchivo);
-};
+    
     const tCant = datos.tiempoCant || "1";
     const tTexto = datos.tiempoUnidadTexto || "uno";
     const tPlural = datos.tiempoUnidadPlural || "DIA";
@@ -317,7 +265,7 @@ export const exportarPresupuestoPDF = async (datos) => {
     if (esFinalizado || esFactura) {
         doc.addPage(); // Salto de página formal
 
-        // --- Encabezado idéntico a la Lista de Compras ---
+        // --- Encabezado idéntico ---
         if (datos.logo) {
             try {
                 doc.addImage(datos.logo, "PNG", 15, 15, 46, 29);
@@ -390,7 +338,7 @@ export const exportarPresupuestoPDF = async (datos) => {
         const lineasExclusiones = doc.splitTextToSize(textoExclusiones, 172);
         doc.text(lineasExclusiones, 19, yGarantia);
 
-        // Dibujar el pie de página exacto en la página 2
+        // Pie de página exacto para la página 2
         dibujarPieDePagina();
     }
 
