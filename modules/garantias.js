@@ -2,20 +2,6 @@
 // MÓDULO DE GARANTÍAS - ABSALON PRO
 // =========================================================================
 
-// Función auxiliar para exportar PDF (por si el import modular falla)
-async function obtenerGeneradorPDF() {
-    if (typeof window.exportarPresupuestoPDF === 'function') {
-        return window.exportarPresupuestoPDF;
-    }
-    try {
-        const modulo = await import('./presupuestoPdf.js');
-        return modulo.exportarPresupuestoPDF || modulo.default;
-    } catch (e) {
-        console.warn("No se pudo cargar dinámicamente presupuestoPdf.js", e);
-        return null;
-    }
-}
-
 // 1. LÓGICA PRINCIPAL DEL MÓDULO
 export async function iniciar() {
     const contenedor = document.getElementById('contenido-principal') 
@@ -139,37 +125,36 @@ async function renderizarGarantias(filtro = '') {
         </div>
     `).join('');
 
-    // Asignación de eventos de impresión
-    const funcionExportar = await obtenerGeneradorPDF();
+    // Asignación de eventos de impresión de forma segura sin importar módulos externos
     document.querySelectorAll('.btn-imprimir-garantia').forEach(btn => {
         btn.addEventListener('click', (e) => {
             const num = e.currentTarget.getAttribute('data-id');
             const orden = garantias.find(g => String(g.numero) === String(num));
-            if (orden && funcionExportar) {
-                funcionExportar(orden);
-            } else if (!funcionExportar) {
-                alert("No se pudo cargar el motor PDF. Verifique que 'presupuestoPdf.js' esté disponible.");
+            
+            if (orden) {
+                if (typeof window.exportarPresupuestoPDF === 'function') {
+                    window.exportarPresupuestoPDF(orden);
+                } else {
+                    alert("El generador de PDF no está cargado globalmente.");
+                }
             }
         });
     });
 }
 
 // =========================================================================
-// COMPATIBILIDAD UNIVERSAL CON EL ENRUTADOR DE APP.JS
+// COMPATIBILIDAD CON EL ENRUTADOR DE APP.JS
 // =========================================================================
 
-// Exportaciones nombradas
 export const load = iniciar;
 export const init = iniciar;
 
-// Exportación por defecto
 export default {
     iniciar,
     load,
     init
 };
 
-// Exposición en la ventana global (soporta scripts tradicionales no-modulares)
 if (typeof window !== 'undefined') {
     window.garantiasModule = { iniciar, load, init };
     window.iniciarGarantias = iniciar;
