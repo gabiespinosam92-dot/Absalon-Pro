@@ -229,12 +229,6 @@ export const exportarPresupuestoPDF = async (datos) => {
     y += 3;
     doc.setFont("helvetica", "normal");
     doc.setFontSize(8.5);
-
-    const textoObs = datos.observaciones || 
-        "• Validez de esta cotización: 15 días corridos a partir de la fecha de emisión.\n" +
-        "• Para el inicio de los trabajos se requiere la entrega de una seña equivalente al 50% del total.\n" +
-        "• La provisión de insumos y materiales quedan sujetos a disponibilidad de acopio en corralón/proveedor.";
-
     const lineasObs = doc.splitTextToSize(textoObs, 175);
     doc.text(lineasObs, 15, y + 4);
 
