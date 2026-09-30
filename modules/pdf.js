@@ -36,7 +36,7 @@ export const exportarPresupuestoPDF = async (datos) => {
 
     // Identificación del prefijo de estado
     const prefijo = String(nroPresupuesto).toUpperCase().charAt(0);
-    const esFinalizado = prefijo === "T";
+    const esFinalizado = prefijo === "T" || datos.estado === "Finalizado";
     const esEnviado = prefijo === "E";
     const esBorrador = prefijo === "B";
     const esFactura = datos.esFactura || false; // Switch para emitir Factura C
@@ -71,9 +71,8 @@ export const exportarPresupuestoPDF = async (datos) => {
     doc.text("Servicio Técnico Integral", 15, 47);
     doc.text("Resistencia - Chaco", 15, 51);
 
-    // Título dinámico (FACTURA C o PRESUPUESTO)
+    // Título dinámico (FACTURA C, ORDEN DE TRABAJO FINALIZADA o PRESUPUESTO)
     if (esFactura) {
-        // Cuadro Recuadro "C" Fiscal
         doc.setLineWidth(0.5);
         doc.setDrawColor(0, 0, 0);
         doc.rect(100, 15, 10, 12);
@@ -84,6 +83,11 @@ export const exportarPresupuestoPDF = async (datos) => {
 
         doc.setFontSize(22);
         doc.text("FACTURA", 195, 25, { align: "right" });
+    } else if (esFinalizado) {
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(16);
+        doc.setTextColor(0, 0, 0); 
+        doc.text("ORDEN DE TRABAJO FINALIZADA", 195, 25, { align: "right" });
     } else {
         doc.setFont("helvetica", "bold");
         doc.setFontSize(24);
@@ -268,7 +272,6 @@ export const exportarPresupuestoPDF = async (datos) => {
     if (esFinalizado || esFactura) {
         doc.addPage(); // Salto de página formal
 
-        // --- Encabezado idéntico ---
         if (datos.logo) {
             try {
                 doc.addImage(datos.logo, "PNG", 15, 15, 46, 29);
@@ -301,7 +304,7 @@ export const exportarPresupuestoPDF = async (datos) => {
         // --- CUERPO DE GARANTÍA ---
         let yGarantia = 65;
 
-        // SECCIÓN 1: CUANDO APLICA
+        // SECCIÓN 1: ALCANCE
         doc.setFillColor(239, 239, 239);
         doc.rect(15, yGarantia, 180, 7.5, "FD");
         doc.setFont("helvetica", "bold");
@@ -314,13 +317,14 @@ export const exportarPresupuestoPDF = async (datos) => {
         doc.setFontSize(9);
 
         const textoAplica = datos.garantiaAplica || 
-            "La presente garantía cubre fallas de ejecución, defectos de ensamblado o vicios ocultos derivados exclusivamente de la mano de obra aplicada en los trabajos detallados en el comprobante principal. Esta cobertura posee una validez de 12 meses a partir de la fecha de entrega y conformidad de la obra.";
+            "Garantía del Servicio Técnico de Refrigeración:\n" +
+            "La presente garantía cubre exclusivamente los trabajos de reparación, mantenimiento o instalación ejecutados sobre el equipo por un período de 6 (seis) meses a partir de la fecha de entrega/finalización del servicio.";
 
         const lineasAplica = doc.splitTextToSize(textoAplica, 172);
         doc.text(lineasAplica, 19, yGarantia);
 
-        // SECCIÓN 2: EXCLUSIONES
-        yGarantia += (lineasAplica.length * 5) + 12;
+        // SECCIÓN 2: EXCLUSIONES / CONDICIONES DE ANULACIÓN
+        yGarantia += (lineasAplica.length * 5) + 8;
 
         doc.setFillColor(239, 239, 239);
         doc.rect(15, yGarantia, 180, 7.5, "FD");
@@ -333,19 +337,16 @@ export const exportarPresupuestoPDF = async (datos) => {
         doc.setFontSize(9);
 
         const textoExclusiones = datos.garantiaExclusiones || 
-            "Quedan expresamente excluidas de la garantía las siguientes situaciones:\n" +
-            "• Intervención o modificación de las instalaciones por parte de terceros no autorizados.\n" +
-            "• Daños provocados por mal uso, sobrecargas eléctricas, humedad ajena a la estructura o factores climáticos extremos.\n" +
-            "• Desgaste natural de insumos y materiales provistos directamente por el cliente.";
+            "Condiciones de Anulación:\n" +
+            "La garantía perderá validez de forma inmediata e irrevocable si el equipo es intervenido, desarmado, reparado o modificado por personal técnico ajeno a nuestra empresa o por el propio usuario durante el período de vigencia. Asimismo, quedan excluidas las fallas ocasionadas por fluctuaciones extremas de tensión eléctrica, mal uso o causas ajenas al trabajo realizado.";
 
         const lineasExclusiones = doc.splitTextToSize(textoExclusiones, 172);
         doc.text(lineasExclusiones, 19, yGarantia);
 
-        // Dibujar el pie de página exacto en la página 2
         dibujarPieDePagina();
     }
 
-    // Descarga directa del archivo PDF
-    const nombreFinalArchivo = `${esFactura ? 'Factura' : 'Presupuesto'}_${nroPresupuesto}_${nombreCliente.replace(/\s+/g, '_')}.pdf`;
+    const tipoDocNombre = esFactura ? 'Factura' : (esFinalizado ? 'OrdenTrabajo' : 'Presupuesto');
+    const nombreFinalArchivo = `${tipoDocNombre}_${nroPresupuesto}_${nombreCliente.replace(/\s+/g, '_')}.pdf`;
     doc.save(nombreFinalArchivo);
 };
