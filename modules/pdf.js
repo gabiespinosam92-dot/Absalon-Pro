@@ -10,7 +10,7 @@ export const exportarPresupuestoPDF = async (datos) => {
     }
 
     const { jsPDF } = window.jspdf;
-
+    
     // Creación del lienzo A4 en milímetros
     const doc = new jsPDF({
         orientation: "portrait",
@@ -25,232 +25,413 @@ export const exportarPresupuestoPDF = async (datos) => {
             maximumFractionDigits: 2
         });
 
-    // Detectamos si es una emisión explícita de Garantía
-    const esGarantia = Boolean(datos.forzarGarantia);
+    // Mapeo de datos recibidos
+    const nroPresupuesto = datos.numero || "S/N";
+    const fechaPresupuesto = datos.fecha || "";
+    const nombreCliente = datos.clienteNombre || "";
+    const dirCliente = datos.clienteDireccion || "";
+    const telCliente = datos.clienteTelefono || "";
+    const docTipo = datos.clienteTipoDoc || "CUIL/CUIT";
+    const docNum = datos.clienteNumDoc || "";
+
+    // Identificación de tipo de documento
+    const prefijo = String(nroPresupuesto).toUpperCase().charAt(0);
+    const esFinalizado = prefijo === "T" || datos.esGarantiaDirecta;
+    const esFactura = datos.esFactura || false;
+    const esSoloGarantia = datos.esGarantiaDirecta || false; // Si se llama expresamente desde Garantías
 
     // ==========================================
-    // 1. ENCABEZADO E IDENTIDAD VISUAL (MEMBRETE)
+    // FUNCIÓN DE PIE DE PÁGINA REUTILIZABLE
     // ==========================================
-    
-    // Isologotipo / Marca institucional
-    doc.setFillColor(16, 78, 46); // Verde Institucional #104E2E
-    
-    // Si tenés el logo cargado en Base64 o preferís renderizar el isotipo vectorizado
-    if (datos.logoBase64) {
-        try {
-            doc.addImage(datos.logoBase64, 'PNG', 14, 10, 50, 22);
-        } catch (e) {
-            dibujarIsotipoVectorial(doc, 14, 10);
-        }
-    } else {
-        dibujarIsotipoVectorial(doc, 14, 10);
-    }
+    const dibujarPieDePagina = () => {
+        const yPie = 260; 
 
-    // Texto de la Empresa
-    doc.setTextColor(0, 0, 0);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(18);
-    doc.text("GABRIEL ABSALON", 50, 18);
-
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(100, 100, 100);
-    doc.text("Servicio Técnico Integral", 50, 24);
-    doc.text("Resistencia - Chaco", 50, 29);
-
-    // Línea divisora verde bajo membrete
-    doc.setDrawColor(16, 78, 46);
-    doc.setLineWidth(1);
-    doc.line(14, 33, 196, 33);
-
-    // ==========================================
-    // 2. BLOQUE DE CLIENTE Y DOCUMENTO
-    // ==========================================
-    let yPos = 40;
-
-    // Caja de datos del Cliente y Documento
-    doc.setFillColor(245, 247, 245);
-    doc.rect(14, yPos, 182, 28, "F");
-    doc.setDrawColor(220, 220, 220);
-    doc.setLineWidth(0.2);
-    doc.rect(14, yPos, 182, 28, "S");
-
-    // Nombre del Cliente obligatorio
-    const clienteNombre = datos.clienteNombre || datos.cliente || "Cliente No Especificado";
-
-    doc.setFontSize(9);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(16, 78, 46);
-    doc.text("CLIENTE:", 18, yPos + 7);
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(0, 0, 0);
-    doc.setFontSize(10);
-    doc.text(clienteNombre.toUpperCase(), 38, yPos + 7);
-
-    doc.setFontSize(9);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(16, 78, 46);
-    doc.text("DIRECCIÓN:", 18, yPos + 14);
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(0, 0, 0);
-    doc.text(datos.clienteDireccion || datos.direccion || "-", 38, yPos + 14);
-
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(16, 78, 46);
-    doc.text("TELÉFONO:", 18, yPos + 21);
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(0, 0, 0);
-    doc.text(datos.clienteTelefono || datos.telefono || "-", 38, yPos + 21);
-
-    // Datos del comprobante a la derecha
-    const numComprobante = datos.numero || `OT-${Date.now().toString().slice(-6)}`;
-    const fechaEmision = datos.fecha || new Date().toLocaleDateString("es-AR");
-
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(11);
-    doc.setTextColor(16, 78, 46);
-    doc.text(esGarantia ? "CERTIFICADO DE GARANTÍA" : "PRESUPUESTO", 192, yPos + 8, { align: "right" });
-    
-    doc.setFontSize(10);
-    doc.setTextColor(0, 0, 0);
-    doc.text(`N° ${numComprobante}`, 192, yPos + 14, { align: "right" });
-    
-    doc.setFontSize(8);
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(100, 100, 100);
-    doc.text(`FECHA: ${fechaEmision}`, 192, yPos + 20, { align: "right" });
-
-    yPos += 35;
-
-    // ==========================================
-    // 3. CONTENIDO: GARANTÍA O PRESUPUESTO
-    // ==========================================
-    if (esGarantia) {
-        // RENDERIZADO EXCLUSIVO DE CERTIFICADO DE GARANTÍA
-        doc.setFillColor(16, 78, 46);
-        doc.rect(14, yPos, 182, 8, "F");
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(10);
-        doc.setTextColor(255, 255, 255);
-        doc.text("TERMINOS Y COBERTURA TÉCNICA DE LA GARANTÍA", 18, yPos + 5.5);
-
-        yPos += 14;
-
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(9.5);
-        doc.setTextColor(40, 40, 40);
-
-        const textoGarantia = datos.garantiaAplica || datos.textoGarantia || 
-            `La presente garantía cubre la mano de obra aplicada y/o instalación realizada para el cliente ${clienteNombre}, bajo las condiciones y especificaciones de las normas técnicas vigentes. Validez de cobertura según la hoja de trabajo.`;
-
-        const lineasTexto = doc.splitTextToSize(textoGarantia, 178);
-        doc.text(lineasTexto, 16, yPos);
-        yPos += (lineasTexto.length * 5) + 10;
-
-        // Cuadro de exclusiones
-        doc.setFillColor(250, 250, 250);
-        doc.setDrawColor(200, 200, 200);
-        doc.rect(14, yPos, 182, 35, "FD");
+        doc.setDrawColor(0, 0, 0);
+        doc.setLineWidth(0.25);
+        doc.line(15, yPie, 195, yPie);
 
         doc.setFont("helvetica", "bold");
         doc.setFontSize(9);
-        doc.setTextColor(180, 40, 40);
-        doc.text("EXCLUSIONES Y PÉRDIDA DE COBERTURA:", 18, yPos + 7);
+        doc.text("CONDICIONES COMERCIALES Y COBERTURA:", 15, yPie + 5);
 
         doc.setFont("helvetica", "normal");
         doc.setFontSize(8.5);
-        doc.setTextColor(60, 60, 60);
-        doc.text("• Intervención o modificación de las instalaciones por parte de terceros no autorizados.", 18, yPos + 14);
-        doc.text("• Daños provocados por mal uso, sobrecargas eléctricas o factores climáticos extremos.", 18, yPos + 20);
-        doc.text("• Desgaste natural de insumos o materiales provistos directamente por el cliente.", 18, yPos + 26);
+        doc.text("RECUERDE QUE LOS PRESUPUESTOS TIENEN UN PLAZO DE 15 DIAS Y PARA CONFIRMAR SE ABONA UNA SEÑA DEL 50%.", 15, yPie + 9);
 
-        yPos += 45;
-
-    } else {
-        // RENDERIZADO DE TABLA DE PRESUPUESTO CONVENCIONAL
-        doc.setFillColor(16, 78, 46);
-        doc.rect(14, yPos, 182, 7, "F");
-
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(8.5);
-        doc.setTextColor(255, 255, 255);
-        doc.text("CANT.", 16, yPos + 5);
-        doc.text("PRODUCTO / DESCRIPCIÓN", 35, yPos + 5);
-        doc.text("PRECIO", 130, yPos + 5, { align: "right" });
-        doc.text("TOTAL", 192, yPos + 5, { align: "right" });
-
-        yPos += 9;
-        doc.setFont("helvetica", "normal");
-        doc.setTextColor(0, 0, 0);
-
-        const items = datos.items || datos.detalles || [];
-        items.forEach((item) => {
-            doc.text(String(item.cantidad || 1), 16, yPos);
-            doc.text(String(item.descripcion || item.producto || ""), 35, yPos);
-            doc.text(`$ ${formato(item.precio || item.precioUnitario)}`, 130, yPos, { align: "right" });
-            doc.text(`$ ${formato(item.total || (item.cantidad * item.precio))}`, 192, yPos, { align: "right" });
-            yPos += 6;
-        });
-
-        // Totales
-        yPos += 5;
         doc.setLineWidth(0.5);
-        doc.line(14, yPos, 196, yPos);
-        yPos += 6;
+        doc.line(15, yPie + 14, 195, yPie + 14);
 
         doc.setFont("helvetica", "bold");
+        doc.setFontSize(10);
+        doc.text("GABRIEL ABSALON", 15, yPie + 20);
+        
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9);
+        doc.setTextColor(80, 80, 80);
+        doc.text("Servicios Técnicos Integrales", 15, yPie + 24);
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(9.5);
+        doc.setTextColor(0, 0, 0);
+        doc.text("CEL: 3624884054", 195, yPie + 20, { align: "right" });
+        
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9);
+        doc.text("Carlos Gardel 1420 - Resistencia Chaco", 195, yPie + 24, { align: "right" });
+    };
+
+    // ==========================================
+    // MODO A: EMISIÓN DIRECTA DE GARANTÍA
+    // ==========================================
+    if (esSoloGarantia) {
+        // ENCABEZADO OFICIAL
+        if (datos.logo) {
+            try {
+                doc.addImage(datos.logo, "PNG", 15, 15, 46, 29);
+            } catch (e) {
+                console.warn("No se pudo cargar el logo en el PDF", e);
+            }
+        }
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9);
+        doc.setTextColor(100, 100, 100);
+        doc.text("Servicio Técnico Integral", 15, 47);
+        doc.text("Resistencia - Chaco", 15, 51);
+
+        // TÍTULO: ORDEN DE TRABAJO TERMINADO
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(16);
+        doc.setTextColor(0, 0, 0);
+        doc.text("ORDEN DE TRABAJO TERMINADO", 195, 25, { align: "right" });
+
+        doc.setFont("monospace", "bold");
         doc.setFontSize(11);
-        doc.text(`TOTAL A PAGAR: $ ${formato(datos.total)}`, 192, yPos, { align: "right" });
-        yPos += 15;
+        doc.setTextColor(50, 50, 50);
+        doc.text(`NUMERO DE PRESUPUESTO: ${nroPresupuesto}`, 195, 32, { align: "right" });
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(10);
+        doc.setTextColor(0, 0, 0);
+        doc.text(`FECHA EMISIÓN: ${fechaPresupuesto}`, 195, 40, { align: "right" });
+
+        // Línea de separación superior
+        doc.setDrawColor(210, 210, 210);
+        doc.setLineWidth(0.3);
+        doc.line(15, 55, 195, 55);
+
+        // DATOS DEL CLIENTE
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(9.5);
+        doc.text("CLIENTE:", 15, 63);
+        doc.text("DIRECCIÓN:", 15, 69);
+        doc.text("TELÉFONO:", 15, 75);
+
+        doc.setFont("helvetica", "normal");
+        doc.text(String(nombreCliente), 35, 63);
+        doc.text(String(dirCliente), 39, 69);
+        doc.text(String(telCliente), 38, 75);
+
+        if (docNum) {
+            doc.setFont("helvetica", "bold");
+            doc.text(`${docTipo}:`, 130, 63);
+            doc.setFont("helvetica", "normal");
+            doc.text(String(docNum), 152, 63);
+        }
+
+        // SECCIÓN GARANTÍAS Y EXCEPCIONES
+        let yGarantia = 88;
+
+        doc.setFillColor(239, 239, 239);
+        doc.rect(15, yGarantia, 180, 7.5, "FD");
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(10);
+        doc.setTextColor(0, 0, 0);
+        doc.text("1. ALCANCE Y CONDICIONES DE APLICACIÓN DE LA GARANTÍA", 19, yGarantia + 5);
+
+        yGarantia += 12;
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9);
+
+        const textoAplica = datos.garantiaAplica || 
+            "La presente garantía cubre fallas de ejecución, defectos de ensamblado o vicios ocultos derivados exclusivamente de la mano de obra aplicada en los trabajos detallados en la orden de trabajo. Esta cobertura posee una validez según los términos acordados a partir de la fecha de entrega y conformidad.";
+
+        const lineasAplica = doc.splitTextToSize(textoAplica, 172);
+        doc.text(lineasAplica, 19, yGarantia);
+
+        yGarantia += (lineasAplica.length * 5) + 12;
+
+        doc.setFillColor(239, 239, 239);
+        doc.rect(15, yGarantia, 180, 7.5, "FD");
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(10);
+        doc.text("2. EXCLUSIONES Y PÉRDIDA DE COBERTURA", 19, yGarantia + 5);
+
+        yGarantia += 12;
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9);
+
+        const textoExclusiones = datos.garantiaExclusiones || 
+            "Quedan expresamente excluidas de la garantía las siguientes situaciones:\n" +
+            "• Intervención o modificación de las instalaciones por parte de terceros no autorizados.\n" +
+            "• Daños provocados por mal uso, sobrecargas eléctricas, humedad ajena a la estructura o factores climáticos extremos.\n" +
+            "• Desgaste natural de insumos y materiales provistos directamente por el cliente.";
+
+        const lineasExclusiones = doc.splitTextToSize(textoExclusiones, 172);
+        doc.text(lineasExclusiones, 19, yGarantia);
+
+        dibujarPieDePagina();
+
+        doc.save(`Garantia_${nroPresupuesto}_${nombreCliente.replace(/\s+/g, '_')}.pdf`);
+        return;
     }
 
     // ==========================================
-    // 4. PIE DE PÁGINA Y FIRMA TÉCNICA
+    // MODO B: PRESUPUESTO / FACTURA CONVENCIONAL
     // ==========================================
-    const pageHeight = doc.internal.pageSize.height;
-    const pieY = pageHeight - 30;
+    const aplicarIva = datos.incluirIva !== undefined ? datos.incluirIva : true;
 
-    doc.setDrawColor(200, 200, 200);
-    doc.setLineWidth(0.3);
-    doc.line(14, pieY, 196, pieY);
+    const matNeto = Number(datos.totalMaterialesNeto || 0);
+    const matIva = aplicarIva ? Number(datos.ivaMateriales || (matNeto * 0.21)) : 0;
+    const matTotal = matNeto + matIva;
 
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(7.5);
-    doc.setTextColor(16, 78, 46);
-    doc.text("CONDICIONES Y RESPONSABILIDAD TÉCNICA:", 14, pieY + 5);
+    const columnaTotalNeto = Number(datos.columnaTotalNeto || 0);
+    const columnaTotalIva = aplicarIva ? Number(datos.columnaTotalIva || 0) : 0;
+    const granTotalFinal = columnaTotalNeto + columnaTotalIva;
+
+    // ENCABEZADO PÁGINA 1
+    if (datos.logo) {
+        try {
+            doc.addImage(datos.logo, "PNG", 15, 15, 46, 29);
+        } catch (e) {
+            console.warn("No se pudo cargar el logo en el PDF", e);
+        }
+    }
 
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(7);
+    doc.setFontSize(9);
     doc.setTextColor(100, 100, 100);
-    doc.text("TRABAJOS EJECUTADOS BAJO NORMAS TÉCNICAS VIGENTES Y COBERTURA DE GARANTÍA SEGÚN TÉRMINOS.", 14, pieY + 9);
+    doc.text("Servicio Técnico Integral", 15, 47);
+    doc.text("Resistencia - Chaco", 15, 51);
+
+    if (esFactura) {
+        doc.setLineWidth(0.5);
+        doc.setDrawColor(0, 0, 0);
+        doc.rect(100, 15, 10, 12);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(14);
+        doc.setTextColor(0, 0, 0);
+        doc.text("C", 103.2, 23);
+
+        doc.setFontSize(22);
+        doc.text("FACTURA", 195, 25, { align: "right" });
+    } else {
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(24);
+        doc.setTextColor(0, 0, 0); 
+        doc.text("PRESUPUESTO", 195, 25, { align: "right" });
+    }
+
+    doc.setFont("monospace", "bold");
+    doc.setFontSize(14);
+    doc.setTextColor(50, 50, 50);
+    doc.text(String(nroPresupuesto), 195, 32, { align: "right" });
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.setTextColor(0, 0, 0);
+    doc.text(`FECHA: ${fechaPresupuesto}`, 195, 40, { align: "right" });
+
+    doc.setDrawColor(210, 210, 210);
+    doc.setLineWidth(0.3);
+    doc.line(15, 55, 195, 55);
+
+    // RECUADRO DE DATOS DEL CLIENTE
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9.5);
+    doc.text("CLIENTE:", 15, 63);
+    doc.text("DIRECCIÓN:", 15, 69);
+    doc.text("TELÉFONO:", 15, 75);
+
+    doc.setFont("helvetica", "normal");
+    doc.text(String(nombreCliente), 35, 63);
+    doc.text(String(dirCliente), 39, 69);
+    doc.text(String(telCliente), 38, 75);
+
+    if (docNum) {
+        doc.setFont("helvetica", "bold");
+        doc.text(`${docTipo}:`, 130, 63);
+        doc.setFont("helvetica", "normal");
+        doc.text(String(docNum), 152, 63);
+    }
+
+    // TABLA DE ITEMS
+    let y = 83;
+
+    doc.setDrawColor(0, 0, 0);
+    doc.setLineWidth(0.25);
+    doc.setFillColor(239, 239, 239);
+    doc.rect(15, y, 180, 7.5, "FD");
 
     doc.setFont("helvetica", "bold");
     doc.setFontSize(9);
-    doc.setTextColor(0, 0, 0);
-    doc.text("GABRIEL ABSALON", 14, pieY + 16);
+    doc.text("CANT.", 17, y + 5);
+    doc.text("PRODUCTO / DESCRIPCIÓN", 32, y + 5);
+    doc.text("PRECIO", 125, y + 5, { align: "right" });
+    doc.text("IVA (21%)", 158, y + 5, { align: "right" });
+    doc.text("TOTAL", 192, y + 5, { align: "right" });
 
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(8);
-    doc.setTextColor(80, 80, 80);
-    doc.text("Servicios Técnicos Integrales | M.M.O.", 14, pieY + 20);
-    doc.text("CEL: 3624884054  |  Carlos Gardel 1420 - Resistencia Chaco", 14, pieY + 24);
+    const agregarFilaTabla = (cant, descripcion, neto, iva, total) => {
+        y += 7.5;
+        doc.setFillColor(255, 255, 255);
+        doc.rect(15, y, 180, 7.5, "S");
+        
+        doc.setFont("helvetica", "normal");
+        doc.text(String(cant), 21, y + 5, { align: "center" });
+        
+        const descTexto = String(descripcion).length > 48 
+            ? String(descripcion).substring(0, 45) + "..." 
+            : String(descripcion);
+            
+        doc.text(descTexto, 32, y + 5);
+        doc.text(neto ? `$ ${formato(neto)}` : "", 125, y + 5, { align: "right" });
+        
+        const textoIva = aplicarIva ? (iva ? `$ ${formato(iva)}` : "$ 0,00") : "$ 0,00";
+        doc.text(textoIva, 158, y + 5, { align: "right" });
+        
+        doc.text(total ? `$ ${formato(total)}` : "", 192, y + 5, { align: "right" });
+    };
 
-    // Guardar archivo con nombre personalizado
-    const nombreLimpio = clienteNombre.toLowerCase().replace(/[^a-z0-9]/g, "_");
-    const prefijo = esGarantia ? "Garantia" : "Presupuesto";
-    doc.save(`${prefijo}_${numComprobante}_${nombreLimpio}.pdf`);
+    if (matNeto > 0) {
+        agregarFilaTabla("1", "Materiales", matNeto, matIva, matTotal);
+    }
+
+    const moItems = datos.manoObraItems || [];
+    if (moItems.length > 0) {
+        moItems.forEach(item => {
+            const itemNeto = Number(item.total || 0);
+            const itemIva = aplicarIva ? (itemNeto * 0.21) : 0;
+            const itemTotal = itemNeto + itemIva;
+            
+            const cantMostrar = `${item.cantidad || 1}`;
+            const descMostrar = `${item.concepto || item.descripcion}`;
+
+            agregarFilaTabla(cantMostrar, descMostrar, itemNeto, itemIva, itemTotal);
+        });
+    } else if (matNeto === 0) {
+        agregarFilaTabla("1", "Servicios Técnicos / Mano de Obra", 0, 0, 0);
+    }
+
+    // Fila Totales
+    y += 7.5;
+    doc.setFillColor(248, 248, 248);
+    doc.rect(15, y, 180, 7.5, "FD");
+    doc.setFont("helvetica", "bold");
+    doc.text("TOTALES", 32, y + 5);
+    doc.text(`$ ${formato(columnaTotalNeto)}`, 125, y + 5, { align: "right" });
+    doc.text(`$ ${formato(columnaTotalIva)}`, 158, y + 5, { align: "right" });
+    doc.text(`$ ${formato(granTotalFinal)}`, 192, y + 5, { align: "right" });
+
+    const limitesColumnas = [30, 128, 161];
+    limitesColumnas.forEach(colX => {
+        doc.line(colX, 83, colX, y + 7.5);
+    });
+
+    // TIEMPO Y RECUADRO DE PAGO
+    y += 12;
+    const tCant = datos.tiempoCant || "1";
+    const tTexto = datos.tiempoUnidadTexto || "uno";
+    const tPlural = datos.tiempoUnidadPlural || "DIA";
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.text(`EL TIEMPO DE EJECUCION SERIA DE ${tCant} (${tTexto}) ${tPlural}.`.toUpperCase(), 15, y);
+
+    y += 5;
+    doc.setLineWidth(0.35);
+    doc.rect(15, y, 180, 15);
+    doc.setFontSize(13);
+    doc.text(`TOTAL A PAGAR: $ ${formato(granTotalFinal)}`, 19, y + 6);
+    doc.setFontSize(10);
+    doc.text("ALIAS: GABI.ESPINOSAM (MERCADO PAGO)", 19, y + 11.5);
+
+    dibujarPieDePagina();
+
+    // PÁGINA ADICIONAL DE GARANTÍAS (SI ESTÁ FINALIZADO O ES FACTURA)
+    if (esFinalizado || esFactura) {
+        doc.addPage();
+
+        if (datos.logo) {
+            try {
+                doc.addImage(datos.logo, "PNG", 15, 15, 46, 29);
+            } catch (e) {
+                console.warn("No se pudo cargar el logo en la pág 2", e);
+            }
+        }
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9);
+        doc.setTextColor(100, 100, 100);
+        doc.text("RESPONSABLE OPERATIVO:", 15, 47);
+        doc.text("Técnico: Gabriel Absalon | M.M.O.", 15, 51);
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(18);
+        doc.setTextColor(0, 0, 0); 
+        doc.text("GARANTÍAS Y COBERTURA", 195, 25, { align: "right" });
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(10);
+        doc.text(`NUMERO DE PRESUPUESTO: ${nroPresupuesto}`, 195, 32, { align: "right" });
+        doc.text(`FECHA EMISIÓN: ${fechaPresupuesto}`, 195, 38, { align: "right" });
+        doc.text(`CLIENTE: ${nombreCliente}`, 195, 44, { align: "right" });
+
+        doc.setDrawColor(210, 210, 210);
+        doc.setLineWidth(0.3);
+        doc.line(15, 55, 195, 55);
+
+        let yGarantia = 65;
+
+        doc.setFillColor(239, 239, 239);
+        doc.rect(15, yGarantia, 180, 7.5, "FD");
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(10);
+        doc.setTextColor(0, 0, 0);
+        doc.text("1. ALCANCE Y CONDICIONES DE APLICACIÓN DE LA GARANTÍA", 19, yGarantia + 5);
+
+        yGarantia += 12;
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9);
+
+        const textoAplica = datos.garantiaAplica || 
+            "La presente garantía cubre fallas de ejecución, defectos de ensamblado o vicios ocultos derivados exclusivamente de la mano de obra aplicada en los trabajos detallados en el comprobante principal. Esta cobertura posee una validez de 12 meses a partir de la fecha de entrega y conformidad de la obra.";
+
+        const lineasAplica = doc.splitTextToSize(textoAplica, 172);
+        doc.text(lineasAplica, 19, yGarantia);
+
+        yGarantia += (lineasAplica.length * 5) + 12;
+
+        doc.setFillColor(239, 239, 239);
+        doc.rect(15, yGarantia, 180, 7.5, "FD");
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(10);
+        doc.text("2. EXCLUSIONES Y PÉRDIDA DE COBERTURA", 19, yGarantia + 5);
+
+        yGarantia += 12;
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9);
+
+        const textoExclusiones = datos.garantiaExclusiones || 
+            "Quedan expresamente excluidas de la garantía las siguientes situaciones:\n" +
+            "• Intervención o modificación de las instalaciones por parte de terceros no autorizados.\n" +
+            "• Daños provocados por mal uso, sobrecargas eléctricas, humedad ajena a la estructura o factores climáticos extremos.\n" +
+            "• Desgaste natural de insumos y materiales provistos directamente por el cliente.";
+
+        const lineasExclusiones = doc.splitTextToSize(textoExclusiones, 172);
+        doc.text(lineasExclusiones, 19, yGarantia);
+
+        dibujarPieDePagina();
+    }
+
+    const nombreFinalArchivo = `${esFactura ? 'Factura' : 'Presupuesto'}_${nroPresupuesto}_${nombreCliente.replace(/\s+/g, '_')}.pdf`;
+    doc.save(nombreFinalArchivo);
 };
-
-// Función auxiliar para dibujar la casa/isologotipo si no se pasa imagen Base64
-function dibujarIsotipoVectorial(doc, x, y) {
-    doc.setFillColor(16, 78, 46);
-    // Polígono del techo / estructura de la casa
-    doc.triangle(x + 12, y, x, y + 10, x + 24, y + 10, "F");
-    doc.rect(x + 3, y + 10, 18, 12, "F");
-    doc.setFillColor(255, 255, 255);
-    // Cruz interior blanca estilo M.M.O. / arquitectura
-    doc.rect(x + 11, y + 10, 2, 12, "F");
-    doc.rect(x + 3, y + 15, 18, 2, "F");
-}
-
-export default exportarPresupuestoPDF;
