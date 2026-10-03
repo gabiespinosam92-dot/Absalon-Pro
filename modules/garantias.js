@@ -30,9 +30,26 @@ export const garantias = {
         }
     },
 
+    renderOptionsPresupuestos() {
+        if (!this.presupuestos || this.presupuestos.length === 0) {
+            return `<option value="">-- No hay presupuestos registrados --</option>`;
+        }
+
+        return `<option value="">-- Seleccioná un presupuesto o trabajo --</option>` +
+            this.presupuestos.map(p => {
+                const idVal = p.id || p.numero || '';
+                const numVal = p.numero || 'S/N';
+                const nomVal = p.clienteNombre || 'Sin nombre';
+                const fecVal = p.fecha || '-';
+                return `<option value="${idVal}">${numVal} - ${nomVal} (${fecVal})</option>`;
+            }).join('');
+    },
+
     render() {
         const main = document.getElementById("workspace");
         if (!main) return;
+
+        const opcionesPresupuestos = this.renderOptionsPresupuestos();
 
         main.innerHTML = `
             <div class="workspace">
@@ -47,8 +64,7 @@ export const garantias = {
                     <p style="font-size: 13px; color: #666; margin-bottom: 15px;">Seleccioná un trabajo finalizado o presupuesto para generar la Hoja Oficial de Garantía con tu identidad de marca.</p>
                     <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                         <select id="select-presupuesto-garantia" style="flex: 1; min-width: 250px; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">
-                            <option value="">-- Seleccioná un presupuesto o trabajo --</option>
-                            ${this.presupuestos.map(p => `<option value="${p.id \vert{}\vert{} p.numero}">${p.numero || 'S/N'} - ${p.clienteNombre \vert{}\vert{} 'Sin nombre'} (${p.fecha || '-'})</option>`).join('')}
+                            ${opcionesPresupuestos}
                         </select>
                         <button id="btn-generar-pdf-garantia" style="background: #104E2E; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: bold;">
                             📄 Descargar Certificado
@@ -122,7 +138,7 @@ export const garantias = {
     },
 
     renderFilas() {
-        if (this.datos.length === 0) {
+        if (!this.datos || this.datos.length === 0) {
             return `<tr><td colspan="4" style="padding:20px; text-align:center; color:#6b7280;">No hay plantillas de garantía creadas.</td></tr>`;
         }
 
@@ -153,7 +169,10 @@ export const garantias = {
 
         if (btnGenerarPdf) {
             btnGenerarPdf.onclick = () => {
-                const val = document.getElementById("select-presupuesto-garantia").value;
+                const selectElem = document.getElementById("select-presupuesto-garantia");
+                if (!selectElem) return;
+
+                const val = selectElem.value;
                 if (!val) {
                     alert("Por favor seleccioná un presupuesto de la lista.");
                     return;
