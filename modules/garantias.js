@@ -1,4 +1,4 @@
-// garantias.js - Módulo unificado de Garantías con buscador dinámico de presupuestos
+// garantias.js - Módulo unificado de Garantías con selección Cliente -> Presupuesto
 import { getAll, save, remove } from "./storage.js";
 import { exportarPresupuestoPDF } from "./pdf.js";
 
@@ -6,7 +6,8 @@ export const garantias = {
     datos: [],
     presupuestos: [],
     clientes: [],
-    presupuestoSeleccionado: null,
+    clienteSeleccionadoId: "",
+    presupuestoSeleccionadoId: "",
     vistaActual: "emitir", // "emitir" o "plantillas"
 
     async iniciar() {
@@ -28,13 +29,10 @@ export const garantias = {
         }
     },
 
-    // Auxiliar para resolver el nombre real del cliente cruzando colecciones (igual que en historial.js)
-    obtenerNombreCliente(p) {
-        if (!p) return "Sin Nombre";
-        if (p.clienteNombre) return p.clienteNombre; // Si ya viene directo
-        const clienteIdString = String(p.cliente || '');
-        const clienteObj = this.clientes.find(c => String(c.id) === clienteIdString);
-        return clienteObj ? clienteObj.nombre : (p.cliente || "Sin Nombre");
+    // Resuelve el nombre del cliente comparando IDs (número o string)
+    obtenerNombreCliente(c) {
+        if (!c) return "Sin Nombre";
+        return c.nombre || c.clienteNombre || "Sin Nombre";
     },
 
     render() {
@@ -67,9 +65,33 @@ export const garantias = {
     },
 
     // -------------------------------------------------------------------------
-    // VISTA 1: EMITIR GARANTÍA
+    // VISTA 1: EMITIR GARANTÍA (SELECCIÓN CLIENTE -> PRESUPUESTO)
     // -------------------------------------------------------------------------
     renderVistaEmitir() {
+        // Ordenar clientes alfabéticamente
+        const clientesOrdenados = [...this.clientes].sort((a, b) => 
+            (a.nombre || "").localeCompare(b.nombre || "")
+        );
+
+        const opcionesClientes = clientesOrdenados
+            .map(c => `<option value="${c.id}" ${String(c.id) === String(this.clienteSeleccionadoId) ? 'selected' : ''}>${c.nombre}</option>`)
+            .join("");
+
+        // Filtrar presupuestos pertenecientes al cliente seleccionado
+        const presupuestosDelCliente = this.presupuestos.filter(p => {
+            if (!this.clienteSeleccionadoId) return false;
+            return String(p.cliente) === String(this.clienteSeleccionadoId);
+        });
+
+        const opcionesPresupuestos = presupuestosDelCliente
+            .map(p => {
+                const numDisplay = p.numero || `N° ${p.id}`;
+                const fechaDisplay = p.fecha ? ` (${p.fecha})` : '';
+                const totalDisplay = p.totalGeneral ? ` - $ ${Number(p.totalGeneral).toLocaleString('es-AR')}` : '';
+                return `<option value="${p.id}" ${String(p.id) === String(this.presupuestoSeleccionadoId) ? 'selected' : ''}>${numDisplay}${fechaDisplay}${totalDisplay}</option>`;
+            })
+            .join("");
+
         const opcionesPlantillas = this.datos
             .map(g => `<option value="${g.id}">${g.titulo} (${g.especialidad})</option>`)
             .join("");
@@ -80,48 +102,46 @@ export const garantias = {
                 
                 <form id="form-emisor-garantia" style="display:flex; flex-direction:column; gap:15px;">
                     
-                    <!-- BÚSQUEDA Y SELECCIÓN DE PRESUPUESTO -->
-                    <div>
-                        <label style="display:block; margin-bottom:5px; font-weight:bold; color:#334155;">1. Buscar Presupuesto o Cliente:</label>
-                        <input type="text" id="buscar-presupuesto-input" placeholder="🔍 Escribí N° de presupuesto o nombre del cliente..." 
-                            style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:6px; font-size:14px; box-sizing:border-box;">
-                        
-                        <!-- Lista de coincidencias -->
-                        <div id="lista-resultados-presupuesto" style="max-height:180px; overflow-y:auto; border:1px solid #cbd5e1; border-top:none; border-radius:0 0 6px 6px; display:none; background:white;"></div>
-                    </div>
+                    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:15px;">
+                        <!-- 1. SELECCIÓN DE CLIENTE -->
+                        <div>
+                            <label style="display:block; margin-bottom:5px; font-weight:bold; color:#334155;">1. Seleccionar Cliente:</label>
+                            <select id="sel-cliente" style="width:100%; padding:9px; border:1px solid #cbd5e1; border-radius:6px; font-size:14px;" required>
+                                <option value="">-- Seleccioná un Cliente --</option>
+                                ${opcionesClientes}
+                            </select>
+                        </div>
 
-                    <!-- Ficha del Presupuesto Seleccionado -->
-                    <div id="info-cliente" style="background:#f8fafc; padding:12px; border-radius:6px; border:1px solid #cbd5e1; font-size:14px; display:${this.presupuestoSeleccionado ? 'block' : 'none'};">
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <div>
-                                <b style="color:#104E2E;">Presupuesto Seleccionado:</b> <span id="lbl-numero">${this.presupuestoSeleccionado ? (this.presupuestoSeleccionado.numero || 'N° ' + this.presupuestoSeleccionado.id) : '-'}</span><br>
-                                <b>Cliente:</b> <span id="lbl-cliente">${this.presupuestoSeleccionado ? this.obtenerNombreCliente(this.presupuestoSeleccionado) : '-'}</span> | 
-                                <b>Fecha:</b> <span id="lbl-fecha">${this.presupuestoSeleccionado ? (this.presupuestoSeleccionado.fecha || '-') : '-'}</span>
-                            </div>
-                            <button type="button" id="btn-deseleccionar-p" style="background:#ef4444; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:12px;">Cambiar</button>
+                        <!-- 2. SELECCIÓN DE PRESUPUESTO DEL CLIENTE -->
+                        <div>
+                            <label style="display:block; margin-bottom:5px; font-weight:bold; color:#334155;">2. Presupuestos de este Cliente:</label>
+                            <select id="sel-presupuesto" style="width:100%; padding:9px; border:1px solid #cbd5e1; border-radius:6px; font-size:14px;" ${!this.clienteSeleccionadoId ? 'disabled' : ''} required>
+                                <option value="">${!this.clienteSeleccionadoId ? '-- Primero elegí un cliente --' : (presupuestosDelCliente.length === 0 ? 'Sin presupuestos guardados' : '-- Seleccioná el Presupuesto --')}</option>
+                                ${opcionesPresupuestos}
+                            </select>
                         </div>
                     </div>
 
-                    <!-- Plantillas Predefinidas -->
+                    <!-- 3. CARGAR PLANTILLA BASE -->
                     <div>
-                        <label style="display:block; margin-bottom:5px; font-weight:bold; color:#334155;">2. Cargar Texto desde Plantilla Base (Opcional):</label>
-                        <select id="sel-plantilla" style="width:100%; padding:9px; border:1px solid #cbd5e1; border-radius:6px;">
-                            <option value="">-- Seleccioná una plantilla previa --</option>
+                        <label style="display:block; margin-bottom:5px; font-weight:bold; color:#334155;">3. Cargar Plantilla Base (Opcional):</label>
+                        <select id="sel-plantilla" style="width:100%; padding:9px; border:1px solid #cbd5e1; border-radius:6px; font-size:14px;">
+                            <option value="">-- Seleccioná plantilla base --</option>
                             ${opcionesPlantillas}
                         </select>
                     </div>
 
                     <hr style="border:0; border-top:1px solid #e2e8f0; margin:5px 0;">
 
-                    <!-- Textos editables -->
+                    <!-- CAMPOS EDITABLES DE GARANTÍA -->
                     <div>
-                        <label style="display:block; margin-bottom:5px; font-weight:bold; color:#334155;">3. Alcance y Condiciones de Aplicación de la Garantía:</label>
-                        <textarea id="garantia-aplica" rows="4" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px; box-sizing:border-box;" placeholder="Detallá qué cubre la garantía..." required></textarea>
+                        <label style="display:block; margin-bottom:5px; font-weight:bold; color:#334155;">Alcance y Condiciones de Aplicación:</label>
+                        <textarea id="garantia-aplica" rows="4" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px; box-sizing:border-box; font-family:sans-serif;" placeholder="Detallá qué cubre la garantía..." required></textarea>
                     </div>
 
                     <div>
-                        <label style="display:block; margin-bottom:5px; font-weight:bold; color:#334155;">4. Exclusiones y Pérdida de Cobertura:</label>
-                        <textarea id="garantia-exclusiones" rows="4" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px; box-sizing:border-box;" placeholder="Detallá las exclusiones..." required></textarea>
+                        <label style="display:block; margin-bottom:5px; font-weight:bold; color:#334155;">Exclusiones y Pérdida de Cobertura:</label>
+                        <textarea id="garantia-exclusiones" rows="4" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px; box-sizing:border-box; font-family:sans-serif;" placeholder="Detallá las exclusiones..." required></textarea>
                     </div>
 
                     <button type="submit" style="background:#104E2E; color:white; border:none; padding:12px; font-size:15px; font-weight:bold; border-radius:6px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; margin-top:10px;">
@@ -229,69 +249,36 @@ export const garantias = {
     },
 
     eventosEmisor() {
-        const inputBuscar = document.getElementById("buscar-presupuesto-input");
-        const contenedorResultados = document.getElementById("lista-resultados-presupuesto");
+        const selCliente = document.getElementById("sel-cliente");
+        const selPresupuesto = document.getElementById("sel-presupuesto");
         const selPlantilla = document.getElementById("sel-plantilla");
         const txtAplica = document.getElementById("garantia-aplica");
         const txtExclusiones = document.getElementById("garantia-exclusiones");
         const formEmisor = document.getElementById("form-emisor-garantia");
-        const btnDeseleccionar = document.getElementById("btn-deseleccionar-p");
 
         if (!formEmisor) return;
 
-        // Búsqueda en tiempo real de presupuestos por Nombre o Número
-        if (inputBuscar) {
-            inputBuscar.oninput = (e) => {
-                const query = e.target.value.toLowerCase().trim();
-                if (!query) {
-                    contenedorResultados.style.display = "none";
-                    return;
-                }
-
-                const Coincidencias = this.presupuestos.filter(p => {
-                    const clienteNombre = this.obtenerNombreCliente(p).toLowerCase();
-                    const num = String(p.numero || p.id).toLowerCase();
-                    return clienteNombre.includes(query) || num.includes(query);
-                });
-
-                if (Coincidencias.length === 0) {
-                    contenedorResultados.innerHTML = `<div style="padding:10px; color:#94a3b8; font-size:13px;">No se encontraron presupuestos.</div>`;
-                } else {
-                    contenedorResultados.innerHTML = Coincidencias.map(p => `
-                        <div class="item-presupuesto-res" data-id="${p.id}" style="padding:10px; border-bottom:1px solid #f1f5f9; cursor:pointer; font-size:13px;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='white'">
-                            <b>${p.numero || ('N° ' + p.id)}</b> - ${this.obtenerNombreCliente(p)} (${p.fecha || 'Sin fecha'})
-                        </div>
-                    `).join("");
-                }
-                contenedorResultados.style.display = "block";
-            };
-
-            // Selección de un presupuesto de la lista
-            contenedorResultados.onclick = (e) => {
-                const item = e.target.closest(".item-presupuesto-res");
-                if (item) {
-                    const id = item.dataset.id;
-                    this.presupuestoSeleccionado = this.presupuestos.find(p => p.id == id);
-                    contenedorResultados.style.display = "none";
-                    inputBuscar.value = "";
-                    this.render();
-                    this.eventos();
-                }
-            };
-        }
-
-        if (btnDeseleccionar) {
-            btnDeseleccionar.onclick = () => {
-                this.presupuestoSeleccionado = null;
+        // Al cambiar de cliente, actualizamos el estado y re-renderizamos el selector de presupuestos
+        if (selCliente) {
+            selCliente.onchange = (e) => {
+                this.clienteSeleccionadoId = e.target.value;
+                this.presupuestoSeleccionadoId = ""; // Resetear presupuesto seleccionado
                 this.render();
                 this.eventos();
             };
         }
 
-        // Selección de plantilla
+        // Al cambiar de presupuesto guardamos su ID
+        if (selPresupuesto) {
+            selPresupuesto.onchange = (e) => {
+                this.presupuestoSeleccionadoId = e.target.value;
+            };
+        }
+
+        // Carga de texto desde plantilla
         if (selPlantilla) {
             selPlantilla.onchange = () => {
-                const g = this.datos.find(item => item.id == selPlantilla.value);
+                const g = this.datos.find(item => String(item.id) === String(selPlantilla.value));
                 if (g) {
                     txtAplica.value = `Garantía (${g.duracion}): ${g.textoGarantia}`;
                     txtExclusiones.value = "Quedan expresamente excluidas de la garantía las siguientes situaciones:\n" +
@@ -302,20 +289,28 @@ export const garantias = {
             };
         }
 
-        // Emitir PDF
+        // Enviar al generador PDF
         formEmisor.onsubmit = async (e) => {
             e.preventDefault();
 
-            if (!this.presupuestoSeleccionado) {
-                alert("Por favor buscá y seleccioná un presupuesto antes de imprimir.");
+            if (!this.presupuestoSeleccionadoId) {
+                alert("Por favor seleccioná un presupuesto válido de la lista.");
                 return;
             }
 
-            const clienteNombreReal = this.obtenerNombreCliente(this.presupuestoSeleccionado);
+            const presupuestoObj = this.presupuestos.find(p => String(p.id) === String(this.presupuestoSeleccionadoId));
+            const clienteObj = this.clientes.find(c => String(c.id) === String(this.clienteSeleccionadoId));
+
+            if (!presupuestoObj) {
+                alert("No se encontró el objeto del presupuesto seleccionado.");
+                return;
+            }
 
             const datosFinalesPDF = {
-                ...this.presupuestoSeleccionado,
-                clienteNombre: clienteNombreReal,
+                ...presupuestoObj,
+                clienteNombre: clienteObj ? clienteObj.nombre : (presupuestoObj.clienteNombre || "Sin Nombre"),
+                clienteDireccion: clienteObj ? (clienteObj.direccion || "") : (presupuestoObj.clienteDireccion || ""),
+                clienteTelefono: clienteObj ? (clienteObj.telefono || "") : (presupuestoObj.clienteTelefono || ""),
                 garantiaAplica: txtAplica.value.trim(),
                 garantiaExclusiones: txtExclusiones.value.trim(),
                 forzarGarantia: true
@@ -352,14 +347,14 @@ export const garantias = {
             const btnEliminar = e.target.closest(".btn-eliminar");
 
             if (btnEditar) {
-                const g = this.datos.find(item => item.id == btnEditar.dataset.id);
+                const g = this.datos.find(item => String(item.id) === String(btnEditar.dataset.id));
                 if (g) {
                     document.getElementById("garantia-id").value = g.id;
                     document.getElementById("garantia-titulo").value = g.titulo;
                     document.getElementById("garantia-especialidad").value = g.especialidad;
                     document.getElementById("garantia-duracion").value = g.duracion;
                     document.getElementById("garantia-texto").value = g.textoGarantia;
-                    document.getElementById("form-titulo").innerText = "✏️️ Editar Plantilla Base";
+                    document.getElementById("form-titulo").innerText = "✏ Editando Plantilla";
                     document.getElementById("btn-cancelar").style.display = "inline-block";
                 }
             }
