@@ -1,3 +1,4 @@
+// pdf.js - Generador de PDFs con Página de Garantía integrada para Absalon Pro
 export const exportarPresupuestoPDF = async (datos) => {
     // 1. Carga limpia de la librería jsPDF
     if (typeof window.jspdf === "undefined") {
@@ -36,14 +37,12 @@ export const exportarPresupuestoPDF = async (datos) => {
 
     // Identificación del prefijo de estado
     const prefijo = String(nroPresupuesto).toUpperCase().charAt(0);
-    const esFinalizado = prefijo === "T" || datos.estado === "Finalizado";
+    const esFinalizado = prefijo === "T";
     const esEnviado = prefijo === "E";
     const esBorrador = prefijo === "B";
-    const esFactura = datos.esFactura || false; // Switch para emitir Factura C
+    const esFactura = datos.esFactura || false;
 
-    // =========================================================================
-    // CONTROL DE CÁLCULO DE IVA
-    // =========================================================================
+    // Control de IVA
     const aplicarIva = datos.incluirIva !== undefined ? datos.incluirIva : true;
 
     const matNeto = Number(datos.totalMaterialesNeto || 0);
@@ -71,7 +70,6 @@ export const exportarPresupuestoPDF = async (datos) => {
     doc.text("Servicio Técnico Integral", 15, 47);
     doc.text("Resistencia - Chaco", 15, 51);
 
-    // Título dinámico (FACTURA C, ORDEN DE TRABAJO FINALIZADA o PRESUPUESTO)
     if (esFactura) {
         doc.setLineWidth(0.5);
         doc.setDrawColor(0, 0, 0);
@@ -83,11 +81,6 @@ export const exportarPresupuestoPDF = async (datos) => {
 
         doc.setFontSize(22);
         doc.text("FACTURA", 195, 25, { align: "right" });
-    } else if (esFinalizado) {
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(16);
-        doc.setTextColor(0, 0, 0); 
-        doc.text("ORDEN DE TRABAJO FINALIZADA", 195, 25, { align: "right" });
     } else {
         doc.setFont("helvetica", "bold");
         doc.setFontSize(24);
@@ -105,7 +98,6 @@ export const exportarPresupuestoPDF = async (datos) => {
     doc.setTextColor(0, 0, 0);
     doc.text(`FECHA: ${fechaPresupuesto}`, 195, 40, { align: "right" });
 
-    // Línea de separación superior
     doc.setDrawColor(210, 210, 210);
     doc.setLineWidth(0.3);
     doc.line(15, 55, 195, 55);
@@ -225,7 +217,7 @@ export const exportarPresupuestoPDF = async (datos) => {
     doc.setFontSize(10);
     doc.text("ALIAS: GABI.ESPINOSAM (MERCADO PAGO)", 19, y + 11.5);
 
-    // Pie de página PÁGINA 1
+    // Función auxiliar de Pie de Página
     const dibujarPieDePagina = () => {
         const yPie = 260; 
 
@@ -235,7 +227,6 @@ export const exportarPresupuestoPDF = async (datos) => {
 
         doc.setFont("helvetica", "bold");
         doc.setFontSize(9);
-        doc.setTextColor(0, 0, 0);
         doc.text("CONDICIONES COMERCIALES:", 15, yPie + 5);
 
         doc.setFont("helvetica", "normal");
@@ -268,9 +259,9 @@ export const exportarPresupuestoPDF = async (datos) => {
 
     // =========================================================================
     // 5. PÁGINA DEDICADA DE GARANTÍAS (SI ESTÁ FINALIZADO O FACTURADO)
-    // =========================================================================
-    if (esFinalizado || esFactura) {
-        doc.addPage(); // Salto de página formal
+    // ==========================================
+    if (esFinalizado || esFactura || datos.forzarGarantia) {
+        doc.addPage(); // Salto a página 2
 
         if (datos.logo) {
             try {
@@ -317,14 +308,13 @@ export const exportarPresupuestoPDF = async (datos) => {
         doc.setFontSize(9);
 
         const textoAplica = datos.garantiaAplica || 
-            "Garantía del Servicio Técnico de Refrigeración:\n" +
-            "La presente garantía cubre exclusivamente los trabajos de reparación, mantenimiento o instalación ejecutados sobre el equipo por un período de 6 (seis) meses a partir de la fecha de entrega/finalización del servicio.";
+            "La presente garantía cubre fallas de ejecución, defectos de ensamblado o vicios ocultos derivados exclusivamente de la mano de obra aplicada en los trabajos detallados en el comprobante principal.";
 
         const lineasAplica = doc.splitTextToSize(textoAplica, 172);
         doc.text(lineasAplica, 19, yGarantia);
 
-        // SECCIÓN 2: EXCLUSIONES / CONDICIONES DE ANULACIÓN
-        yGarantia += (lineasAplica.length * 5) + 8;
+        // SECCIÓN 2: EXCLUSIONES
+        yGarantia += (lineasAplica.length * 5) + 12;
 
         doc.setFillColor(239, 239, 239);
         doc.rect(15, yGarantia, 180, 7.5, "FD");
@@ -337,8 +327,10 @@ export const exportarPresupuestoPDF = async (datos) => {
         doc.setFontSize(9);
 
         const textoExclusiones = datos.garantiaExclusiones || 
-            "Condiciones de Anulación:\n" +
-            "La garantía perderá validez de forma inmediata e irrevocable si el equipo es intervenido, desarmado, reparado o modificado por personal técnico ajeno a nuestra empresa o por el propio usuario durante el período de vigencia. Asimismo, quedan excluidas las fallas ocasionadas por fluctuaciones extremas de tensión eléctrica, mal uso o causas ajenas al trabajo realizado.";
+            "Quedan expresamente excluidas de la garantía las siguientes situaciones:\n" +
+            "• Intervención o modificación de las instalaciones por parte de terceros no autorizados.\n" +
+            "• Daños provocados por mal uso, sobrecargas eléctricas o factores climáticos extremos.\n" +
+            "• Desgaste natural de insumos provistos directamente por el cliente.";
 
         const lineasExclusiones = doc.splitTextToSize(textoExclusiones, 172);
         doc.text(lineasExclusiones, 19, yGarantia);
@@ -346,7 +338,7 @@ export const exportarPresupuestoPDF = async (datos) => {
         dibujarPieDePagina();
     }
 
-    const tipoDocNombre = esFactura ? 'Factura' : (esFinalizado ? 'OrdenTrabajo' : 'Presupuesto');
-    const nombreFinalArchivo = `${tipoDocNombre}_${nroPresupuesto}_${nombreCliente.replace(/\s+/g, '_')}.pdf`;
+    // Guardado del PDF
+    const nombreFinalArchivo = `${esFactura ? 'Factura' : 'Presupuesto'}_${nroPresupuesto}_${nombreCliente.replace(/\s+/g, '_')}.pdf`;
     doc.save(nombreFinalArchivo);
 };
