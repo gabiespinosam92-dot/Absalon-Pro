@@ -41,7 +41,7 @@ export const garantias = {
                     <p>Emití certificados de garantía exclusivos para tus clientes y administrá plantillas por rubro técnico.</p>
                 </div>
 
-                <!-- EMISIÓN RÁPIDA DE GARANTÍAS (SOLO PÁGINA DE GARANTÍA CON LOGO) -->
+                <!-- EMISIÓN RÁPIDA DE GARANTÍAS -->
                 <div class="dashboard-card" style="margin-top: 20px; border-top: 4px solid #104E2E;">
                     <h3 style="margin-bottom: 10px; color: #104E2E;">📄 Emitir Certificado de Garantía</h3>
                     <p style="font-size: 13px; color: #666; margin-bottom: 15px;">Seleccioná un trabajo finalizado o presupuesto para generar la Hoja Oficial de Garantía con tu identidad de marca.</p>
@@ -96,7 +96,7 @@ export const garantias = {
                         </form>
                     </div>
 
-                    <!-- Listado de Garantías y Descarga Directa por Plantilla -->
+                    <!-- Listado de Garantías -->
                     <div class="dashboard-card">
                         <h3 style="margin-bottom: 15px;">📋 Plantillas Guardadas</h3>
                         <div style="overflow-x: auto;">
@@ -190,55 +190,61 @@ export const garantias = {
             this.eventos();
         };
 
-        document.getElementById("lista-garantias").onclick = async (e) => {
-            const btnImprimir = e.target.closest(".btn-imprimir-plantilla");
-            const btnEditar = e.target.closest(".btn-editar");
-            const btnEliminar = e.target.closest(".btn-eliminar");
+        const listaGarantias = document.getElementById("lista-garantias");
+        if (listaGarantias) {
+            listaGarantias.onclick = async (e) => {
+                const btnImprimir = e.target.closest(".btn-imprimir-plantilla");
+                const btnEditar = e.target.closest(".btn-editar");
+                const btnEliminar = e.target.closest(".btn-eliminar");
 
-            if (btnImprimir) {
-                const id = btnImprimir.dataset.id;
-                const g = this.datos.find(item => item.id == id);
-                if (g) {
-                    exportarPresupuestoPDF({
-                        numero: `GAR-${g.id}`,
-                        clienteNombre: "Cliente General",
-                        garantiaAplica: g.textoGarantia,
-                        forzarGarantia: true
-                    });
+                if (btnImprimir) {
+                    const id = btnImprimir.dataset.id;
+                    const g = this.datos.find(item => item.id == id);
+                    if (g) {
+                        exportarPresupuestoPDF({
+                            numero: `GAR-${g.id}`,
+                            clienteNombre: "Cliente General",
+                            garantiaAplica: g.textoGarantia,
+                            forzarGarantia: true
+                        });
+                    }
                 }
-            }
 
-            if (btnEditar) {
-                const id = btnEditar.dataset.id;
-                const g = this.datos.find(item => item.id == id);
-                if (g) {
-                    document.getElementById("garantia-id").value = g.id;
-                    document.getElementById("garantia-titulo").value = g.titulo;
-                    document.getElementById("garantia-especialidad").value = g.especialidad;
-                    document.getElementById("garantia-duracion").value = g.duracion;
-                    document.getElementById("garantia-texto").value = g.textoGarantia;
-                    document.getElementById("form-titulo").innerText = "✏️ Editar Plantilla";
-                    document.getElementById("btn-cancelar").style.display = "block";
+                if (btnEditar) {
+                    const id = btnEditar.dataset.id;
+                    const g = this.datos.find(item => item.id == id);
+                    if (g) {
+                        document.getElementById("garantia-id").value = g.id;
+                        document.getElementById("garantia-titulo").value = g.titulo;
+                        document.getElementById("garantia-especialidad").value = g.especialidad;
+                        document.getElementById("garantia-duracion").value = g.duracion;
+                        document.getElementById("garantia-texto").value = g.textoGarantia;
+                        document.getElementById("form-titulo").innerText = "✏️ Editar Plantilla";
+                        document.getElementById("btn-cancelar").style.display = "block";
+                    }
                 }
-            }
 
-            if (btnEliminar) {
-                if (confirm("¿Borrar esta plantilla de garantía?")) {
-                    const idABorrar = Number(btnEliminar.dataset.id);
-                    await remove("garantias", idABorrar);
-                    await this.cargarGarantias();
-                    this.render();
-                    this.eventos();
+                if (btnEliminar) {
+                    if (confirm("¿Borrar esta plantilla de garantía?")) {
+                        const idABorrar = Number(btnEliminar.dataset.id);
+                        await remove("garantias", idABorrar);
+                        await this.cargarGarantias();
+                        this.render();
+                        this.eventos();
+                    }
                 }
-            }
-        };
+            };
+        }
 
-        document.getElementById("btn-cancelar").onclick = () => {
-            form.reset();
-            document.getElementById("garantia-id").value = "";
-            document.getElementById("form-titulo").innerText = "📜 Nueva Plantilla";
-            document.getElementById("btn-cancelar").style.display = "none";
-        };
+        const btnCancelar = document.getElementById("btn-cancelar");
+        if (btnCancelar) {
+            btnCancelar.onclick = () => {
+                form.reset();
+                document.getElementById("garantia-id").value = "";
+                document.getElementById("form-titulo").innerText = "📜 Nueva Plantilla";
+                btnCancelar.style.display = "none";
+            };
+        }
     }
 };
 
