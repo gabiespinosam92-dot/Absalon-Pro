@@ -38,20 +38,20 @@ export const garantias = {
             <div class="workspace">
                 <div class="welcome-card" style="border-left: 5px solid #104E2E;">
                     <h2>🛡️ Gestión y Certificados de Garantía</h2>
-                    <p>Emití certificados de garantía vinculados a tus trabajos y administrá plantillas por rubro.</p>
+                    <p>Emití certificados de garantía exclusivos para tus clientes y administrá plantillas por rubro técnico.</p>
                 </div>
 
-                <!-- SECCIÓN DE EMISIÓN RÁPIDA DE GARANTÍAS -->
+                <!-- EMISIÓN RÁPIDA DE GARANTÍAS (SOLO PÁGINA DE GARANTÍA CON LOGO) -->
                 <div class="dashboard-card" style="margin-top: 20px; border-top: 4px solid #104E2E;">
-                    <h3 style="margin-bottom: 10px; color: #104E2E;">📄 Emitir PDF de Garantía por Trabajo</h3>
-                    <p style="font-size: 13px; color: #666; margin-bottom: 15px;">Seleccioná un presupuesto o trabajo finalizado para generar el documento PDF impreso con Hoja de Garantía incluida.</p>
+                    <h3 style="margin-bottom: 10px; color: #104E2E;">📄 Emitir Certificado de Garantía</h3>
+                    <p style="font-size: 13px; color: #666; margin-bottom: 15px;">Seleccioná un trabajo finalizado o presupuesto para generar la Hoja Oficial de Garantía con tu identidad de marca.</p>
                     <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                         <select id="select-presupuesto-garantia" style="flex: 1; min-width: 250px; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">
                             <option value="">-- Seleccioná un presupuesto o trabajo --</option>
                             ${this.presupuestos.map(p => `<option value="${p.id \vert{}\vert{} p.numero}">${p.numero || 'S/N'} - ${p.clienteNombre \vert{}\vert{} 'Sin nombre'} (${p.fecha || '-'})</option>`).join('')}
                         </select>
                         <button id="btn-generar-pdf-garantia" style="background: #104E2E; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: bold;">
-                            📄 Descargar Certificado PDF
+                            📄 Descargar Certificado
                         </button>
                     </div>
                 </div>
@@ -96,7 +96,7 @@ export const garantias = {
                         </form>
                     </div>
 
-                    <!-- Listado de Garantías -->
+                    <!-- Listado de Garantías y Descarga Directa por Plantilla -->
                     <div class="dashboard-card">
                         <h3 style="margin-bottom: 15px;">📋 Plantillas Guardadas</h3>
                         <div style="overflow-x: auto;">
@@ -138,8 +138,9 @@ export const garantias = {
                     <td style="padding:10px;"><span style="background:${colorBadge}; color:white; padding:2px 6px; border-radius:4px; font-size:11px;">${g.especialidad}</span></td>
                     <td style="padding:10px;">${g.duracion}</td>
                     <td style="padding:10px; text-align:right;">
+                        <button class="btn-imprimir-plantilla" data-id="${g.id}" title="Imprimir esta garantía" style="border:none; background:none; cursor:pointer; margin-right:5px;">📄</button>
                         <button class="btn-editar" data-id="${g.id}" style="border:none; background:none; cursor:pointer; margin-right:5px;">✏️</button>
-                        <button class="btn-eliminar" data-id="${g.id}" style="border:none; background:none; cursor:pointer;">🗑️️</button>
+                        <button class="btn-eliminar" data-id="${g.id}" style="border:none; background:none; cursor:pointer;">🗑</button>
                     </td>
                 </tr>
             `;
@@ -150,7 +151,6 @@ export const garantias = {
         const form = document.getElementById("form-garantia");
         const btnGenerarPdf = document.getElementById("btn-generar-pdf-garantia");
 
-        // Evento para emitir certificado directo de un presupuesto
         if (btnGenerarPdf) {
             btnGenerarPdf.onclick = () => {
                 const val = document.getElementById("select-presupuesto-garantia").value;
@@ -160,8 +160,7 @@ export const garantias = {
                 }
                 const p = this.presupuestos.find(item => String(item.id || item.numero) === String(val));
                 if (p) {
-                    const copia = { ...p, forzarGarantia: true };
-                    exportarPresupuestoPDF(copia);
+                    exportarPresupuestoPDF({ ...p, forzarGarantia: true });
                 } else {
                     alert("No se encontró la información del presupuesto seleccionado.");
                 }
@@ -192,8 +191,22 @@ export const garantias = {
         };
 
         document.getElementById("lista-garantias").onclick = async (e) => {
+            const btnImprimir = e.target.closest(".btn-imprimir-plantilla");
             const btnEditar = e.target.closest(".btn-editar");
             const btnEliminar = e.target.closest(".btn-eliminar");
+
+            if (btnImprimir) {
+                const id = btnImprimir.dataset.id;
+                const g = this.datos.find(item => item.id == id);
+                if (g) {
+                    exportarPresupuestoPDF({
+                        numero: `GAR-${g.id}`,
+                        clienteNombre: "Cliente General",
+                        garantiaAplica: g.textoGarantia,
+                        forzarGarantia: true
+                    });
+                }
+            }
 
             if (btnEditar) {
                 const id = btnEditar.dataset.id;
