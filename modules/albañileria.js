@@ -1,7 +1,7 @@
 /* ==========================================================
    ABSALON PRO - MÓDULO ALBAÑILERÍA COMPLETO (FÓRMULAS DE OBRA)
 ========================================================== */
-import { getAll } from "./storage.js"; // Como storage.js está en la misma carpeta 'modules'
+import { getAll } from "./storage.js";
 
 export const albanileria = {
     catalogo: [],
@@ -24,7 +24,7 @@ export const albanileria = {
     render() {
         document.getElementById("workspace").innerHTML = `
         <div class="card">
-            <h2>🏗️ Cómputo Métrico de Albañilería y Obra Húmeda</h2>
+            <h2>🏗️️ Cómputo Métrico de Albañilería y Obra Húmeda</h2>
             <p class="text-muted">Cálculo parametrizado por dosificación y rendimiento de materiales por m² y m³.</p>
             <br>
 
@@ -41,6 +41,7 @@ export const albanileria = {
                             <option value="contrapiso">Contrapiso H° Cascote (Espesor 10 cm)</option>
                             <option value="carpeta">Carpeta de Nivelación (Espesor 2.5 cm)</option>
                             <option value="membrana_liquida">Impermeabilización con Membrana Líquida (3 Manos)</option>
+                            <option value="cubierta_techo_chapa">🏠 Cubierta Techo Chapa C25 + Perfil C + Aislante</option>
                         </select>
                     </div>
 
@@ -100,9 +101,8 @@ export const albanileria = {
         // -------------------------------------------------------------
         switch (rubro) {
             case "muro_ceramico_12":
-                // Ladrillo Cerámico 12x18x33 (16 a 17 un/m2)
                 resumen = [
-                    { nombreBusqueda: "Ladrillo Cerámico Hueco 12x18x33", cantidad: Math.ceil(m2 * 16.5 * 1.05), unidad: "Unidad" }, // +5% desperdicio
+                    { nombreBusqueda: "Ladrillo Cerámico Hueco 12x18x33", cantidad: Math.ceil(m2 * 16.5 * 1.05), unidad: "Unidad" },
                     { nombreBusqueda: "Cemento", cantidad: Math.ceil(m2 * 3.5), unidad: "Kg" },
                     { nombreBusqueda: "Cal Hidráulica", cantidad: Math.ceil(m2 * 7.0), unidad: "Kg" },
                     { nombreBusqueda: "Arena Gruesa", cantidad: Math.round((m2 * 0.025) * 100) / 100, unidad: "m³" }
@@ -110,7 +110,6 @@ export const albanileria = {
                 break;
 
             case "muro_ceramico_18":
-                // Ladrillo Cerámico 18x18x33 (16 a 17 un/m2)
                 resumen = [
                     { nombreBusqueda: "Ladrillo Cerámico Hueco 18x18x33", cantidad: Math.ceil(m2 * 16.5 * 1.05), unidad: "Unidad" },
                     { nombreBusqueda: "Cemento", cantidad: Math.ceil(m2 * 5.0), unidad: "Kg" },
@@ -120,9 +119,8 @@ export const albanileria = {
                 break;
 
             case "muro_comun_15":
-                // Ladrillo Común espesor 15cm (~60 un/m2)
                 resumen = [
-                    { nombreBusqueda: "Ladrillo Común", cantidad: Math.ceil(m2 * 60 * 1.07), unidad: "Unidad" }, // +7% rotura/desperdicio
+                    { nombreBusqueda: "Ladrillo Común", cantidad: Math.ceil(m2 * 60 * 1.07), unidad: "Unidad" },
                     { nombreBusqueda: "Cemento", cantidad: Math.ceil(m2 * 7.5), unidad: "Kg" },
                     { nombreBusqueda: "Cal Hidráulica", cantidad: Math.ceil(m2 * 15.0), unidad: "Kg" },
                     { nombreBusqueda: "Arena Gruesa", cantidad: Math.round((m2 * 0.05) * 100) / 100, unidad: "m³" }
@@ -130,7 +128,6 @@ export const albanileria = {
                 break;
 
             case "revoque_grueso":
-                // Revoque Grueso 1.5 cm (0.015 m³ mortero/m2)
                 resumen = [
                     { nombreBusqueda: "Cemento", cantidad: Math.ceil(m2 * 2.5), unidad: "Kg" },
                     { nombreBusqueda: "Cal Hidráulica", cantidad: Math.ceil(m2 * 6.0), unidad: "Kg" },
@@ -139,7 +136,6 @@ export const albanileria = {
                 break;
 
             case "revoque_fino":
-                // Revoque Fino 0.5 cm (0.005 m³ mortero/m2)
                 resumen = [
                     { nombreBusqueda: "Cal Aérea / Fina", cantidad: Math.ceil(m2 * 2.2), unidad: "Kg" },
                     { nombreBusqueda: "Cemento", cantidad: Math.ceil(m2 * 0.8), unidad: "Kg" },
@@ -148,7 +144,6 @@ export const albanileria = {
                 break;
 
             case "contrapiso":
-                // Contrapiso 10 cm espesor
                 resumen = [
                     { nombreBusqueda: "Cemento", cantidad: Math.ceil(m2 * 10.5), unidad: "Kg" },
                     { nombreBusqueda: "Cal Hidráulica", cantidad: Math.ceil(m2 * 15.0), unidad: "Kg" },
@@ -158,7 +153,6 @@ export const albanileria = {
                 break;
 
             case "carpeta":
-                // Carpeta de nivelación 2.5 cm (Dosificación 1:3)
                 resumen = [
                     { nombreBusqueda: "Cemento", cantidad: Math.ceil(m2 * 9.0), unidad: "Kg" },
                     { nombreBusqueda: "Arena Gruesa / Mediana", cantidad: Math.round((m2 * 0.028) * 100) / 100, unidad: "m³" },
@@ -167,14 +161,25 @@ export const albanileria = {
                 break;
 
             case "membrana_liquida":
-                // Membrana Líquida impermeabilizante (3 Manos: ~1.4 kg por m2)
                 const kgMembrana = Math.ceil(m2 * 1.4);
-                // Si la lata estándar es de 20kg, se calcula la cantidad de baldes requeridos
                 const baldes20kg = Math.ceil(kgMembrana / 20);
 
                 resumen = [
                     { nombreBusqueda: "Membrana Líquida Impermeabilizante 20kg", cantidad: baldes20kg, unidad: "Balde" },
                     { nombreBusqueda: "Malla / Venda Sintética (Refuerzo)", cantidad: Math.ceil(m2 * 1.1), unidad: "Metro" }
+                ];
+                break;
+
+            case "cubierta_techo_chapa":
+                // Cubierta completa de Techo de Chapa, Perfiles C y Aislante
+                resumen = [
+                    { nombreBusqueda: "Chapa Galvanizada C25", cantidad: Math.ceil(m2 * 1.08), unidad: "m²" },
+                    { nombreBusqueda: "Perfil C Galvanizado 100x50x15x2 mm", cantidad: Math.ceil(m2 * 0.24), unidad: "Barra (6m)" },
+                    { nombreBusqueda: "Aislante Térmico Aluminizado 10 mm", cantidad: Math.ceil((m2 * 1.15) / 20), unidad: "Rollo (20m²)" },
+                    { nombreBusqueda: "Red / Malla Galvanizada Sostén", cantidad: Math.ceil(m2 * 1.05), unidad: "m²" },
+                    { nombreBusqueda: "Cinta Aluminizada de Sellado", cantidad: Math.ceil(m2 / 30), unidad: "Rollo" },
+                    { nombreBusqueda: "Cenefa Perimetral Plegada", cantidad: Math.ceil(Math.sqrt(m2) * 3.4), unidad: "Metro" },
+                    { nombreBusqueda: "Tornillo Autoperforante c/ Neopreno", cantidad: Math.ceil(m2 * 7), unidad: "Unidad" }
                 ];
                 break;
         }
@@ -189,7 +194,6 @@ export const albanileria = {
         let totalGeneral = 0;
 
         resumen.forEach(item => {
-            // Buscamos coincidencia aproximada con el nombre en el catálogo
             const itemCat = this.catalogo.find(c => 
                 (c.concepto || c.nombre || "").toLowerCase().includes(item.nombreBusqueda.toLowerCase())
             );
@@ -225,7 +229,7 @@ export const albanileria = {
         localStorage.setItem("materiales_computados", JSON.stringify(this.materialesCalculados));
         localStorage.setItem("origen_computo", "albanileria");
 
-        alert("✅ Materiales de albañilería cargados. Redirigiendo al generador de presupuestos...");
+        alert("✅ Materiales cargados. Redirigiendo al generador de presupuestos...");
         
         const btnPresupuesto = document.querySelector('[data-view="presupuestos"]');
         if (btnPresupuesto) btnPresupuesto.click();
