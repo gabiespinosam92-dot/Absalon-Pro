@@ -1,8 +1,8 @@
 // pdf.js - Generador unificado de Presupuestos, Órdenes de Trabajo y Garantías
-import { jsPDF } from "jspdf";
+import { jspdf } from "jspdf";
 
 export async function exportarPresupuestoPDF(datos) {
-    const doc = new jsPDF({
+    const doc = new jspdf({
         orientation: "portrait",
         unit: "mm",
         format: "a4"
