@@ -37,10 +37,144 @@ export const exportarPresupuestoPDF = async (datos) => {
     // Identificación del prefijo de estado
     const prefijo = String(nroPresupuesto).toUpperCase().charAt(0);
     const esFinalizado = prefijo === "T" || datos.forzarGarantia === true;
-    const esFactura = datos.esFactura || false; // Switch para emitir Factura C
+    const esFactura = datos.esFactura || false;
+
+    // Obtención prioritaria del Logo (del objeto o del almacenamiento local)
+    const logoData = datos.logo || localStorage.getItem("absalon_logo_base64") || localStorage.getItem("logo_base64");
+
+    // Función global para el pie de página
+    const dibujarPieDePagina = () => {
+        const yPie = 260; 
+
+        doc.setDrawColor(0, 0, 0);
+        doc.setLineWidth(0.25);
+        doc.line(15, yPie, 195, yPie);
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(9);
+        doc.setTextColor(0, 0, 0);
+        doc.text("CONDICIONES Y RESPONSABILIDAD TÉCNICA:", 15, yPie + 5);
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(8.5);
+        doc.text("TRABAJOS EJECUTADOS BAJO NORMAS TÉCNICAS VIGENTES Y COBERTURA DE GARANTÍA SEGÚN TÉRMINOS.", 15, yPie + 9);
+
+        doc.setLineWidth(0.5);
+        doc.line(15, yPie + 14, 195, yPie + 14);
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(10);
+        doc.text("GABRIEL ABSALON", 15, yPie + 20);
+        
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9);
+        doc.setTextColor(80, 80, 80);
+        doc.text("Servicios Técnicos Integrales | M.M.O.", 15, yPie + 24);
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(9.5);
+        doc.setTextColor(0, 0, 0);
+        doc.text("CEL: 3624884054", 195, yPie + 20, { align: "right" });
+        
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9);
+        doc.text("Carlos Gardel 1420 - Resistencia Chaco", 195, yPie + 24, { align: "right" });
+    };
 
     // =========================================================================
-    // CONTROL DE CÁLCULO DE IVA
+    // CASO A: SÓLO CERTIFICADO DE GARANTÍA (PARA TERMINADOS 'T' O GARANTÍAS)
+    // =========================================================================
+    if (esFinalizado) {
+        // --- LOGO DESTACADO EN GARANTÍA ---
+        if (logoData) {
+            try {
+                doc.addImage(logoData, "PNG", 15, 12, 46, 29);
+            } catch (e) {
+                console.warn("Error al renderizar el logo en la garantía:", e);
+            }
+        } else {
+            // Isotipo fallback en verde corporativo
+            doc.setFillColor(16, 78, 46);
+            doc.roundedRect(15, 12, 22, 22, 2, 2, "F");
+            doc.setTextColor(255, 255, 255);
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(12);
+            doc.text("GA", 20, 26);
+        }
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9);
+        doc.setTextColor(100, 100, 100);
+        doc.text("RESPONSABLE OPERATIVO:", 15, 47);
+        doc.text("Técnico: Gabriel Absalon | M.M.O.", 15, 51);
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(18);
+        doc.setTextColor(16, 78, 46); 
+        doc.text("CERTIFICADO DE GARANTÍA", 195, 25, { align: "right" });
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(10);
+        doc.setTextColor(0, 0, 0);
+        doc.text(`N° TRABAJO / OT: ${nroPresupuesto}`, 195, 32, { align: "right" });
+        doc.text(`FECHA EMISIÓN: ${fechaPresupuesto || new Date().toISOString().split("T")[0]}`, 195, 38, { align: "right" });
+        doc.text(`CLIENTE: ${nombreCliente || 'Sin Especificar'}`, 195, 44, { align: "right" });
+
+        doc.setDrawColor(210, 210, 210);
+        doc.setLineWidth(0.3);
+        doc.line(15, 55, 195, 55);
+
+        // --- CUERPO DE GARANTÍA ---
+        let yGarantia = 65;
+
+        // SECCIÓN 1: ALCANCE
+        doc.setFillColor(239, 239, 239);
+        doc.rect(15, yGarantia, 180, 7.5, "FD");
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(10);
+        doc.setTextColor(0, 0, 0);
+        doc.text("1. ALCANCE Y CONDICIONES DE APLICACIÓN DE LA GARANTÍA", 19, yGarantia + 5);
+
+        yGarantia += 12;
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9);
+
+        const textoAplica = datos.garantiaAplica || datos.textoGarantia ||
+            "La presente garantía cubre fallas de ejecución, defectos de ensamblado o vicios ocultos derivados exclusivamente de la mano de obra aplicada en los trabajos detallados en el comprobante principal. Esta cobertura posee una validez de 12 meses a partir de la fecha de entrega y conformidad de la obra.";
+
+        const lineasAplica = doc.splitTextToSize(textoAplica, 172);
+        doc.text(lineasAplica, 19, yGarantia);
+
+        // SECCIÓN 2: EXCLUSIONES
+        yGarantia += (lineasAplica.length * 5) + 12;
+
+        doc.setFillColor(239, 239, 239);
+        doc.rect(15, yGarantia, 180, 7.5, "FD");
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(10);
+        doc.text("2. EXCLUSIONES Y PÉRDIDA DE COBERTURA", 19, yGarantia + 5);
+
+        yGarantia += 12;
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9);
+
+        const textoExclusiones = datos.garantiaExclusiones || 
+            "Quedan expresamente excluidas de la garantía las siguientes situaciones:\n" +
+            "• Intervención o modificación de las instalaciones por parte de terceros no autorizados.\n" +
+            "• Daños provocados por mal uso, sobrecargas eléctricas, humedad ajena a la estructura o factores climáticos extremos.\n" +
+            "• Desgaste natural de insumos y materiales provistos directamente por el cliente.";
+
+        const lineasExclusiones = doc.splitTextToSize(textoExclusiones, 172);
+        doc.text(lineasExclusiones, 19, yGarantia);
+
+        dibujarPieDePagina();
+
+        doc.save(`Garantia_${nroPresupuesto}_${nombreCliente.replace(/\s+/g, '_')}.pdf`);
+        return; // Salimos para que no genere la hoja de presupuesto
+    }
+
+    // =========================================================================
+    // CASO B: PRESUPUESTOS (BORRADOR 'B' Y ENVIADO 'E')
     // =========================================================================
     const aplicarIva = datos.incluirIva !== undefined ? datos.incluirIva : true;
 
@@ -52,12 +186,10 @@ export const exportarPresupuestoPDF = async (datos) => {
     const columnaTotalIva = aplicarIva ? Number(datos.columnaTotalIva || 0) : 0;
     const granTotalFinal = columnaTotalNeto + columnaTotalIva;
 
-    // ==========================================
-    // 1. ENCABEZADO PÁGINA 1
-    // ==========================================
-    if (datos.logo) {
+    // LOGO PRESUPUESTO
+    if (logoData) {
         try {
-            doc.addImage(datos.logo, "PNG", 15, 15, 46, 29);
+            doc.addImage(logoData, "PNG", 15, 15, 46, 29);
         } catch (e) {
             console.warn("No se pudo cargar el logo en el PDF", e);
         }
@@ -69,7 +201,6 @@ export const exportarPresupuestoPDF = async (datos) => {
     doc.text("Servicio Técnico Integral", 15, 47);
     doc.text("Resistencia - Chaco", 15, 51);
 
-    // Título dinámico (FACTURA C o PRESUPUESTO / ORDEN TERMINADA)
     if (esFactura) {
         doc.setLineWidth(0.5);
         doc.setDrawColor(0, 0, 0);
@@ -83,10 +214,9 @@ export const exportarPresupuestoPDF = async (datos) => {
         doc.text("FACTURA", 195, 25, { align: "right" });
     } else {
         doc.setFont("helvetica", "bold");
-        doc.setFontSize(22);
+        doc.setFontSize(24);
         doc.setTextColor(0, 0, 0); 
-        const tituloDoc = esFinalizado ? "TRABAJO TERMINADO" : "PRESUPUESTO";
-        doc.text(tituloDoc, 195, 25, { align: "right" });
+        doc.text("PRESUPUESTO", 195, 25, { align: "right" });
     }
 
     doc.setFont("monospace", "bold");
@@ -99,14 +229,11 @@ export const exportarPresupuestoPDF = async (datos) => {
     doc.setTextColor(0, 0, 0);
     doc.text(`FECHA: ${fechaPresupuesto}`, 195, 40, { align: "right" });
 
-    // Línea de separación superior
     doc.setDrawColor(210, 210, 210);
     doc.setLineWidth(0.3);
     doc.line(15, 55, 195, 55);
 
-    // ==========================================
-    // 2. RECUADRO DE DATOS DEL CLIENTE
-    // ==========================================
+    // DATOS CLIENTE
     doc.setFont("helvetica", "bold");
     doc.setFontSize(9.5);
     doc.text("CLIENTE:", 15, 63);
@@ -125,11 +252,8 @@ export const exportarPresupuestoPDF = async (datos) => {
         doc.text(String(docNum), 152, 63);
     }
 
-    // ==========================================
-    // 3. TABLA DE ITEMS
-    // ==========================================
+    // TABLA
     let y = 83;
-
     doc.setDrawColor(0, 0, 0);
     doc.setLineWidth(0.25);
     doc.setFillColor(239, 239, 239);
@@ -184,7 +308,7 @@ export const exportarPresupuestoPDF = async (datos) => {
         agregarFilaTabla("1", "Servicios Técnicos / Mano de Obra", 0, 0, 0);
     }
 
-    // Fila Totales
+    // Totales
     y += 7.5;
     doc.setFillColor(248, 248, 248);
     doc.rect(15, y, 180, 7.5, "FD");
@@ -199,9 +323,6 @@ export const exportarPresupuestoPDF = async (datos) => {
         doc.line(colX, 83, colX, y + 7.5);
     });
 
-    // ==========================================
-    // 4. TIEMPO Y RECUADRO DE PAGO
-    // ==========================================
     y += 12;
     doc.setFont("helvetica", "bold");
     doc.setFontSize(10);
@@ -219,128 +340,8 @@ export const exportarPresupuestoPDF = async (datos) => {
     doc.setFontSize(10);
     doc.text("ALIAS: GABI.ESPINOSAM (MERCADO PAGO)", 19, y + 11.5);
 
-    // Pie de página PÁGINA 1
-    const dibujarPieDePagina = () => {
-        const yPie = 260; 
-
-        doc.setDrawColor(0, 0, 0);
-        doc.setLineWidth(0.25);
-        doc.line(15, yPie, 195, yPie);
-
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(9);
-        doc.text("CONDICIONES COMERCIALES:", 15, yPie + 5);
-
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(8.5);
-        doc.text("RECUERDE QUE LOS PRESUPUESTOS TIENEN UN PLAZO DE 15 DIAS Y PARA CONFIRMAR SE ABONA UNA SEÑA DEL 50%.", 15, yPie + 9);
-
-        doc.setLineWidth(0.5);
-        doc.line(15, yPie + 14, 195, yPie + 14);
-
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(10);
-        doc.text("GABRIEL ABSALON", 15, yPie + 20);
-        
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(9);
-        doc.setTextColor(80, 80, 80);
-        doc.text("Servicios Técnicos Integrales", 15, yPie + 24);
-
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(9.5);
-        doc.setTextColor(0, 0, 0);
-        doc.text("CEL: 3624884054", 195, yPie + 20, { align: "right" });
-        
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(9);
-        doc.text("Carlos Gardel 1420 - Resistencia Chaco", 195, yPie + 24, { align: "right" });
-    };
-
     dibujarPieDePagina();
 
-    // =========================================================================
-    // 5. PÁGINA DEDICADA DE GARANTÍAS (SÓLO SI ESTÁ FINALIZADO 'T' O FACTURADO)
-    // =========================================================================
-    if (esFinalizado || esFactura) {
-        doc.addPage();
-
-        if (datos.logo) {
-            try {
-                doc.addImage(datos.logo, "PNG", 15, 15, 46, 29);
-            } catch (e) {
-                console.warn("No se pudo cargar el logo en la pág 2", e);
-            }
-        }
-
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(9);
-        doc.setTextColor(100, 100, 100);
-        doc.text("RESPONSABLE OPERATIVO:", 15, 47);
-        doc.text("Técnico: Gabriel Absalon | M.M.O.", 15, 51);
-
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(18);
-        doc.setTextColor(0, 0, 0); 
-        doc.text("GARANTÍAS Y COBERTURA", 195, 25, { align: "right" });
-
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(10);
-        doc.text(`ASOCIADO A: ${nroPresupuesto}`, 195, 32, { align: "right" });
-        doc.text(`FECHA EMISIÓN: ${fechaPresupuesto}`, 195, 38, { align: "right" });
-        doc.text(`CLIENTE: ${nombreCliente}`, 195, 44, { align: "right" });
-
-        doc.setDrawColor(210, 210, 210);
-        doc.setLineWidth(0.3);
-        doc.line(15, 55, 195, 55);
-
-        // --- CUERPO DE GARANTÍA ---
-        let yGarantia = 65;
-
-        // SECCIÓN 1: CUANDO APLICA
-        doc.setFillColor(239, 239, 239);
-        doc.rect(15, yGarantia, 180, 7.5, "FD");
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(10);
-        doc.setTextColor(0, 0, 0);
-        doc.text("1. ALCANCE Y CONDICIONES DE APLICACIÓN DE LA GARANTÍA", 19, yGarantia + 5);
-
-        yGarantia += 12;
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(9);
-
-        const textoAplica = datos.garantiaAplica || 
-            "La presente garantía cubre fallas de ejecución, defectos de ensamblado o vicios ocultos derivados exclusivamente de la mano de obra aplicada en los trabajos detallados en el comprobante principal. Esta cobertura posee una validez de 12 meses a partir de la fecha de entrega y conformidad de la obra.";
-
-        const lineasAplica = doc.splitTextToSize(textoAplica, 172);
-        doc.text(lineasAplica, 19, yGarantia);
-
-        // SECCIÓN 2: EXCLUSIONES
-        yGarantia += (lineasAplica.length * 5) + 12;
-
-        doc.setFillColor(239, 239, 239);
-        doc.rect(15, yGarantia, 180, 7.5, "FD");
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(10);
-        doc.text("2. EXCLUSIONES Y PÉRDIDA DE COBERTURA", 19, yGarantia + 5);
-
-        yGarantia += 12;
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(9);
-
-        const textoExclusiones = datos.garantiaExclusiones || 
-            "Quedan expresamente excluidas de la garantía las siguientes situaciones:\n" +
-            "• Intervención o modificación de las instalaciones por parte de terceros no autorizados.\n" +
-            "• Daños provocados por mal uso, sobrecargas eléctricas, humedad ajena a la estructura o factores climáticos extremos.\n" +
-            "• Desgaste natural de insumos y materiales provistos directamente por el cliente.";
-
-        const lineasExclusiones = doc.splitTextToSize(textoExclusiones, 172);
-        doc.text(lineasExclusiones, 19, yGarantia);
-
-        dibujarPieDePagina();
-    }
-
-    // Descarga directa del archivo PDF
-    const nombreFinalArchivo = `${esFactura ? 'Factura' : (esFinalizado ? 'Garantia' : 'Presupuesto')}_${nroPresupuesto}_${nombreCliente.replace(/\s+/g, '_')}.pdf`;
+    const nombreFinalArchivo = `${esFactura ? 'Factura' : 'Presupuesto'}_${nroPresupuesto}_${nombreCliente.replace(/\s+/g, '_')}.pdf`;
     doc.save(nombreFinalArchivo);
 };
