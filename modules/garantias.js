@@ -9,12 +9,13 @@ export const garantias = {
         await this.cargarGarantias();
         await this.cargarPresupuestos();
         this.render();
+        this.poblarSelectPresupuestos();
         this.eventos();
     },
 
     async cargarGarantias() {
         try {
-            this.datos = await getAll("garantias") || [];
+            this.datos = (await getAll("garantias")) || [];
         } catch (error) {
             console.error("Error al cargar las garantías:", error);
             this.datos = [];
@@ -23,33 +24,40 @@ export const garantias = {
 
     async cargarPresupuestos() {
         try {
-            this.presupuestos = await getAll("presupuestos") || [];
+            this.presupuestos = (await getAll("presupuestos")) || [];
         } catch (error) {
             console.error("Error al cargar presupuestos en garantías:", error);
             this.presupuestos = [];
         }
     },
 
-    renderOptionsPresupuestos() {
-        if (!this.presupuestos || this.presupuestos.length === 0) {
-            return `<option value="">-- No hay presupuestos registrados --</option>`;
-        }
+    poblarSelectPresupuestos() {
+        const select = document.getElementById("select-presupuesto-garantia");
+        if (!select) return;
 
-        return `<option value="">-- Seleccioná un presupuesto o trabajo --</option>` +
-            this.presupuestos.map(p => {
-                const idVal = p.id || p.numero || '';
-                const numVal = p.numero || 'S/N';
-                const nomVal = p.clienteNombre || 'Sin nombre';
-                const fecVal = p.fecha || '-';
-                return `<option value="${idVal}">${numVal} - ${nomVal} (${fecVal})</option>`;
-            }).join('');
+        select.innerHTML = "";
+
+        const defaultOption = document.createElement("option");
+        defaultOption.value = "";
+        defaultOption.textContent = "-- Seleccioná un presupuesto o trabajo --";
+        select.appendChild(defaultOption);
+
+        if (this.presupuestos && this.presupuestos.length > 0) {
+            this.presupuestos.forEach((p) => {
+                const opt = document.createElement("option");
+                opt.value = p.id || p.numero || "";
+                const num = p.numero || "S/N";
+                const nom = p.clienteNombre || "Sin nombre";
+                const fec = p.fecha || "-";
+                opt.textContent = `${num} - ${nom} (${fec})`;
+                select.appendChild(opt);
+            });
+        }
     },
 
     render() {
         const main = document.getElementById("workspace");
         if (!main) return;
-
-        const opcionesPresupuestos = this.renderOptionsPresupuestos();
 
         main.innerHTML = `
             <div class="workspace">
@@ -64,7 +72,7 @@ export const garantias = {
                     <p style="font-size: 13px; color: #666; margin-bottom: 15px;">Seleccioná un trabajo finalizado o presupuesto para generar la Hoja Oficial de Garantía con tu identidad de marca.</p>
                     <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                         <select id="select-presupuesto-garantia" style="flex: 1; min-width: 250px; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">
-                            ${opcionesPresupuestos}
+                            <option value="">Cargando datos...</option>
                         </select>
                         <button id="btn-generar-pdf-garantia" style="background: #104E2E; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: bold;">
                             📄 Descargar Certificado
@@ -142,13 +150,14 @@ export const garantias = {
             return `<tr><td colspan="4" style="padding:20px; text-align:center; color:#6b7280;">No hay plantillas de garantía creadas.</td></tr>`;
         }
 
-        return this.datos.map(g => {
-            let colorBadge = "#6b7280";
-            if (g.especialidad === "Refrigeración") colorBadge = "#0284c7";
-            if (g.especialidad === "Electricidad") colorBadge = "#d97706";
-            if (g.especialidad === "Construcción Seco") colorBadge = "#16a34a";
+        return this.datos
+            .map((g) => {
+                let colorBadge = "#6b7280";
+                if (g.especialidad === "Refrigeración") colorBadge = "#0284c7";
+                if (g.especialidad === "Electricidad") colorBadge = "#d97706";
+                if (g.especialidad === "Construcción Seco") colorBadge = "#16a34a";
 
-            return `
+                return `
                 <tr style="border-bottom: 1px solid #e5e7eb;">
                     <td style="padding:10px;"><b>${g.titulo}</b></td>
                     <td style="padding:10px;"><span style="background:${colorBadge}; color:white; padding:2px 6px; border-radius:4px; font-size:11px;">${g.especialidad}</span></td>
@@ -160,7 +169,8 @@ export const garantias = {
                     </td>
                 </tr>
             `;
-        }).join("");
+            })
+            .join("");
     },
 
     eventos() {
@@ -177,7 +187,9 @@ export const garantias = {
                     alert("Por favor seleccioná un presupuesto de la lista.");
                     return;
                 }
-                const p = this.presupuestos.find(item => String(item.id || item.numero) === String(val));
+                const p = this.presupuestos.find(
+                    (item) => String(item.id || item.numero) === String(val)
+                );
                 if (p) {
                     exportarPresupuestoPDF({ ...p, forzarGarantia: true });
                 } else {
@@ -190,7 +202,7 @@ export const garantias = {
 
         form.onsubmit = async (e) => {
             e.preventDefault();
-            
+
             const idInput = document.getElementById("garantia-id").value;
             const titulo = document.getElementById("garantia-titulo").value.trim();
             const especialidad = document.getElementById("garantia-especialidad").value;
@@ -198,7 +210,7 @@ export const garantias = {
             const textoGarantia = document.getElementById("garantia-texto").value.trim();
 
             const nuevaGarantia = { titulo, especialidad, duracion, textoGarantia };
-            
+
             if (idInput) {
                 nuevaGarantia.id = Number(idInput);
             }
@@ -206,6 +218,7 @@ export const garantias = {
             await save("garantias", nuevaGarantia);
             await this.cargarGarantias();
             this.render();
+            this.poblarSelectPresupuestos();
             this.eventos();
         };
 
@@ -218,7 +231,7 @@ export const garantias = {
 
                 if (btnImprimir) {
                     const id = btnImprimir.dataset.id;
-                    const g = this.datos.find(item => item.id == id);
+                    const g = this.datos.find((item) => item.id == id);
                     if (g) {
                         exportarPresupuestoPDF({
                             numero: `GAR-${g.id}`,
@@ -231,7 +244,7 @@ export const garantias = {
 
                 if (btnEditar) {
                     const id = btnEditar.dataset.id;
-                    const g = this.datos.find(item => item.id == id);
+                    const g = this.datos.find((item) => item.id == id);
                     if (g) {
                         document.getElementById("garantia-id").value = g.id;
                         document.getElementById("garantia-titulo").value = g.titulo;
@@ -249,6 +262,7 @@ export const garantias = {
                         await remove("garantias", idABorrar);
                         await this.cargarGarantias();
                         this.render();
+                        this.poblarSelectPresupuestos();
                         this.eventos();
                     }
                 }
