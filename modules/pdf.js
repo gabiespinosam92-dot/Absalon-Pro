@@ -420,7 +420,7 @@ export const iniciar = async () => {
     console.log("Módulo PDF preparado para exportación.");
 };
 
-// Exportación default para compatibilidad con app.js (cargarVista)
+// Exportación default para compatibilidad total con app.js
 export default {
     iniciar,
     exportarPresupuestoPDF
