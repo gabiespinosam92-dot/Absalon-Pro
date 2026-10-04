@@ -1,5 +1,7 @@
+// modules/garantias.js
+
+// 1. Exportación de la función para generar el PDF de Garantía
 export const exportarPresupuestoPDF = async (datos) => {
-    // 1. Carga segura y reactiva de jsPDF si no está presente en window
     if (typeof window.jspdf === "undefined") {
         try {
             await new Promise((resolve, reject) => {
@@ -16,22 +18,14 @@ export const exportarPresupuestoPDF = async (datos) => {
     }
 
     const { jsPDF } = window.jspdf;
-    
-    // Creación del lienzo A4 en milímetros
-    const doc = new jsPDF({
-        orientation: "portrait",
-        unit: "mm",
-        format: "a4"
-    });
+    const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
 
-    // Formateador de moneda es-AR
     const formato = (n) =>
         Number(n || 0).toLocaleString("es-AR", {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2
         });
 
-    // Mapeo e higienización de datos de entrada
     const nroPresupuesto = datos.numero || "S/N";
     const fechaPresupuesto = datos.fecha || "";
     const nombreCliente = datos.clienteNombre || "";
@@ -45,12 +39,8 @@ export const exportarPresupuestoPDF = async (datos) => {
     const esFactura = Boolean(datos.esFactura);
     const esSoloGarantia = Boolean(datos.esGarantiaDirecta);
 
-    // ==========================================
-    // DIBUJO DE PIE DE PÁGINA FIX EN MILÍMETROS
-    // ==========================================
     const dibujarPieDePagina = () => {
-        const yPie = 258; 
-
+        const yPie = 258;
         doc.setDrawColor(0, 0, 0);
         doc.setLineWidth(0.25);
         doc.line(15, yPie, 195, yPie);
@@ -86,16 +76,9 @@ export const exportarPresupuestoPDF = async (datos) => {
         doc.text("Carlos Gardel 1420 - Resistencia Chaco", 195, yPie + 22, { align: "right" });
     };
 
-    // ==========================================
-    // MODO A: EMISIÓN DIRECTA DE GARANTÍA
-    // ==========================================
     if (esSoloGarantia) {
         if (datos.logo) {
-            try {
-                doc.addImage(datos.logo, "PNG", 15, 15, 46, 29);
-            } catch (e) {
-                console.warn("No se pudo cargar el logo en el PDF", e);
-            }
+            try { doc.addImage(datos.logo, "PNG", 15, 15, 46, 29); } catch (e) {}
         }
 
         doc.setFont("helvetica", "normal");
@@ -123,7 +106,6 @@ export const exportarPresupuestoPDF = async (datos) => {
         doc.setLineWidth(0.3);
         doc.line(15, 55, 195, 55);
 
-        // DATOS CLIENTE
         doc.setFont("helvetica", "bold");
         doc.setFontSize(9);
         doc.text("CLIENTE:", 15, 63);
@@ -142,7 +124,6 @@ export const exportarPresupuestoPDF = async (datos) => {
             doc.text(String(docNum), 152, 63);
         }
 
-        // COBERTURA
         let yGarantia = 86;
 
         doc.setFillColor(239, 239, 239);
@@ -190,11 +171,8 @@ export const exportarPresupuestoPDF = async (datos) => {
         return;
     }
 
-    // ==========================================
-    // MODO B: PRESUPUESTO / FACTURA CONVENCIONAL
-    // ==========================================
+    // Modo B: Presupuesto/Factura Estándar
     const aplicarIva = datos.incluirIva !== undefined ? Boolean(datos.incluirIva) : true;
-
     const matNeto = Number(datos.totalMaterialesNeto || 0);
     const matIva = aplicarIva ? Number(datos.ivaMateriales || (matNeto * 0.21)) : 0;
     const matTotal = matNeto + matIva;
@@ -204,11 +182,7 @@ export const exportarPresupuestoPDF = async (datos) => {
     const granTotalFinal = columnaTotalNeto + columnaTotalIva;
 
     if (datos.logo) {
-        try {
-            doc.addImage(datos.logo, "PNG", 15, 15, 46, 29);
-        } catch (e) {
-            console.warn("No se pudo cargar el logo en el PDF", e);
-        }
+        try { doc.addImage(datos.logo, "PNG", 15, 15, 46, 29); } catch (e) {}
     }
 
     doc.setFont("helvetica", "normal");
@@ -249,7 +223,6 @@ export const exportarPresupuestoPDF = async (datos) => {
     doc.setLineWidth(0.3);
     doc.line(15, 55, 195, 55);
 
-    // DATOS CLIENTE
     doc.setFont("helvetica", "bold");
     doc.setFontSize(9);
     doc.text("CLIENTE:", 15, 63);
@@ -268,7 +241,6 @@ export const exportarPresupuestoPDF = async (datos) => {
         doc.text(String(docNum), 152, 63);
     }
 
-    // CABECERA DE TABLA DE ÍTEMS
     let y = 83;
     const yInicioTabla = y;
 
@@ -285,7 +257,6 @@ export const exportarPresupuestoPDF = async (datos) => {
     doc.text("IVA (21%)", 158, y + 5, { align: "right" });
     doc.text("TOTAL", 192, y + 5, { align: "right" });
 
-    // RENDERIZADO DINÁMICO DE FILAS CON MULTILÍNEA
     const agregarFilaTabla = (cant, descripcion, neto, iva, total) => {
         doc.setFont("helvetica", "normal");
         doc.setFontSize(8.5);
@@ -299,15 +270,13 @@ export const exportarPresupuestoPDF = async (datos) => {
         
         doc.text(String(cant), 21, y + 5, { align: "center" });
         doc.text(lineasDesc, 32, y + 5);
-        
         doc.text(neto ? `$ ${formato(neto)}` : "", 125, y + 5, { align: "right" });
         
         const textoIva = aplicarIva ? (iva ? `$ ${formato(iva)}` : "$ 0,00") : "$ 0,00";
         doc.text(textoIva, 158, y + 5, { align: "right" });
-        
         doc.text(total ? `$ ${formato(total)}` : "", 192, y + 5, { align: "right" });
 
-        y += (altoFila - 7.5); // Ajuste dinámico si la descripción ocupa más de 1 línea
+        y += (altoFila - 7.5);
     };
 
     if (matNeto > 0) {
@@ -320,7 +289,6 @@ export const exportarPresupuestoPDF = async (datos) => {
             const itemNeto = Number(item.total || 0);
             const itemIva = aplicarIva ? (itemNeto * 0.21) : 0;
             const itemTotal = itemNeto + itemIva;
-            
             const cantMostrar = `${item.cantidad || 1}`;
             const descMostrar = `${item.concepto || item.descripcion || 'Servicio Técnico'}`;
 
@@ -330,7 +298,6 @@ export const exportarPresupuestoPDF = async (datos) => {
         agregarFilaTabla("1", "Servicios Técnicos / Mano de Obra", 0, 0, 0);
     }
 
-    // FILA DE TOTALES ACUMULADOS
     y += 7.5;
     doc.setFillColor(248, 248, 248);
     doc.rect(15, y, 180, 7.5, "FD");
@@ -340,13 +307,11 @@ export const exportarPresupuestoPDF = async (datos) => {
     doc.text(`$ ${formato(columnaTotalIva)}`, 158, y + 5, { align: "right" });
     doc.text(`$ ${formato(granTotalFinal)}`, 192, y + 5, { align: "right" });
 
-    // DIVISORES VERTICALES DE COLUMNA
     const limitesColumnas = [30, 128, 161];
     limitesColumnas.forEach(colX => {
         doc.line(colX, yInicioTabla, colX, y + 7.5);
     });
 
-    // TIEMPO ESTIMADO Y CUADRO DE PAGO
     y += 11;
     const tCant = datos.tiempoCant || "1";
     const tTexto = datos.tiempoUnidadTexto || "uno";
@@ -366,18 +331,11 @@ export const exportarPresupuestoPDF = async (datos) => {
 
     dibujarPieDePagina();
 
-    // ==========================================
-    // PÁGINA 2: ANEXO GARANTÍA Y COBERTURA
-    // ==========================================
     if (esFinalizado || esFactura) {
         doc.addPage();
 
         if (datos.logo) {
-            try {
-                doc.addImage(datos.logo, "PNG", 15, 15, 46, 29);
-            } catch (e) {
-                console.warn("No se pudo cargar el logo en pág 2", e);
-            }
+            try { doc.addImage(datos.logo, "PNG", 15, 15, 46, 29); } catch (e) {}
         }
 
         doc.setFont("helvetica", "normal");
@@ -446,4 +404,47 @@ export const exportarPresupuestoPDF = async (datos) => {
 
     const nombreFinalArchivo = `${esFactura ? 'Factura' : 'Presupuesto'}_${nroPresupuesto}_${nombreCliente.replace(/[^\w\s-]/gi, '').replace(/\s+/g, '_')}.pdf`;
     doc.save(nombreFinalArchivo);
+};
+
+// 2. Función principal de inicialización y cruce de datos Clientes <-> Presupuestos
+export const iniciar = async () => {
+    console.log("Iniciando Módulo de Garantías...");
+
+    try {
+        // Obtención de listas desde la base de datos local / storage
+        const listaClientes = (typeof storage !== "undefined" && storage.obtenerClientes) 
+            ? await storage.obtenerClientes() 
+            : JSON.parse(localStorage.getItem("clientes") || "[]");
+
+        const listaPresupuestos = (typeof storage !== "undefined" && storage.obtenerPresupuestos) 
+            ? await storage.obtenerPresupuestos() 
+            : JSON.parse(localStorage.getItem("presupuestos") || "[]");
+
+        // Relación e integración de presupuestos por cada cliente
+        const clientesConPresupuestos = listaClientes.map(cliente => {
+            const presupuestosDelCliente = listaPresupuestos.filter(p => {
+                const coincideId = p.clienteId && String(p.clienteId) === String(cliente.id);
+                const coincideNombre = p.clienteNombre && p.clienteNombre.trim().toLowerCase() === (cliente.nombre || "").trim().toLowerCase();
+                return coincideId || coincideNombre;
+            });
+
+            return {
+                ...cliente,
+                presupuestos: presupuestosDelCliente
+            };
+        });
+
+        // Evento de renderizado o render directo si tenés la función en el ámbito
+        if (typeof renderizarVistaGarantias === "function") {
+            renderizarVistaGarantias(clientesConPresupuestos);
+        }
+    } catch (e) {
+        console.error("Error al cargar la relación de clientes y presupuestos en garantías:", e);
+    }
+};
+
+// 3. Exportación default requerida por app.js
+export default {
+    iniciar,
+    exportarPresupuestoPDF
 };
