@@ -1,6 +1,5 @@
 // modules/garantias.js
 
-// 1. Exportación de la función para generar el PDF de Garantía
 export const exportarPresupuestoPDF = async (datos) => {
     if (typeof window.jspdf === "undefined") {
         try {
@@ -12,7 +11,7 @@ export const exportarPresupuestoPDF = async (datos) => {
                 document.head.appendChild(script);
             });
         } catch (e) {
-            console.error("No se pudo cargar la librería jsPDF:", e);
+            console.error("No se pudo cargar jsPDF:", e);
             return;
         }
     }
@@ -27,10 +26,10 @@ export const exportarPresupuestoPDF = async (datos) => {
         });
 
     const nroPresupuesto = datos.numero || "S/N";
-    const fechaPresupuesto = datos.fecha || "";
-    const nombreCliente = datos.clienteNombre || "";
-    const dirCliente = datos.clienteDireccion || "";
-    const telCliente = datos.clienteTelefono || "";
+    const fechaPresupuesto = datos.fecha || new Date().toLocaleDateString("es-AR");
+    const nombreCliente = datos.clienteNombre || (datos.cliente ? datos.cliente.nombre : "") || "";
+    const dirCliente = datos.clienteDireccion || (datos.cliente ? datos.cliente.direccion : "") || "";
+    const telCliente = datos.clienteTelefono || (datos.cliente ? datos.cliente.telefono : "") || "";
     const docTipo = datos.clienteTipoDoc || "CUIL/CUIT";
     const docNum = datos.clienteNumDoc || "";
 
@@ -171,13 +170,12 @@ export const exportarPresupuestoPDF = async (datos) => {
         return;
     }
 
-    // Modo B: Presupuesto/Factura Estándar
     const aplicarIva = datos.incluirIva !== undefined ? Boolean(datos.incluirIva) : true;
     const matNeto = Number(datos.totalMaterialesNeto || 0);
     const matIva = aplicarIva ? Number(datos.ivaMateriales || (matNeto * 0.21)) : 0;
     const matTotal = matNeto + matIva;
 
-    const columnaTotalNeto = Number(datos.columnaTotalNeto || 0);
+    const columnaTotalNeto = Number(datos.columnaTotalNeto || datos.total || 0);
     const columnaTotalIva = aplicarIva ? Number(datos.columnaTotalIva || 0) : 0;
     const granTotalFinal = columnaTotalNeto + columnaTotalIva;
 
@@ -283,10 +281,10 @@ export const exportarPresupuestoPDF = async (datos) => {
         agregarFilaTabla("1", "Materiales", matNeto, matIva, matTotal);
     }
 
-    const moItems = datos.manoObraItems || [];
+    const moItems = datos.manoObraItems || datos.items || [];
     if (moItems.length > 0) {
         moItems.forEach(item => {
-            const itemNeto = Number(item.total || 0);
+            const itemNeto = Number(item.total || item.precioUnitario || 0);
             const itemIva = aplicarIva ? (itemNeto * 0.21) : 0;
             const itemTotal = itemNeto + itemIva;
             const cantMostrar = `${item.cantidad || 1}`;
@@ -406,12 +404,73 @@ export const exportarPresupuestoPDF = async (datos) => {
     doc.save(nombreFinalArchivo);
 };
 
-// 2. Función principal de inicialización y cruce de datos Clientes <-> Presupuestos
+// Función interna para construir el HTML de la vista
+const renderizarVistaGarantias = (datosClientes) => {
+    // Detecta el contenedor principal de la App
+    const contenedor = document.getElementById("contenido") || document.getElementById("app") || document.querySelector("main");
+    if (!contenedor) return;
+
+    let html = `
+        <div style="padding: 20px; font-family: sans-serif;">
+            <h2 style="margin-bottom: 20px; color: #2e7d32;">Gestión de Garantías</h2>
+    `;
+
+    if (!datosClientes || datosClientes.length === 0) {
+        html += `<p style="color: #666;">No hay clientes ni presupuestos registrados en el sistema.</p>`;
+    } else {
+        datosClientes.forEach(cliente => {
+            html += `
+                <div style="background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                    <h3 style="margin-top: 0; color: #333;">${cliente.nombre || 'Cliente sin nombre'}</h3>
+                    <p style="margin: 4px 0; color: #666; font-size: 14px;">
+                        📍 ${cliente.direccion || 'Sin dirección'} | 📞 ${cliente.telefono || 'Sin teléfono'}
+                    </p>
+                    
+                    <h4 style="margin-top: 15px; margin-bottom: 10px; font-size: 14px; color: #555;">Presupuestos y Órdenes Asociadas:</h4>
+            `;
+
+            if (cliente.presupuestos && cliente.presupuestos.length > 0) {
+                html += `<div style="display: flex; flex-direction: column; gap: 8px;">`;
+                cliente.presupuestos.forEach(p => {
+                    const datosJSON = JSON.stringify(p).replace(/'/g, "&apos;");
+                    html += `
+                        <div style="display: flex; justify-content: space-between; align-items: center; background: #f9f9f9; padding: 10px 14px; border-radius: 6px; border: 1px solid #eee;">
+                            <div>
+                                <strong>N° ${p.numero || 'S/N'}</strong> - ${p.fecha || ''}
+                                <span style="margin-left: 10px; font-weight: bold; color: #2e7d32;">$ ${(p.total || 0).toLocaleString('es-AR')}</span>
+                            </div>
+                            <button onclick='window.descargarGarantiaPDF(${datosJSON})' style="background-color: #2e7d32; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 13px;">
+                                📄 Generar PDF Garantía
+                            </button>
+                        </div>
+                    `;
+                });
+                html += `</div>`;
+            } else {
+                html += `<p style="font-size: 13px; color: #888; font-style: italic;">No posee presupuestos ni trabajos vinculados.</p>`;
+            }
+
+            html += `</div>`;
+        });
+    }
+
+    html += `</div>`;
+    contenedor.innerHTML = html;
+};
+
+// Asignar función global para los clics en los botones de PDF
+window.descargarGarantiaPDF = (datosPresupuesto) => {
+    exportarPresupuestoPDF({
+        ...datosPresupuesto,
+        esGarantiaDirecta: true
+    });
+};
+
+// Función de entrada invocada por app.js
 export const iniciar = async () => {
     console.log("Iniciando Módulo de Garantías...");
 
     try {
-        // Obtención de listas desde la base de datos local / storage
         const listaClientes = (typeof storage !== "undefined" && storage.obtenerClientes) 
             ? await storage.obtenerClientes() 
             : JSON.parse(localStorage.getItem("clientes") || "[]");
@@ -434,16 +493,13 @@ export const iniciar = async () => {
             };
         });
 
-        // Evento de renderizado o render directo si tenés la función en el ámbito
-        if (typeof renderizarVistaGarantias === "function") {
-            renderizarVistaGarantias(clientesConPresupuestos);
-        }
+        // Inyección visual en pantalla
+        renderizarVistaGarantias(clientesConPresupuestos);
     } catch (e) {
         console.error("Error al cargar la relación de clientes y presupuestos en garantías:", e);
     }
 };
 
-// 3. Exportación default requerida por app.js
 export default {
     iniciar,
     exportarPresupuestoPDF
