@@ -163,7 +163,7 @@ export const garantias = {
 
                 <!-- Selección de Plantilla de Cobertura -->
                 <div style="margin-bottom: 15px;">
-                    <label style="font-weight: bold; font-size: 14px; display: block; margin-bottom: 5px;">3. Plantilla de Cobertura Técnicas (Opcional):</label>
+                    <label style="font-weight: bold; font-size: 14px; display: block; margin-bottom: 5px;">3. Plantilla de Cobertura Técnica (Opcional):</label>
                     <select id="cert-plantilla" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; background: white;">
                         <option value="">-- Usar Texto Estándar del Sistema --</option>
                         ${opcionesPlantillas}
@@ -216,7 +216,6 @@ export const garantias = {
     },
 
     eventos() {
-        // Eventos de Pestañas/Solapas
         const btnTabPlantillas = document.getElementById("tab-btn-plantillas");
         const btnTabCertificados = document.getElementById("tab-btn-certificados");
 
@@ -233,7 +232,6 @@ export const garantias = {
             };
         }
 
-        // Lógica de Solapa Plantillas
         if (this.tabActual === "plantillas") {
             const form = document.getElementById("form-garantia");
             if (!form) return;
@@ -309,7 +307,6 @@ export const garantias = {
             }
         }
 
-        // Lógica de Solapa Certificados
         if (this.tabActual === "certificados") {
             const selectCliente = document.getElementById("cert-cliente");
             const selectPresupuesto = document.getElementById("cert-presupuesto");
@@ -329,18 +326,29 @@ export const garantias = {
                     }
 
                     const clienteSel = this.clientes.find(c => c.id == clienteId);
+                    
+                    // Búsqueda flexible de presupuestos asociados al cliente
                     const presupuestosDelCliente = this.presupuestos.filter(p => {
-                        const mId = p.clienteId && String(p.clienteId) === String(clienteId);
-                        const mNombre = clienteSel && p.clienteNombre && p.clienteNombre.trim().toLowerCase() === clienteSel.nombre.trim().toLowerCase();
-                        return mId || mNombre;
+                        const coincideId = p.clienteId && String(p.clienteId) === String(clienteId);
+                        const idObjeto = p.cliente && p.cliente.id && String(p.cliente.id) === String(clienteId);
+                        
+                        const nombreClienteSel = (clienteSel && clienteSel.nombre) ? clienteSel.nombre.trim().toLowerCase() : "";
+                        const pNombre = p.clienteNombre ? p.clienteNombre.trim().toLowerCase() : (p.cliente && p.cliente.nombre ? p.cliente.nombre.trim().toLowerCase() : "");
+                        
+                        const coincideNombre = nombreClienteSel && pNombre && pNombre.includes(nombreClienteSel);
+                        
+                        return coincideId || idObjeto || coincideNombre;
                     });
 
                     if (presupuestosDelCliente.length === 0) {
-                        selectPresupuesto.innerHTML = `<option value="">Sin presupuestos vinculados (se usará S/N)</option>`;
+                        selectPresupuesto.innerHTML = `<option value="SN">Sin presupuestos guardados (Se usará S/N)</option>`;
                     } else {
                         presupuestosDelCliente.forEach(p => {
+                            const numMostrar = p.numero || p.nroPresupuesto || p.id || 'S/N';
+                            const fechaMostrar = p.fecha || '';
+                            const totalMostrar = p.total || p.columnaTotalNeto || 0;
                             selectPresupuesto.innerHTML += `
-                                <option value="${p.id || p.numero}">N° ${p.numero || 'S/N'} - ${p.fecha || ''} ($ ${(p.total || 0).toLocaleString('es-AR')})</option>
+                                <option value="${p.id || numMostrar}">N° ${numMostrar} - ${fechaMostrar} ($ ${Number(totalMostrar).toLocaleString('es-AR')})</option>
                             `;
                         });
                     }
@@ -370,9 +378,8 @@ export const garantias = {
 
                     const clienteObj = this.clientes.find(c => c.id == clienteId);
                     const presVal = selectPresupuesto.value;
-                    let presupuestoObj = this.presupuestos.find(p => (p.id == presVal || p.numero == presVal));
+                    let presupuestoObj = this.presupuestos.find(p => (p.id == presVal || p.numero == presVal || p.nroPresupuesto == presVal));
 
-                    // Si no tiene presupuesto asociado, armamos uno base con los datos completos del cliente
                     if (!presupuestoObj) {
                         presupuestoObj = {
                             numero: "S/N",
@@ -381,20 +388,20 @@ export const garantias = {
                             clienteDireccion: clienteObj.direccion || "",
                             clienteTelefono: clienteObj.telefono || "",
                             clienteTipoDoc: clienteObj.tipoDocumento || "CUIL/CUIT",
-                            clienteNumDoc: clienteObj.numeroDocumento || ""
+                            clienteNumDoc: clienteObj.numeroDocumento || "X"
                         };
                     } else {
                         presupuestoObj = {
                             ...presupuestoObj,
-                            clienteNombre: clienteObj.nombre,
+                            numero: presupuestoObj.numero || presupuestoObj.nroPresupuesto || "S/N",
+                            clienteNombre: clienteObj.nombre || presupuestoObj.clienteNombre,
                             clienteDireccion: clienteObj.direccion || presupuestoObj.clienteDireccion || "",
                             clienteTelefono: clienteObj.telefono || presupuestoObj.clienteTelefono || "",
                             clienteTipoDoc: clienteObj.tipoDocumento || presupuestoObj.clienteTipoDoc || "CUIL/CUIT",
-                            clienteNumDoc: clienteObj.numeroDocumento || presupuestoObj.clienteNumDoc || ""
+                            clienteNumDoc: clienteObj.numeroDocumento || presupuestoObj.clienteNumDoc || "X"
                         };
                     }
 
-                    // Inyectamos textos modificados de la vista
                     presupuestoObj.garantiaAplica = txtAplica.value.trim();
                     presupuestoObj.garantiaExclusiones = txtExclusiones.value.trim();
                     presupuestoObj.esGarantiaDirecta = true;
