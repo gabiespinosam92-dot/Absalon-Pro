@@ -38,7 +38,7 @@ export const exportarPresupuestoPDF = async (datos) => {
     const docTipo = datos.clienteTipoDoc || (datos.cliente ? datos.cliente.tipoDocumento : "CUIL/CUIT") || "CUIL/CUIT";
     const docNum = datos.clienteNumDoc || (datos.cliente ? datos.cliente.numeroDocumento : "") || "";
     
-    // Capturamos las observaciones tanto si vienen como 'observaciones' o 'descripcionTrabajo'
+    // Capturamos observaciones del envío o servicio
     const observacionesTexto = datos.observaciones || datos.descripcionTrabajo || "";
 
     const prefijo = String(nroPresupuesto).toUpperCase().charAt(0);
@@ -46,11 +46,11 @@ export const exportarPresupuestoPDF = async (datos) => {
     const esFactura = Boolean(datos.esFactura);
     const esSoloGarantia = Boolean(datos.esGarantiaDirecta);
 
-    // Carga del logo (soporta ruta relativa, Base64 o LocalStorage)
+    // Carga del logo de la empresa
     const logoEmpresa = datos.logo || localStorage.getItem("logo") || localStorage.getItem("empresa_logo") || null;
 
-    // Pie de página estándar con la nueva leyenda de garantía
-    const dibujarPieDePagina = () => {
+    // Pie de página dinámico según el tipo de documento
+    const dibujarPieDePagina = (esGarantia = false) => {
         const yPie = 258;
         doc.setDrawColor(0, 0, 0);
         doc.setLineWidth(0.25);
@@ -62,8 +62,16 @@ export const exportarPresupuestoPDF = async (datos) => {
         doc.text("CONDICIONES COMERCIALES Y COBERTURA:", 15, yPie + 4.5);
 
         doc.setFont("helvetica", "normal");
-        doc.setFontSize(7.5);
-        doc.text("LA VISITA QUE CUBRE LA GARANTÍA ESTARÁ DISPONIBLE DENTRO DE LAS PRIMERAS 72HS HÁBILES A PARTIR DEL LLAMADO.", 15, yPie + 8.5);
+        
+        if (esGarantia) {
+            // Leyenda exclusiva para Certificados de Garantía / Orden de Trabajo Terminado
+            doc.setFontSize(7.5);
+            doc.text("LA VISITA QUE CUBRE LA GARANTÍA ESTARÁ DISPONIBLE DENTRO DE LAS PRIMERAS 72HS HÁBILES A PARTIR DEL LLAMADO.", 15, yPie + 8.5);
+        } else {
+            // Leyenda estándar para Presupuestos y Facturas
+            doc.setFontSize(8);
+            doc.text("RECUERDE QUE LOS PRESUPUESTOS TIENEN UN PLAZO DE 15 DIAS Y PARA CONFIRMAR SE ABONA UNA SEÑA DEL 50%.", 15, yPie + 8.5);
+        }
 
         doc.setLineWidth(0.4);
         doc.line(15, yPie + 12.5, 195, yPie + 12.5);
@@ -176,7 +184,7 @@ export const exportarPresupuestoPDF = async (datos) => {
         const lineasExclusiones = doc.splitTextToSize(textoExclusiones, 172);
         doc.text(lineasExclusiones, 19, yGarantia);
 
-        dibujarPieDePagina();
+        dibujarPieDePagina(true); // Se fuerza la leyenda de 72hs para garantía
 
         const nombreArchivo = `Garantia_${nroPresupuesto}_${nombreCliente.replace(/[^\w\s-]/gi, '').replace(/\s+/g, '_')}.pdf`;
         doc.save(nombreArchivo);
@@ -341,7 +349,7 @@ export const exportarPresupuestoPDF = async (datos) => {
     doc.setFontSize(9.5);
     doc.text("ALIAS: GABI.ESPINOSAM (MERCADO PAGO)", 19, y + 10.5);
 
-    // 🚀 RESTAURACIÓN DEL BLOQUE DE OBSERVACIONES / DETALLES DEL ENVÍO
+    // Bloque de Observaciones del Presupuesto
     if (observacionesTexto) {
         y += 18;
         doc.setFont("helvetica", "bold");
@@ -358,9 +366,9 @@ export const exportarPresupuestoPDF = async (datos) => {
         doc.text(lineasObs, 15, y);
     }
 
-    dibujarPieDePagina();
+    dibujarPieDePagina(false); // Presupuesto Estándar (mantiene el 50% de seña y 15 días)
 
-    // Segunda Página: Anexo de Garantías (si aplica)
+    // Segunda Página: Anexo de Garantías (si aplica a presupuestos finalizados)
     if (esFinalizado || esFactura) {
         doc.addPage();
 
@@ -429,7 +437,7 @@ export const exportarPresupuestoPDF = async (datos) => {
         const lineasExclusiones = doc.splitTextToSize(textoExclusiones, 172);
         doc.text(lineasExclusiones, 19, yGarantia);
 
-        dibujarPieDePagina();
+        dibujarPieDePagina(true); // Anexo de Garantías (se activa leyenda de 72hs)
     }
 
     const nombreFinalArchivo = `${esFactura ? 'Factura' : 'Presupuesto'}_${nroPresupuesto}_${nombreCliente.replace(/[^\w\s-]/gi, '').replace(/\s+/g, '_')}.pdf`;
