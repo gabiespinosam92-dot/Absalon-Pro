@@ -4,6 +4,7 @@
  * Función principal para generar y exportar el PDF del Presupuesto / Garantía
  */
 export const exportarPresupuestoPDF = async (datos) => {
+    // Carga dinámica de jsPDF si no está presente en el scope global
     if (typeof window.jspdf === "undefined") {
         try {
             await new Promise((resolve, reject) => {
@@ -36,16 +37,19 @@ export const exportarPresupuestoPDF = async (datos) => {
     const telCliente = datos.clienteTelefono || (datos.cliente ? datos.cliente.telefono : "") || "";
     const docTipo = datos.clienteTipoDoc || (datos.cliente ? datos.cliente.tipoDocumento : "CUIL/CUIT") || "CUIL/CUIT";
     const docNum = datos.clienteNumDoc || (datos.cliente ? datos.cliente.numeroDocumento : "") || "";
+    
+    // Capturamos las observaciones tanto si vienen como 'observaciones' o 'descripcionTrabajo'
+    const observacionesTexto = datos.observaciones || datos.descripcionTrabajo || "";
 
     const prefijo = String(nroPresupuesto).toUpperCase().charAt(0);
     const esFinalizado = prefijo === "T" || Boolean(datos.esGarantiaDirecta);
     const esFactura = Boolean(datos.esFactura);
     const esSoloGarantia = Boolean(datos.esGarantiaDirecta);
 
-    // Búsqueda del logo guardado localmente si no viene en el objeto directo
+    // Carga del logo (soporta ruta relativa, Base64 o LocalStorage)
     const logoEmpresa = datos.logo || localStorage.getItem("logo") || localStorage.getItem("empresa_logo") || null;
 
-    // Pie de página estándar con nueva cláusula de garantía
+    // Pie de página estándar con la nueva leyenda de garantía
     const dibujarPieDePagina = () => {
         const yPie = 258;
         doc.setDrawColor(0, 0, 0);
@@ -58,7 +62,7 @@ export const exportarPresupuestoPDF = async (datos) => {
         doc.text("CONDICIONES COMERCIALES Y COBERTURA:", 15, yPie + 4.5);
 
         doc.setFont("helvetica", "normal");
-        doc.setFontSize(8);
+        doc.setFontSize(7.5);
         doc.text("LA VISITA QUE CUBRE LA GARANTÍA ESTARÁ DISPONIBLE DENTRO DE LAS PRIMERAS 72HS HÁBILES A PARTIR DEL LLAMADO.", 15, yPie + 8.5);
 
         doc.setLineWidth(0.4);
@@ -337,9 +341,26 @@ export const exportarPresupuestoPDF = async (datos) => {
     doc.setFontSize(9.5);
     doc.text("ALIAS: GABI.ESPINOSAM (MERCADO PAGO)", 19, y + 10.5);
 
+    // 🚀 RESTAURACIÓN DEL BLOQUE DE OBSERVACIONES / DETALLES DEL ENVÍO
+    if (observacionesTexto) {
+        y += 18;
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(8.5);
+        doc.setTextColor(0, 0, 0);
+        doc.text("OBSERVACIONES Y CONDICIONES DEL SERVICIO:", 15, y);
+
+        y += 4;
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(8);
+        doc.setTextColor(50, 50, 50);
+
+        const lineasObs = doc.splitTextToSize(String(observacionesTexto), 180);
+        doc.text(lineasObs, 15, y);
+    }
+
     dibujarPieDePagina();
 
-    // Segunda Página: Anexo de Garantías
+    // Segunda Página: Anexo de Garantías (si aplica)
     if (esFinalizado || esFactura) {
         doc.addPage();
 
