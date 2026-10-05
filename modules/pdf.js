@@ -4,7 +4,6 @@
  * Función principal para generar y exportar el PDF del Presupuesto / Garantía
  */
 export const exportarPresupuestoPDF = async (datos) => {
-    // Carga dinámica de jsPDF si no está presente en el scope global
     if (typeof window.jspdf === "undefined") {
         try {
             await new Promise((resolve, reject) => {
@@ -30,20 +29,23 @@ export const exportarPresupuestoPDF = async (datos) => {
         });
 
     // Mapeo de datos del presupuesto y cliente
-    const nroPresupuesto = datos.numero || "S/N";
+    const nroPresupuesto = datos.numero || datos.nroPresupuesto || "S/N";
     const fechaPresupuesto = datos.fecha || new Date().toLocaleDateString("es-AR");
     const nombreCliente = datos.clienteNombre || (datos.cliente ? datos.cliente.nombre : "") || "";
     const dirCliente = datos.clienteDireccion || (datos.cliente ? datos.cliente.direccion : "") || "";
     const telCliente = datos.clienteTelefono || (datos.cliente ? datos.cliente.telefono : "") || "";
-    const docTipo = datos.clienteTipoDoc || "CUIL/CUIT";
-    const docNum = datos.clienteNumDoc || "";
+    const docTipo = datos.clienteTipoDoc || (datos.cliente ? datos.cliente.tipoDocumento : "CUIL/CUIT") || "CUIL/CUIT";
+    const docNum = datos.clienteNumDoc || (datos.cliente ? datos.cliente.numeroDocumento : "") || "";
 
     const prefijo = String(nroPresupuesto).toUpperCase().charAt(0);
     const esFinalizado = prefijo === "T" || Boolean(datos.esGarantiaDirecta);
     const esFactura = Boolean(datos.esFactura);
     const esSoloGarantia = Boolean(datos.esGarantiaDirecta);
 
-    // Pie de página estándar
+    // Búsqueda del logo guardado localmente si no viene en el objeto directo
+    const logoEmpresa = datos.logo || localStorage.getItem("logo") || localStorage.getItem("empresa_logo") || null;
+
+    // Pie de página estándar con nueva cláusula de garantía
     const dibujarPieDePagina = () => {
         const yPie = 258;
         doc.setDrawColor(0, 0, 0);
@@ -57,7 +59,7 @@ export const exportarPresupuestoPDF = async (datos) => {
 
         doc.setFont("helvetica", "normal");
         doc.setFontSize(8);
-        doc.text("RECUERDE QUE LOS PRESUPUESTOS TIENEN UN PLAZO DE 15 DIAS Y PARA CONFIRMAR SE ABONA UNA SEÑA DEL 50%.", 15, yPie + 8.5);
+        doc.text("LA VISITA QUE CUBRE LA GARANTÍA ESTARÁ DISPONIBLE DENTRO DE LAS PRIMERAS 72HS HÁBILES A PARTIR DEL LLAMADO.", 15, yPie + 8.5);
 
         doc.setLineWidth(0.4);
         doc.line(15, yPie + 12.5, 195, yPie + 12.5);
@@ -83,15 +85,15 @@ export const exportarPresupuestoPDF = async (datos) => {
 
     // MODO SOLO GARANTÍA (ORDEN DE TRABAJO TERMINADO)
     if (esSoloGarantia) {
-        if (datos.logo) {
-            try { doc.addImage(datos.logo, "PNG", 15, 15, 46, 29); } catch (e) {}
+        if (logoEmpresa) {
+            try { doc.addImage(logoEmpresa, "PNG", 15, 12, 46, 29); } catch (e) {}
         }
 
         doc.setFont("helvetica", "normal");
         doc.setFontSize(9);
         doc.setTextColor(100, 100, 100);
-        doc.text("Servicio Técnico Integral", 15, 47);
-        doc.text("Resistencia - Chaco", 15, 51);
+        doc.text("Servicio Técnico Integral", 15, 44);
+        doc.text("Resistencia - Chaco", 15, 48);
 
         doc.setFont("helvetica", "bold");
         doc.setFontSize(15);
@@ -110,27 +112,27 @@ export const exportarPresupuestoPDF = async (datos) => {
 
         doc.setDrawColor(210, 210, 210);
         doc.setLineWidth(0.3);
-        doc.line(15, 55, 195, 55);
+        doc.line(15, 52, 195, 52);
 
         doc.setFont("helvetica", "bold");
         doc.setFontSize(9);
-        doc.text("CLIENTE:", 15, 63);
-        doc.text("DIRECCIÓN:", 15, 69);
-        doc.text("TELÉFONO:", 15, 75);
+        doc.text("CLIENTE:", 15, 60);
+        doc.text("DIRECCIÓN:", 15, 66);
+        doc.text("TELÉFONO:", 15, 72);
 
         doc.setFont("helvetica", "normal");
-        doc.text(String(nombreCliente), 35, 63);
-        doc.text(String(dirCliente), 39, 69);
-        doc.text(String(telCliente), 38, 75);
+        doc.text(String(nombreCliente), 35, 60);
+        doc.text(String(dirCliente), 39, 66);
+        doc.text(String(telCliente), 38, 72);
 
         if (docNum) {
             doc.setFont("helvetica", "bold");
-            doc.text(`${docTipo}:`, 130, 63);
+            doc.text(`${docTipo}:`, 130, 60);
             doc.setFont("helvetica", "normal");
-            doc.text(String(docNum), 152, 63);
+            doc.text(String(docNum), 152, 60);
         }
 
-        let yGarantia = 86;
+        let yGarantia = 82;
 
         doc.setFillColor(239, 239, 239);
         doc.rect(15, yGarantia, 180, 7.5, "FD");
@@ -187,15 +189,15 @@ export const exportarPresupuestoPDF = async (datos) => {
     const columnaTotalIva = aplicarIva ? Number(datos.columnaTotalIva || 0) : 0;
     const granTotalFinal = columnaTotalNeto + columnaTotalIva;
 
-    if (datos.logo) {
-        try { doc.addImage(datos.logo, "PNG", 15, 15, 46, 29); } catch (e) {}
+    if (logoEmpresa) {
+        try { doc.addImage(logoEmpresa, "PNG", 15, 12, 46, 29); } catch (e) {}
     }
 
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
     doc.setTextColor(100, 100, 100);
-    doc.text("Servicio Técnico Integral", 15, 47);
-    doc.text("Resistencia - Chaco", 15, 51);
+    doc.text("Servicio Técnico Integral", 15, 44);
+    doc.text("Resistencia - Chaco", 15, 48);
 
     if (esFactura) {
         doc.setLineWidth(0.5);
@@ -341,8 +343,8 @@ export const exportarPresupuestoPDF = async (datos) => {
     if (esFinalizado || esFactura) {
         doc.addPage();
 
-        if (datos.logo) {
-            try { doc.addImage(datos.logo, "PNG", 15, 15, 46, 29); } catch (e) {}
+        if (logoEmpresa) {
+            try { doc.addImage(logoEmpresa, "PNG", 15, 12, 46, 29); } catch (e) {}
         }
 
         doc.setFont("helvetica", "normal");
