@@ -81,7 +81,7 @@ export const exportarPresupuestoPDF = async (datos) => {
         doc.text("Carlos Gardel 1420 - Resistencia Chaco", 195, yPie + 22, { align: "right" });
     };
 
-    // MODO SOLO GARANTÍA
+    // MODO SOLO GARANTÍA (ORDEN DE TRABAJO TERMINADO)
     if (esSoloGarantia) {
         if (datos.logo) {
             try { doc.addImage(datos.logo, "PNG", 15, 15, 46, 29); } catch (e) {}
@@ -337,7 +337,7 @@ export const exportarPresupuestoPDF = async (datos) => {
 
     dibujarPieDePagina();
 
-    // Segunda Página: Anexo de Garantías (si aplica)
+    // Segunda Página: Anexo de Garantías
     if (esFinalizado || esFactura) {
         doc.addPage();
 
@@ -413,14 +413,10 @@ export const exportarPresupuestoPDF = async (datos) => {
     doc.save(nombreFinalArchivo);
 };
 
-/**
- * Función de inicialización requerida por app.js al cargar dinámicamente el módulo
- */
 export const iniciar = async () => {
     console.log("Módulo PDF preparado para exportación.");
 };
 
-// Exportación default para compatibilidad total con app.js
 export default {
     iniciar,
     exportarPresupuestoPDF
