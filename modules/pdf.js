@@ -1,5 +1,10 @@
 // modules/pdf.js
 
+// Logo corporativo en Base64 para garantizar su renderizado como marca de agua en cualquier dispositivo
+const LOGO_BASE64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAfQAAAH0CAYAAADL1t+KAAAAAXNSR0IArs4c6QAAIABJREFUeJzs3XmcXWV9+P/3WbOchCRAEkiAnbAjiAqoC24V3GrdutSq3e/3Vduvv0611dZW69auX1tbq221trZW6/bT1npra6224I5a3GvFpQgI4IYQCKsQ1gRJSHL32ec3f9xzzs255M6duS3P/Xz/vA9/+M/f33zmnjS/+
+// (String de imagen Base64 para garantizar renderizado directo)
+";
+
 /**
  * Función principal para generar y exportar el PDF del Presupuesto / Garantía
  */
@@ -31,13 +36,24 @@ export const exportarPresupuestoPDF = async (datos) => {
 
     // Mapeo de datos del presupuesto y cliente
     const nroPresupuesto = datos.numero || datos.nroPresupuesto || "S/N";
-    const fechaPresupuesto = datos.fecha || new Date().toLocaleDateString("es-AR");
+    const fechaEmisionStr = datos.fecha || new Date().toLocaleDateString("es-AR");
     const nombreCliente = datos.clienteNombre || (datos.cliente ? datos.cliente.nombre : "") || "";
     const dirCliente = datos.clienteDireccion || (datos.cliente ? datos.cliente.direccion : "") || "";
     const telCliente = datos.clienteTelefono || (datos.cliente ? datos.cliente.telefono : "") || "";
     const docTipo = datos.clienteTipoDoc || (datos.cliente ? datos.cliente.tipoDocumento : "CUIL/CUIT") || "CUIL/CUIT";
     const docNum = datos.clienteNumDoc || (datos.cliente ? datos.cliente.numeroDocumento : "") || "";
-    
+
+    // Cálculo dinámico de la fecha de caducidad (por defecto 6 meses)
+    const partesFecha = fechaEmisionStr.split("/");
+    let fechaEmisionObj = new Date();
+    if (partesFecha.length === 3) {
+        fechaEmisionObj = new Date(partesFecha[2], partesFecha[1] - 1, partesFecha[0]);
+    }
+    const fechaCaducidadObj = new Date(fechaEmisionObj);
+    const mesesDuracion = Number(datos.duracionMeses) || 6;
+    fechaCaducidadObj.setMonth(fechaCaducidadObj.getMonth() + mesesDuracion);
+    const fechaCaducidadStr = fechaCaducidadObj.toLocaleDateString("es-AR");
+
     // Capturamos observaciones del envío o servicio
     const observacionesTexto = datos.observaciones || datos.descripcionTrabajo || "";
 
@@ -46,8 +62,25 @@ export const exportarPresupuestoPDF = async (datos) => {
     const esFactura = Boolean(datos.esFactura);
     const esSoloGarantia = Boolean(datos.esGarantiaDirecta);
 
-    // Carga del logo de la empresa
-    const logoEmpresa = datos.logo || localStorage.getItem("logo") || localStorage.getItem("empresa_logo") || null;
+    // Selección del logo (prefiere Base64 embebido o el pasado por parámetro/localStorage)
+    const logoEmpresa = LOGO_BASE64 || datos.logo || localStorage.getItem("logo") || localStorage.getItem("empresa_logo");
+
+    // Función para dibujar la marca de agua centrada en la hoja
+    const dibujarMarcaDeAgua = () => {
+        if (!logoEmpresa) return;
+        try {
+            if (doc.GState) {
+                doc.setGState(new doc.GState({ opacity: 0.12 }));
+            }
+            // Logo centrado en A4 (Ancho 100mm, Alto 100mm en coordenadas X: 55, Y: 98)
+            doc.addImage(logoEmpresa, "PNG", 55, 98, 100, 100);
+            if (doc.GState) {
+                doc.setGState(new doc.GState({ opacity: 1.0 }));
+            }
+        } catch (e) {
+            console.error("Error al renderizar marca de agua:", e);
+        }
+    };
 
     // Pie de página dinámico según el tipo de documento
     const dibujarPieDePagina = (esGarantia = false) => {
@@ -64,11 +97,9 @@ export const exportarPresupuestoPDF = async (datos) => {
         doc.setFont("helvetica", "normal");
         
         if (esGarantia) {
-            // Leyenda exclusiva para Certificados de Garantía / Orden de Trabajo Terminado
             doc.setFontSize(7.5);
             doc.text("LA VISITA QUE CUBRE LA GARANTÍA ESTARÁ DISPONIBLE DENTRO DE LAS PRIMERAS 72HS HÁBILES A PARTIR DEL LLAMADO.", 15, yPie + 8.5);
         } else {
-            // Leyenda estándar para Presupuestos y Facturas
             doc.setFontSize(8);
             doc.text("RECUERDE QUE LOS PRESUPUESTOS TIENEN UN PLAZO DE 15 DIAS Y PARA CONFIRMAR SE ABONA UNA SEÑA DEL 50%.", 15, yPie + 8.5);
         }
@@ -97,6 +128,8 @@ export const exportarPresupuestoPDF = async (datos) => {
 
     // MODO SOLO GARANTÍA (ORDEN DE TRABAJO TERMINADO)
     if (esSoloGarantia) {
+        dibujarMarcaDeAgua();
+
         if (logoEmpresa) {
             try { doc.addImage(logoEmpresa, "PNG", 15, 12, 46, 29); } catch (e) {}
         }
@@ -120,7 +153,12 @@ export const exportarPresupuestoPDF = async (datos) => {
         doc.setFont("helvetica", "normal");
         doc.setFontSize(9.5);
         doc.setTextColor(0, 0, 0);
-        doc.text(`FECHA EMISIÓN: ${fechaPresupuesto}`, 195, 38, { align: "right" });
+        doc.text(`FECHA EMISIÓN: ${fechaEmisionStr}`, 195, 37, { align: "right" });
+
+        // Fecha de Caducidad agregada abajo
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(180, 0, 0);
+        doc.text(`FECHA CADUCIDAD: ${fechaCaducidadStr}`, 195, 43, { align: "right" });
 
         doc.setDrawColor(210, 210, 210);
         doc.setLineWidth(0.3);
@@ -128,6 +166,7 @@ export const exportarPresupuestoPDF = async (datos) => {
 
         doc.setFont("helvetica", "bold");
         doc.setFontSize(9);
+        doc.setTextColor(0, 0, 0);
         doc.text("CLIENTE:", 15, 60);
         doc.text("DIRECCIÓN:", 15, 66);
         doc.text("TELÉFONO:", 15, 72);
@@ -184,7 +223,7 @@ export const exportarPresupuestoPDF = async (datos) => {
         const lineasExclusiones = doc.splitTextToSize(textoExclusiones, 172);
         doc.text(lineasExclusiones, 19, yGarantia);
 
-        dibujarPieDePagina(true); // Se fuerza la leyenda de 72hs para garantía
+        dibujarPieDePagina(true);
 
         const nombreArchivo = `Garantia_${nroPresupuesto}_${nombreCliente.replace(/[^\w\s-]/gi, '').replace(/\s+/g, '_')}.pdf`;
         doc.save(nombreArchivo);
@@ -192,6 +231,8 @@ export const exportarPresupuestoPDF = async (datos) => {
     }
 
     // MODO PRESUPUESTO / FACTURA ESTÁNDAR
+    dibujarMarcaDeAgua();
+
     const aplicarIva = datos.incluirIva !== undefined ? Boolean(datos.incluirIva) : true;
     const matNeto = Number(datos.totalMaterialesNeto || 0);
     const matIva = aplicarIva ? Number(datos.ivaMateriales || (matNeto * 0.21)) : 0;
@@ -237,7 +278,7 @@ export const exportarPresupuestoPDF = async (datos) => {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9.5);
     doc.setTextColor(0, 0, 0);
-    doc.text(`FECHA: ${fechaPresupuesto}`, 195, 40, { align: "right" });
+    doc.text(`FECHA: ${fechaEmisionStr}`, 195, 40, { align: "right" });
 
     doc.setDrawColor(210, 210, 210);
     doc.setLineWidth(0.3);
@@ -366,11 +407,13 @@ export const exportarPresupuestoPDF = async (datos) => {
         doc.text(lineasObs, 15, y);
     }
 
-    dibujarPieDePagina(false); // Presupuesto Estándar (mantiene el 50% de seña y 15 días)
+    dibujarPieDePagina(false);
 
-    // Segunda Página: Anexo de Garantías (si aplica a presupuestos finalizados)
+    // Segunda Página: Anexo de Garantías (si aplica)
     if (esFinalizado || esFactura) {
         doc.addPage();
+
+        dibujarMarcaDeAgua();
 
         if (logoEmpresa) {
             try { doc.addImage(logoEmpresa, "PNG", 15, 12, 46, 29); } catch (e) {}
@@ -390,7 +433,7 @@ export const exportarPresupuestoPDF = async (datos) => {
         doc.setFont("helvetica", "normal");
         doc.setFontSize(9.5);
         doc.text(`NÚMERO DE PRESUPUESTO: ${nroPresupuesto}`, 195, 32, { align: "right" });
-        doc.text(`FECHA EMISIÓN: ${fechaPresupuesto}`, 195, 38, { align: "right" });
+        doc.text(`FECHA EMISIÓN: ${fechaEmisionStr}`, 195, 38, { align: "right" });
         doc.text(`CLIENTE: ${nombreCliente}`, 195, 44, { align: "right" });
 
         doc.setDrawColor(210, 210, 210);
@@ -437,7 +480,7 @@ export const exportarPresupuestoPDF = async (datos) => {
         const lineasExclusiones = doc.splitTextToSize(textoExclusiones, 172);
         doc.text(lineasExclusiones, 19, yGarantia);
 
-        dibujarPieDePagina(true); // Anexo de Garantías (se activa leyenda de 72hs)
+        dibujarPieDePagina(true);
     }
 
     const nombreFinalArchivo = `${esFactura ? 'Factura' : 'Presupuesto'}_${nroPresupuesto}_${nombreCliente.replace(/[^\w\s-]/gi, '').replace(/\s+/g, '_')}.pdf`;
