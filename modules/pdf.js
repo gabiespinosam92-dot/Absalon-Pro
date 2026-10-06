@@ -1,11 +1,30 @@
 // modules/pdf.js
-import { LOGO_BASE64 } from "./logoData.js";
+
+/**
+ * Convierte dinámicamente un archivo de imagen local (o URL) a Base64 en memoria
+ */
+const cargarImagenBase64 = (url) => {
+    return new Promise((resolve) => {
+        const img = new Image();
+        img.crossOrigin = "Anonymous";
+        img.onload = () => {
+            const canvas = document.createElement("canvas");
+            canvas.width = img.width;
+            canvas.height = img.height;
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(img, 0, 0);
+            resolve(canvas.toDataURL("image/png"));
+        };
+        img.onerror = () => resolve(null);
+        img.src = url;
+    });
+};
 
 /**
  * Función principal para generar y exportar el PDF del Presupuesto / Garantía
  */
 export const exportarPresupuestoPDF = async (datos) => {
-    // Carga dinámica de jsPDF si no está presente en el scope global
+    // Carga dinámica de jsPDF si no está disponible en window
     if (typeof window.jspdf === "undefined") {
         try {
             await new Promise((resolve, reject) => {
@@ -30,10 +49,11 @@ export const exportarPresupuestoPDF = async (datos) => {
             maximumFractionDigits: 2
         });
 
-    // Carga directa del logo corporativo desde el módulo centralizado
-    const logoEmpresa = LOGO_BASE64 || datos.logo || localStorage.getItem("logo") || localStorage.getItem("empresa_logo");
+    // Carga directa de logos presentes en la raíz de la aplicación
+    const logoEncabezado = await cargarImagenBase64("./logo_083121.png");
+    const logoMarcaAgua = await cargarImagenBase64("./logo_2.png") || logoEncabezado;
 
-    // Mapeo de datos del presupuesto y cliente
+    // Mapeo de datos principales
     const nroPresupuesto = datos.numero || datos.nroPresupuesto || "S/N";
     const fechaEmisionStr = datos.fecha || new Date().toLocaleDateString("es-AR");
     const nombreCliente = datos.clienteNombre || (datos.cliente ? datos.cliente.nombre : "") || "";
@@ -42,7 +62,7 @@ export const exportarPresupuestoPDF = async (datos) => {
     const docTipo = datos.clienteTipoDoc || (datos.cliente ? datos.cliente.tipoDocumento : "CUIL/CUIT") || "CUIL/CUIT";
     const docNum = datos.clienteNumDoc || (datos.cliente ? datos.cliente.numeroDocumento : "") || "";
 
-    // Cálculo dinámico de la fecha de caducidad de la garantía
+    // Cálculo dinámico de la fecha de caducidad (6 meses por defecto)
     const partesFecha = fechaEmisionStr.split("/");
     let fechaEmisionObj = new Date();
     if (partesFecha.length === 3) {
@@ -53,7 +73,6 @@ export const exportarPresupuestoPDF = async (datos) => {
     fechaCaducidadObj.setMonth(fechaCaducidadObj.getMonth() + mesesDuracion);
     const fechaCaducidadStr = fechaCaducidadObj.toLocaleDateString("es-AR");
 
-    // Observaciones enviadas desde el módulo de presupuestos
     const observacionesTexto = datos.observaciones || datos.descripcionTrabajo || "";
 
     const prefijo = String(nroPresupuesto).toUpperCase().charAt(0);
@@ -61,23 +80,23 @@ export const exportarPresupuestoPDF = async (datos) => {
     const esFactura = Boolean(datos.esFactura);
     const esSoloGarantia = Boolean(datos.esGarantiaDirecta);
 
-    // Dibujar Marca de Agua en el centro de la página A4 (con opacidad atenuada)
+    // Dibujar Marca de Agua centrado con logo_2.png
     const dibujarMarcaDeAgua = () => {
-        if (!logoEmpresa) return;
+        if (!logoMarcaAgua) return;
         try {
             if (doc.GState) {
                 doc.setGState(new doc.GState({ opacity: 0.12 }));
             }
-            doc.addImage(logoEmpresa, "PNG", 55, 98, 100, 100);
+            doc.addImage(logoMarcaAgua, "PNG", 55, 98, 100, 100);
             if (doc.GState) {
                 doc.setGState(new doc.GState({ opacity: 1.0 }));
             }
         } catch (e) {
-            console.error("Error al renderizar la marca de agua:", e);
+            console.error("Error al renderizar marca de agua:", e);
         }
     };
 
-    // Pie de página dinámico según el tipo de documento
+    // Pie de página dinámico según el comprobante
     const dibujarPieDePagina = (esGarantia = false) => {
         const yPie = 258;
         doc.setDrawColor(0, 0, 0);
@@ -127,8 +146,8 @@ export const exportarPresupuestoPDF = async (datos) => {
     if (esSoloGarantia) {
         dibujarMarcaDeAgua();
 
-        if (logoEmpresa) {
-            try { doc.addImage(logoEmpresa, "PNG", 15, 12, 46, 29); } catch (e) {}
+        if (logoEncabezado) {
+            try { doc.addImage(logoEncabezado, "PNG", 15, 12, 46, 29); } catch (e) {}
         }
 
         doc.setFont("helvetica", "normal");
@@ -240,8 +259,8 @@ export const exportarPresupuestoPDF = async (datos) => {
     const columnaTotalIva = aplicarIva ? Number(datos.columnaTotalIva || 0) : 0;
     const granTotalFinal = columnaTotalNeto + columnaTotalIva;
 
-    if (logoEmpresa) {
-        try { doc.addImage(logoEmpresa, "PNG", 15, 12, 46, 29); } catch (e) {}
+    if (logoEncabezado) {
+        try { doc.addImage(logoEncabezado, "PNG", 15, 12, 46, 29); } catch (e) {}
     }
 
     doc.setFont("helvetica", "normal");
@@ -413,8 +432,8 @@ export const exportarPresupuestoPDF = async (datos) => {
 
         dibujarMarcaDeAgua();
 
-        if (logoEmpresa) {
-            try { doc.addImage(logoEmpresa, "PNG", 15, 12, 46, 29); } catch (e) {}
+        if (logoEncabezado) {
+            try { doc.addImage(logoEncabezado, "PNG", 15, 12, 46, 29); } catch (e) {}
         }
 
         doc.setFont("helvetica", "normal");
