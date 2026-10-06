@@ -82,8 +82,8 @@ export const garantias = {
                         </div>
 
                         <div>
-                            <label style="display:block; margin-bottom:5px; font-weight:bold;">Duración:</label>
-                            <input type="text" id="garantia-duracion" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;" placeholder="Ej: 6 meses / 1 año" required>
+                            <label style="display:block; margin-bottom:5px; font-weight:bold;">Duración (en meses):</label>
+                            <input type="number" id="garantia-duracion" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;" placeholder="Ej: 6" value="6" required>
                         </div>
 
                         <div>
@@ -132,8 +132,10 @@ export const garantias = {
         `).join("");
 
         const opcionesPlantillas = this.datos.map(g => `
-            <option value="${g.id}">${g.titulo} - ${g.especialidad} (${g.duracion})</option>
+            <option value="${g.id}">${g.titulo} - ${g.especialidad} (${g.duracion || 6} meses)</option>
         `).join("");
+
+        const fechaHoy = new Date().toISOString().split('T')[0];
 
         return `
             <div class="card" style="max-width: 700px; margin: 0 auto; background: #fff; padding: 25px; border-radius: 8px; border: 1px solid #e5e7eb; font-family: sans-serif;">
@@ -141,7 +143,7 @@ export const garantias = {
                     🎓 Emisión de Certificado de Garantía
                 </h3>
                 <p style="color: #666; font-size: 13px; margin-bottom: 20px;">
-                    Seleccioná el cliente registrado para vincular sus datos de contacto y emitir la Orden de Trabajo Finalizado.
+                    Seleccioná el cliente registrado e ingresá los datos del presupuesto para emitir la Orden de Trabajo Finalizado.
                 </p>
 
                 <!-- Selección de Cliente -->
@@ -153,17 +155,21 @@ export const garantias = {
                     </select>
                 </div>
 
-                <!-- Selección de Presupuesto del Cliente -->
-                <div style="margin-bottom: 15px;">
-                    <label style="font-weight: bold; font-size: 14px; display: block; margin-bottom: 5px;">2. Presupuesto / Trabajo Asociado:</label>
-                    <select id="cert-presupuesto" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; background: white;" disabled>
-                        <option value="">-- Primero seleccioná un cliente --</option>
-                    </select>
+                <!-- Datos del Presupuesto (Manual / Automático) -->
+                <div style="margin-bottom: 15px; display: flex; gap: 15px;">
+                    <div style="flex: 1;">
+                        <label style="font-weight: bold; font-size: 14px; display: block; margin-bottom: 5px;">2. N° de Presupuesto:</label>
+                        <input type="text" id="cert-num-presupuesto" placeholder="Ej: E-0023 o S/N" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+                    </div>
+                    <div style="flex: 1;">
+                        <label style="font-weight: bold; font-size: 14px; display: block; margin-bottom: 5px;">Fecha Emisión:</label>
+                        <input type="date" id="cert-fecha-emision" value="${fechaHoy}" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+                    </div>
                 </div>
 
                 <!-- Selección de Plantilla de Cobertura -->
                 <div style="margin-bottom: 15px;">
-                    <label style="font-weight: bold; font-size: 14px; display: block; margin-bottom: 5px;">3. Plantilla de Cobertura Técnica (Opcional):</label>
+                    <label style="font-weight: bold; font-size: 14px; display: block; margin-bottom: 5px;">3. Cargar Plantilla de Garantía (Opcional):</label>
                     <select id="cert-plantilla" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; background: white;">
                         <option value="">-- Usar Texto Estándar del Sistema --</option>
                         ${opcionesPlantillas}
@@ -205,7 +211,7 @@ export const garantias = {
                 <tr style="border-bottom: 1px solid #e5e7eb;">
                     <td style="padding:10px;"><b>${g.titulo}</b></td>
                     <td style="padding:10px;"><span style="background:${colorBadge}; color:white; padding:2px 6px; border-radius:4px; font-size:11px;">${g.especialidad}</span></td>
-                    <td style="padding:10px;">${g.duracion}</td>
+                    <td style="padding:10px;">${g.duracion || 6} meses</td>
                     <td style="padding:10px; text-align:right;">
                         <button class="btn-editar" data-id="${g.id}" style="border:none; background:none; cursor:pointer; margin-right:5px;">✏️</button>
                         <button class="btn-eliminar" data-id="${g.id}" style="border:none; background:none; cursor:pointer;">🗑️</button>
@@ -241,14 +247,14 @@ export const garantias = {
                 const idInput = document.getElementById("garantia-id").value;
                 const titulo = document.getElementById("garantia-titulo").value.trim();
                 const especialidad = document.getElementById("garantia-especialidad").value;
-                const duracion = document.getElementById("garantia-duracion").value.trim();
+                const duracion = document.getElementById("garantia-duracion").value;
                 const textoGarantia = document.getElementById("garantia-texto").value.trim();
                 const garantiaExclusiones = document.getElementById("garantia-exclusiones").value.trim();
 
                 const nuevaGarantia = { 
                     titulo, 
                     especialidad, 
-                    duracion, 
+                    duracion: Number(duracion) || 6, 
                     textoGarantia,
                     garantiaExclusiones
                 };
@@ -276,7 +282,7 @@ export const garantias = {
                             document.getElementById("garantia-id").value = g.id;
                             document.getElementById("garantia-titulo").value = g.titulo;
                             document.getElementById("garantia-especialidad").value = g.especialidad;
-                            document.getElementById("garantia-duracion").value = g.duracion;
+                            document.getElementById("garantia-duracion").value = g.duracion || 6;
                             document.getElementById("garantia-texto").value = g.textoGarantia || "";
                             document.getElementById("garantia-exclusiones").value = g.garantiaExclusiones || "";
                             document.getElementById("form-titulo").innerText = "✏️ Editar Plantilla";
@@ -309,53 +315,13 @@ export const garantias = {
 
         if (this.tabActual === "certificados") {
             const selectCliente = document.getElementById("cert-cliente");
-            const selectPresupuesto = document.getElementById("cert-presupuesto");
             const selectPlantilla = document.getElementById("cert-plantilla");
             const txtAplica = document.getElementById("cert-texto-aplica");
             const txtExclusiones = document.getElementById("cert-texto-exclusiones");
             const btnEmitir = document.getElementById("btnEmitirCertificado");
+            const inputNumPresupuesto = document.getElementById("cert-num-presupuesto");
 
-            if (selectCliente) {
-                selectCliente.onchange = (e) => {
-                    const clienteId = e.target.value;
-                    selectPresupuesto.innerHTML = `<option value="">-- Seleccionar Presupuesto --</option>`;
-                    
-                    if (!clienteId) {
-                        selectPresupuesto.disabled = true;
-                        return;
-                    }
-
-                    const clienteSel = this.clientes.find(c => c.id == clienteId);
-                    
-                    // Búsqueda flexible de presupuestos asociados al cliente
-                    const presupuestosDelCliente = this.presupuestos.filter(p => {
-                        const coincideId = p.clienteId && String(p.clienteId) === String(clienteId);
-                        const idObjeto = p.cliente && p.cliente.id && String(p.cliente.id) === String(clienteId);
-                        
-                        const nombreClienteSel = (clienteSel && clienteSel.nombre) ? clienteSel.nombre.trim().toLowerCase() : "";
-                        const pNombre = p.clienteNombre ? p.clienteNombre.trim().toLowerCase() : (p.cliente && p.cliente.nombre ? p.cliente.nombre.trim().toLowerCase() : "");
-                        
-                        const coincideNombre = nombreClienteSel && pNombre && pNombre.includes(nombreClienteSel);
-                        
-                        return coincideId || idObjeto || coincideNombre;
-                    });
-
-                    if (presupuestosDelCliente.length === 0) {
-                        selectPresupuesto.innerHTML = `<option value="SN">Sin presupuestos guardados (Se usará S/N)</option>`;
-                    } else {
-                        presupuestosDelCliente.forEach(p => {
-                            const numMostrar = p.numero || p.nroPresupuesto || p.id || 'S/N';
-                            const fechaMostrar = p.fecha || '';
-                            const totalMostrar = p.total || p.columnaTotalNeto || 0;
-                            selectPresupuesto.innerHTML += `
-                                <option value="${p.id || numMostrar}">N° ${numMostrar} - ${fechaMostrar} ($ ${Number(totalMostrar).toLocaleString('es-AR')})</option>
-                            `;
-                        });
-                    }
-
-                    selectPresupuesto.disabled = false;
-                };
-            }
+            let duracionSeleccionadaMeses = 6;
 
             if (selectPlantilla) {
                 selectPlantilla.onchange = (e) => {
@@ -364,6 +330,7 @@ export const garantias = {
                     if (g) {
                         txtAplica.value = g.textoGarantia || "";
                         txtExclusiones.value = g.garantiaExclusiones || "";
+                        duracionSeleccionadaMeses = Number(g.duracion) || 6;
                     }
                 };
             }
@@ -377,36 +344,32 @@ export const garantias = {
                     }
 
                     const clienteObj = this.clientes.find(c => c.id == clienteId);
-                    const presVal = selectPresupuesto.value;
-                    let presupuestoObj = this.presupuestos.find(p => (p.id == presVal || p.numero == presVal || p.nroPresupuesto == presVal));
-
-                    if (!presupuestoObj) {
-                        presupuestoObj = {
-                            numero: "S/N",
-                            fecha: new Date().toLocaleDateString("es-AR"),
-                            clienteNombre: clienteObj.nombre,
-                            clienteDireccion: clienteObj.direccion || "",
-                            clienteTelefono: clienteObj.telefono || "",
-                            clienteTipoDoc: clienteObj.tipoDocumento || "CUIL/CUIT",
-                            clienteNumDoc: clienteObj.numeroDocumento || "X"
-                        };
-                    } else {
-                        presupuestoObj = {
-                            ...presupuestoObj,
-                            numero: presupuestoObj.numero || presupuestoObj.nroPresupuesto || "S/N",
-                            clienteNombre: clienteObj.nombre || presupuestoObj.clienteNombre,
-                            clienteDireccion: clienteObj.direccion || presupuestoObj.clienteDireccion || "",
-                            clienteTelefono: clienteObj.telefono || presupuestoObj.clienteTelefono || "",
-                            clienteTipoDoc: clienteObj.tipoDocumento || presupuestoObj.clienteTipoDoc || "CUIL/CUIT",
-                            clienteNumDoc: clienteObj.numeroDocumento || presupuestoObj.clienteNumDoc || "X"
-                        };
+                    const numPresupuestoManual = inputNumPresupuesto.value.trim() || "S/N";
+                    
+                    const fechaInputVal = document.getElementById("cert-fecha-emision").value;
+                    let fechaEmisionFormateada = new Date().toLocaleDateString("es-AR");
+                    if (fechaInputVal) {
+                        const partes = fechaInputVal.split("-");
+                        if (partes.length === 3) {
+                            fechaEmisionFormateada = `${partes[2]}/${partes[1]}/${partes[0]}`;
+                        }
                     }
 
-                    presupuestoObj.garantiaAplica = txtAplica.value.trim();
-                    presupuestoObj.garantiaExclusiones = txtExclusiones.value.trim();
-                    presupuestoObj.esGarantiaDirecta = true;
+                    const paqueteGarantia = {
+                        numero: numPresupuestoManual,
+                        fecha: fechaEmisionFormateada,
+                        duracionMeses: duracionSeleccionadaMeses,
+                        clienteNombre: clienteObj.nombre,
+                        clienteDireccion: clienteObj.direccion || "",
+                        clienteTelefono: clienteObj.telefono || "",
+                        clienteTipoDoc: clienteObj.tipoDocumento || "CUIL/CUIT",
+                        clienteNumDoc: clienteObj.numeroDocumento || "X",
+                        garantiaAplica: txtAplica.value.trim(),
+                        garantiaExclusiones: txtExclusiones.value.trim(),
+                        esGarantiaDirecta: true
+                    };
 
-                    await exportarPresupuestoPDF(presupuestoObj);
+                    await exportarPresupuestoPDF(paqueteGarantia);
                 };
             }
         }
