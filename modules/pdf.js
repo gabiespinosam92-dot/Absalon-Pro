@@ -1,9 +1,5 @@
 // modules/pdf.js
-
-// Logo corporativo en Base64 para garantizar su renderizado como marca de agua en cualquier dispositivo
-const LOGO_BASE64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAfQAAAH0CAYAAADL1t+KAAAAAXNSR0IArs4c6QAAIABJREFUeJzs3XmcXWV9+P/3WbOchCRAEkiAnbAjiAqoC24V3GrdutSq3e/3Vduvv0611dZW69auX1tbq221trZW6/bT1npra6224I5a3GvFpQgI4IYQCKsQ1gRJSHL32ec3f9xzzs255M6duS3P/Xz/vA9/+M/f33zmnjS/+
-// (String de imagen Base64 para garantizar renderizado directo)
-";
+import { LOGO_BASE64 } from "./logoData.js";
 
 /**
  * Función principal para generar y exportar el PDF del Presupuesto / Garantía
@@ -34,6 +30,9 @@ export const exportarPresupuestoPDF = async (datos) => {
             maximumFractionDigits: 2
         });
 
+    // Carga directa del logo corporativo desde el módulo centralizado
+    const logoEmpresa = LOGO_BASE64 || datos.logo || localStorage.getItem("logo") || localStorage.getItem("empresa_logo");
+
     // Mapeo de datos del presupuesto y cliente
     const nroPresupuesto = datos.numero || datos.nroPresupuesto || "S/N";
     const fechaEmisionStr = datos.fecha || new Date().toLocaleDateString("es-AR");
@@ -43,7 +42,7 @@ export const exportarPresupuestoPDF = async (datos) => {
     const docTipo = datos.clienteTipoDoc || (datos.cliente ? datos.cliente.tipoDocumento : "CUIL/CUIT") || "CUIL/CUIT";
     const docNum = datos.clienteNumDoc || (datos.cliente ? datos.cliente.numeroDocumento : "") || "";
 
-    // Cálculo dinámico de la fecha de caducidad (por defecto 6 meses)
+    // Cálculo dinámico de la fecha de caducidad de la garantía
     const partesFecha = fechaEmisionStr.split("/");
     let fechaEmisionObj = new Date();
     if (partesFecha.length === 3) {
@@ -54,7 +53,7 @@ export const exportarPresupuestoPDF = async (datos) => {
     fechaCaducidadObj.setMonth(fechaCaducidadObj.getMonth() + mesesDuracion);
     const fechaCaducidadStr = fechaCaducidadObj.toLocaleDateString("es-AR");
 
-    // Capturamos observaciones del envío o servicio
+    // Observaciones enviadas desde el módulo de presupuestos
     const observacionesTexto = datos.observaciones || datos.descripcionTrabajo || "";
 
     const prefijo = String(nroPresupuesto).toUpperCase().charAt(0);
@@ -62,23 +61,19 @@ export const exportarPresupuestoPDF = async (datos) => {
     const esFactura = Boolean(datos.esFactura);
     const esSoloGarantia = Boolean(datos.esGarantiaDirecta);
 
-    // Selección del logo (prefiere Base64 embebido o el pasado por parámetro/localStorage)
-    const logoEmpresa = LOGO_BASE64 || datos.logo || localStorage.getItem("logo") || localStorage.getItem("empresa_logo");
-
-    // Función para dibujar la marca de agua centrada en la hoja
+    // Dibujar Marca de Agua en el centro de la página A4 (con opacidad atenuada)
     const dibujarMarcaDeAgua = () => {
         if (!logoEmpresa) return;
         try {
             if (doc.GState) {
                 doc.setGState(new doc.GState({ opacity: 0.12 }));
             }
-            // Logo centrado en A4 (Ancho 100mm, Alto 100mm en coordenadas X: 55, Y: 98)
             doc.addImage(logoEmpresa, "PNG", 55, 98, 100, 100);
             if (doc.GState) {
                 doc.setGState(new doc.GState({ opacity: 1.0 }));
             }
         } catch (e) {
-            console.error("Error al renderizar marca de agua:", e);
+            console.error("Error al renderizar la marca de agua:", e);
         }
     };
 
@@ -126,7 +121,9 @@ export const exportarPresupuestoPDF = async (datos) => {
         doc.text("Carlos Gardel 1420 - Resistencia Chaco", 195, yPie + 22, { align: "right" });
     };
 
-    // MODO SOLO GARANTÍA (ORDEN DE TRABAJO TERMINADO)
+    // =========================================================
+    // 1. MODO SOLO GARANTÍA (ORDEN DE TRABAJO TERMINADO)
+    // =========================================================
     if (esSoloGarantia) {
         dibujarMarcaDeAgua();
 
@@ -155,7 +152,6 @@ export const exportarPresupuestoPDF = async (datos) => {
         doc.setTextColor(0, 0, 0);
         doc.text(`FECHA EMISIÓN: ${fechaEmisionStr}`, 195, 37, { align: "right" });
 
-        // Fecha de Caducidad agregada abajo
         doc.setFont("helvetica", "bold");
         doc.setTextColor(180, 0, 0);
         doc.text(`FECHA CADUCIDAD: ${fechaCaducidadStr}`, 195, 43, { align: "right" });
@@ -230,7 +226,9 @@ export const exportarPresupuestoPDF = async (datos) => {
         return;
     }
 
-    // MODO PRESUPUESTO / FACTURA ESTÁNDAR
+    // =========================================================
+    // 2. MODO PRESUPUESTO / FACTURA ESTÁNDAR
+    // =========================================================
     dibujarMarcaDeAgua();
 
     const aplicarIva = datos.incluirIva !== undefined ? Boolean(datos.incluirIva) : true;
@@ -409,7 +407,7 @@ export const exportarPresupuestoPDF = async (datos) => {
 
     dibujarPieDePagina(false);
 
-    // Segunda Página: Anexo de Garantías (si aplica)
+    // Segunda Página: Anexo de Garantías (si aplica a presupuestos finalizados)
     if (esFinalizado || esFactura) {
         doc.addPage();
 
