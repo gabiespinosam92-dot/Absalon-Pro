@@ -1,8 +1,9 @@
 /* ==========================================================
    ABSALON PRO - MÓDULO ELECTRICIDAD (NORMA AEA 90364)
+   Actualizado con Pestañas de Configuración Detallada
 ========================================================== */
 
-import { getAll } from "./storage.js"; // Como storage.js está en la misma carpeta 'modules'
+import { getAll } from "./storage.js";
 
 export const electricidad = {
     catalogo: [],
@@ -29,41 +30,95 @@ export const electricidad = {
             <p class="text-muted">Cálculo parametrizado por bocas, cableado de circuitos y Puesta a Tierra (PAT).</p>
             <br>
 
+            <!-- Sistema de Pestañas (Tabs) -->
+            <div style="display:flex; gap:10px; border-bottom:2px solid #ddd; margin-bottom:20px;">
+                <button type="button" class="tab-btn active" data-tab="tab-bocas" style="padding:10px 20px; background:#eab308; border:none; font-weight:bold; cursor:pointer; border-radius:4px 4px 0 0;">1. Bocas y Circuitos</button>
+                <button type="button" class="tab-btn" data-tab="tab-materiales" style="padding:10px 20px; background:#f3f4f6; border:none; font-weight:bold; cursor:pointer; border-radius:4px 4px 0 0;">2. Materiales y Cañerías</button>
+            </div>
+
             <form id="formElectricidad">
-                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:15px;">
-                    <div>
-                        <label><b>Bocas Iluminación (IUG)</b></label><br>
-                        <input type="number" id="cantIUG" value="8" min="0" style="width:100%; padding:6px;">
+                <!-- PESTAÑA 1: BOCAS -->
+                <div id="tab-bocas" class="tab-content">
+                    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:15px;">
+                        <div>
+                            <label><b>Bocas Iluminación (IUG)</b></label><br>
+                            <input type="number" id="cantIUG" value="8" min="0" style="width:100%; padding:6px;">
+                        </div>
+                        <div>
+                            <label><b>Bocas Tomacorrientes (TUG)</b></label><br>
+                            <input type="number" id="cantTUG" value="12" min="0" style="width:100%; padding:6px;">
+                        </div>
+                        <div>
+                            <label><b>Bocas Uso Especial (TUE)</b></label><br>
+                            <input type="number" id="cantTUE" value="2" min="0" style="width:100%; padding:6px;">
+                        </div>
                     </div>
-                    <div>
-                        <label><b>Bocas Tomacorrientes (TUG)</b></label><br>
-                        <input type="number" id="cantTUG" value="12" min="0" style="width:100%; padding:6px;">
-                    </div>
-                    <div>
-                        <label><b>Bocas Uso Especial (TUE)</b></label><br>
-                        <input type="number" id="cantTUE" value="2" min="0" style="width:100%; padding:6px;">
+
+                    <hr style="margin:20px 0;">
+
+                    <h4>🔌 Configuración de Tomacorrientes y Cajas</h4>
+                    <p class="text-muted" style="font-size: 0.9em;">Define el estándar de armado para las cajas rectangulares (puntos y tomas).</p>
+                    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap:15px; margin-top:10px;">
+                        <div>
+                            <label>Tipo de Caja Rectangular predominante</label><br>
+                            <select id="tipoCajaRectangular" style="width:100%; padding:6px;">
+                                <option value="simple">1 Toma / Punto por caja (Standard)</option>
+                                <option value="doble" selected>Caja con 2 tomas (Doble módulo)</option>
+                                <option value="triple">Caja con 3 tomas (Múltiple)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label>Sección Cable Circuitos TUG / TUE</label><br>
+                            <select id="seccionTUG" style="width:100%; padding:6px;">
+                                <option value="2.5" selected>2.5 mm² (Normalizado)</option>
+                                <option value="4.0">4.0 mm² (Reforzado)</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
 
-                <hr style="margin:20px 0;">
+                <!-- PESTAÑA 2: CAÑERÍAS Y ACCESORIOS -->
+                <div id="tab-materiales" class="tab-content" style="display:none;">
+                    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:15px; margin-top:10px;">
+                        <div>
+                            <label>Promedio Cañería / Boca (m)</label><br>
+                            <input type="number" id="mCañoPorBoca" value="3" step="0.5" style="width:100%; padding:6px;">
+                        </div>
+                        <div>
+                            <label>Tipo de Cañería</label><br>
+                            <select id="tipoCaneria" style="width:100%; padding:6px;">
+                                <option value="Corrugado PVC Pesado">Caño Corrugado Pesado (K6)</option>
+                                <option value="Caño Rígido PVC">Caño Rígido PVC Rosca/Expansión</option>
+                                <option value="Caño Acero Galvanizado">Caño Metálico Semipesado</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label>Diámetro de Cañería</label><br>
+                            <select id="diametroCaneria" style="width:100%; padding:6px;">
+                                <option value="3/4" selected>3/4" (Estándar viviendas)</option>
+                                <option value="7/8">7/8"</option>
+                                <option value="1">1" (Alimentadores / Centralizados)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label>Sección Cable Alimentador (mm²)</label><br>
+                            <select id="seccionAlimentador" style="width:100%; padding:6px;">
+                                <option value="4">4.0 mm²</option>
+                                <option value="6" selected>6.0 mm²</option>
+                                <option value="10">10.0 mm²</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label>Metros Acometida a Tablero (m)</label><br>
+                            <input type="number" id="mAlimentador" value="15" step="1" style="width:100%; padding:6px;">
+                        </div>
+                    </div>
 
-                <h4>🔌 Cableado y Puesta a Tierra (PAT)</h4>
-                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:15px; margin-top:10px;">
-                    <div>
-                        <label>Promedio Cañería / Boca (m)</label><br>
-                        <input type="number" id="mCañoPorBoca" value="3" step="0.5" style="width:100%; padding:6px;">
-                    </div>
-                    <div>
-                        <label>Sección Cable Principal (mm²)</label><br>
-                        <select id="seccionAlimentador" style="width:100%; padding:6px;">
-                            <option value="4">4.0 mm²</option>
-                            <option value="6" selected>6.0 mm²</option>
-                            <option value="10">10.0 mm²</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label>Metros Acometida a Tablero (m)</label><br>
-                        <input type="number" id="mAlimentador" value="15" step="1" style="width:100%; padding:6px;">
+                    <hr style="margin:20px 0;">
+
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <input type="checkbox" id="incluirCurvas" checked style="transform:scale(1.3);">
+                        <label for="incluirCurvas" style="cursor:pointer;">Incluir cálculo automático de Curvas y Conectores (aprox. 2 por boca)</label>
                     </div>
                 </div>
 
@@ -103,6 +158,24 @@ export const electricidad = {
     },
 
     eventos() {
+        // Manejo simple de pestañas
+        const tabButtons = document.querySelectorAll(".tab-btn");
+        tabButtons.forEach(btn => {
+            btn.addEventListener("click", (e) => {
+                tabButtons.forEach(b => {
+                    b.classList.remove("active");
+                    b.style.background = "#f3f4f6";
+                });
+                e.target.classList.add("active");
+                e.target.style.background = "#eab308";
+
+                document.querySelectorAll(".tab-content").forEach(content => {
+                    content.style.display = "none";
+                });
+                document.getElementById(e.target.dataset.tab).style.display = "block";
+            });
+        });
+
         document.getElementById("btnCalcularElec").addEventListener("click", () => this.calcularElectricidad());
         document.getElementById("btnTransferirElec").addEventListener("click", () => this.enviarAPresupuesto());
     },
@@ -112,23 +185,39 @@ export const electricidad = {
         const cantTUG = Number(document.getElementById("cantTUG").value) || 0;
         const cantTUE = Number(document.getElementById("cantTUE").value) || 0;
 
+        const tipoCajaRect = document.getElementById("tipoCajaRectangular").value;
+        const seccionTUGVal = Number(document.getElementById("seccionTUG").value) || 2.5;
+
         const mCañoPorBoca = Number(document.getElementById("mCañoPorBoca").value) || 3;
+        const tipoCaneria = document.getElementById("tipoCaneria").value;
+        const diametroCaneria = document.getElementById("diametroCaneria").value;
         const seccionAlim = document.getElementById("seccionAlimentador").value;
         const mAlim = Number(document.getElementById("mAlimentador").value) || 0;
+        const incluirCurvas = document.getElementById("incluirCurvas").checked;
         const conPAT = document.getElementById("incluirPAT").checked;
 
         const totalBocas = cantIUG + cantTUG + cantTUE;
 
-        // 1. CAJAS Y CAÑERÍAS
+        // 1. CAJAS Y ACCESORIOS CON MULTIPLICADORES SEGÚN CONFIGURACIÓN
         const cajasOctogonales = cantIUG;
+        
+        // Multiplicador de bastidores/tapas/tomas si elige doble o triple
+        let factorModulosCaja = 1;
+        if (tipoCajaRect == "doble") factorModulosCaja = 2;
+        if (tipoCajaRect == "triple") factorModulosCaja = 3;
+
         const cajasRectangulares = cantTUG + cantTUE;
-        const conectores = totalBocas * 2;
+        const cantidadModulosTom = cajasRectangulares * factorModulosCaja;
+
+        const conectores = incluirCurvas ? totalBocas * 2 : 0;
+        const curvas = incluirCurvas ? Math.ceil(totalBocas * 1.5) : 0;
         const metrosCaño = Math.ceil(totalBocas * mCañoPorBoca);
 
         // 2. CABLEADO ESTIMADO (Factor 1.15 por retornos/empalmes)
-        // IUG: 1.5mm² (2 hilos) | TUG: 2.5mm² (2 hilos) | PE (Protección): 2.5mm² por boca
         const mCable15 = Math.ceil((cantIUG * mCañoPorBoca * 2) * 1.15);
-        const mCable25 = Math.ceil(((cantTUG + cantTUE) * mCañoPorBoca * 2 + totalBocas * mCañoPorBoca) * 1.15); // Incluye PE de circuito
+        
+        // Cable de la sección seleccionada para tomas (2.5mm² o 4mm²) + conductor de protección (PE)
+        const mCableTomas = Math.ceil(((cantTUG + cantTUE) * mCañoPorBoca * 2 + totalBocas * mCañoPorBoca) * 1.15);
         const mCableAlim = Math.ceil(mAlim * 2 * 1.05);
 
         // 3. TABLERO Y PROTECCIONES BÁSICAS
@@ -138,14 +227,24 @@ export const electricidad = {
         const resumen = [
             { nombreBusqueda: "Caja Octogonal Chapa/PVC", cantidad: cajasOctogonales, unidad: "Unidad" },
             { nombreBusqueda: "Caja Rectangular 10x5", cantidad: cajasRectangulares, unidad: "Unidad" },
-            { nombreBusqueda: "Conector 3/4", cantidad: conectores, unidad: "Unidad" },
-            { nombreBusqueda: "Caño Corrugado / Rígido 3/4", cantidad: metrosCaño, unidad: "Metro" },
+            { nombreBusqueda: `Módulo / Tapa Tomacorriente (Pack x${factorModulosCaja})`, cantidad: cantidadModulosTom, unidad: "Unidad" },
+            { nombreBusqueda: `Caño ${tipoCaneria} ${diametroCaneria}`, cantidad: metrosCaño, unidad: "Metro" }
+        ];
+
+        if (incluirCurvas) {
+            resumen.push(
+                { nombreBusqueda: `Conector ${diametroCaneria}`, cantidad: conectores, unidad: "Unidad" },
+                { nombreBusqueda: `Curva ${diametroCaneria}`, cantidad: curvas, unidad: "Unidad" }
+            );
+        }
+
+        resumen.push(
             { nombreBusqueda: "Cable Unipolar 1.5 mm²", cantidad: mCable15, unidad: "Metro" },
-            { nombreBusqueda: "Cable Unipolar 2.5 mm²", cantidad: mCable25, unidad: "Metro" },
+            { nombreBusqueda: `Cable Unipolar ${seccionTUGVal} mm²`, cantidad: mCableTomas, unidad: "Metro" },
             { nombreBusqueda: `Cable Unipolar ${seccionAlim} mm²`, cantidad: mCableAlim, unidad: "Metro" },
             { nombreBusqueda: "Disyuntor Diferencial 2x40A", cantidad: disyuntorDiferencial, unidad: "Unidad" },
             { nombreBusqueda: "Llave Termomagnética Bipolar", cantidad: termicasCircuito, unidad: "Unidad" }
-        ];
+        );
 
         if (conPAT) {
             resumen.push(
