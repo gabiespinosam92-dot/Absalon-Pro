@@ -211,32 +211,29 @@ export const refrigeracion = {
                     return;
                 }
 
-                const nombreCliente = prompt("Ingresá el nombre o referencia del cliente:") || "Cliente Refrigeración";
-                const totalPresupuesto = itemsAGuardar.reduce((acc, item) => acc + (item.cant * item.precio), 0);
+                // 🚀 AQUÍ ESTÁ LA MAGIA IGUAL QUE EN CONSTRUCCIÓN EN SECO:
+                // Preparamos los ítems con la propiedad id/concepto para que presupuestos.js los reconozca
+                const itemsParaPresupuesto = itemsAGuardar.map(item => {
+                    // Buscamos si existe en el catálogo cargado para matchear su ID exacto
+                    const catEncontrado = this.catalogos.find(c => 
+                        (c.concepto || c.nombre || "").toLowerCase() === item.concepto.toLowerCase()
+                    );
+                    return {
+                        id: catEncontrado ? catEncontrado.id : item.concepto,
+                        cantidad: item.cant,
+                        concepto: item.concepto
+                    };
+                });
 
-                const nuevoPresupuesto = {
-                    id: String(Date.now()),
-                    fecha: new Date().toLocaleDateString("es-AR"),
-                    cliente: nombreCliente,
-                    rubro: "Refrigeración",
-                    items: itemsAGuardar,
-                    total: totalPresupuesto,
-                    estado: "Pendiente"
-                };
+                localStorage.setItem("materiales_computados", JSON.stringify(itemsParaPresupuesto));
+                localStorage.setItem("origen_computo", "refrigeracion");
 
-                try {
-                    await save("presupuestos", nuevoPresupuesto);
-                    alert("✅ Presupuesto exportado correctamente.");
+                alert("✅ Materiales exportados correctamente. Redirigiendo al generador de presupuestos...");
 
-                    const btnNavPresupuestos = document.querySelector('[data-view="presupuestos"]') || document.querySelector('[data-view="historial"]');
-                    if (btnNavPresupuestos) {
-                        btnNavPresupuestos.click();
-                    } else if (window.cargarVista) {
-                        window.cargarVista("presupuestos");
-                    }
-                } catch (error) {
-                    console.error("Error al exportar presupuesto:", error);
-                    alert("❌ Hubo un error al intentar exportar el presupuesto.");
+                // Redirigimos automáticamente al módulo de Presupuestos
+                const btnPresupuestos = document.querySelector('[data-view="presupuestos"]');
+                if (btnPresupuestos) {
+                    btnPresupuestos.click();
                 }
             };
         }
@@ -275,7 +272,6 @@ export const refrigeracion = {
             items.push({ concepto: "Aislante Térmico (Metro)", cant: metrosCano * 2, precio: precioAislante });
             items.push({ concepto: "Cinta PVC de Empaque (Rollos)", cant: Math.ceil(metrosCano / 3), precio: precioCinta });
 
-            // NUEVOS INSUMOS: Manguera cristal y omegas para drenaje
             const precioMangueraCristal = this.obtenerPrecioCatalogo("manguera_cristal_58", 1500);
             const precioOmega = this.obtenerPrecioCatalogo("omega_drenaje", 300);
             items.push({ concepto: 'Manguera Cristal de 5/8" (Drenaje)', cant: metrosCano, precio: precioMangueraCristal });
@@ -285,7 +281,6 @@ export const refrigeracion = {
                 const precioSoporte = this.obtenerPrecioCatalogo(idSoporte, 8500);
                 items.push({ concepto: "Juego Ménsulas / Soportes Exterior", cant: 1, precio: precioSoporte });
 
-                // NUEVOS INSUMOS: Kit de fijación para ménsula en pared hueca
                 const precioTug8 = this.obtenerPrecioCatalogo("kit_fijacion_pared_hueca_8", 450);
                 const precioTug10 = this.obtenerPrecioCatalogo("kit_fijacion_pared_hueca_10", 650);
                 items.push({ concepto: "Kit Fijación Ménsula - Pared Hueca N° 8", cant: 6, precio: precioTug8 });
