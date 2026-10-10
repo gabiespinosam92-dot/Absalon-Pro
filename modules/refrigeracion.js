@@ -80,7 +80,7 @@ export const refrigeracion = {
 
                     <div id="panelElectrica" style="display: none; margin-top: 15px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
                         <div>
-                            <label><b>Metros de Cable Tipo Taller:</b></label>
+                            <label><b>Metros de Cable Tipo Taller (5x1.5mm):</b></label>
                             <input type="number" id="elecMetrosCable" value="5" min="0" step="1" style="width: 100%; padding: 8px; margin-top: 5px;">
                         </div>
                         <div>
@@ -201,7 +201,6 @@ export const refrigeracion = {
         const btnGuardar = document.getElementById("btnGuardarPresupuesto");
         if (btnGuardar) {
             btnGuardar.onclick = async () => {
-                // Si aún no se calculó en pantalla, realizamos el cálculo automático
                 let itemsAGuardar = this.itemsCalculadosActuales;
                 if (!itemsAGuardar || itemsAGuardar.length === 0) {
                     itemsAGuardar = this.calcularPresupuesto();
@@ -226,12 +225,9 @@ export const refrigeracion = {
                 };
 
                 try {
-                    // 1. Guardar en la base de datos
                     await save("presupuestos", nuevoPresupuesto);
                     alert("✅ Presupuesto exportado correctamente.");
 
-                    // 2. Redireccionar automáticamente al módulo de Presupuestos o Historial
-                    // Dispara el evento del menú lateral o la función global de router de app.js
                     const btnNavPresupuestos = document.querySelector('[data-view="presupuestos"]') || document.querySelector('[data-view="historial"]');
                     if (btnNavPresupuestos) {
                         btnNavPresupuestos.click();
@@ -279,9 +275,21 @@ export const refrigeracion = {
             items.push({ concepto: "Aislante Térmico (Metro)", cant: metrosCano * 2, precio: precioAislante });
             items.push({ concepto: "Cinta PVC de Empaque (Rollos)", cant: Math.ceil(metrosCano / 3), precio: precioCinta });
 
+            // NUEVOS INSUMOS: Manguera cristal y omegas para drenaje
+            const precioMangueraCristal = this.obtenerPrecioCatalogo("manguera_cristal_58", 1500);
+            const precioOmega = this.obtenerPrecioCatalogo("omega_drenaje", 300);
+            items.push({ concepto: 'Manguera Cristal de 5/8" (Drenaje)', cant: metrosCano, precio: precioMangueraCristal });
+            items.push({ concepto: "Omegas de Fijación para Drenaje", cant: Math.ceil(metrosCano * 2), precio: precioOmega });
+
             if (idSoporte !== "ninguno") {
                 const precioSoporte = this.obtenerPrecioCatalogo(idSoporte, 8500);
                 items.push({ concepto: "Juego Ménsulas / Soportes Exterior", cant: 1, precio: precioSoporte });
+
+                // NUEVOS INSUMOS: Kit de fijación para ménsula en pared hueca
+                const precioTug8 = this.obtenerPrecioCatalogo("kit_fijacion_pared_hueca_8", 450);
+                const precioTug10 = this.obtenerPrecioCatalogo("kit_fijacion_pared_hueca_10", 650);
+                items.push({ concepto: "Kit Fijación Ménsula - Pared Hueca N° 8", cant: 6, precio: precioTug8 });
+                items.push({ concepto: "Kit Fijación Ménsula - Pared Hueca N° 10", cant: 6, precio: precioTug10 });
             }
         }
 
@@ -295,7 +303,7 @@ export const refrigeracion = {
 
             if (metrosCable > 0) {
                 const precioCable = this.obtenerPrecioCatalogo("cable_taller_5x15", 2400);
-                items.push({ concepto: "Cable Alimentación Eléctrica (Metro)", cant: metrosCable, precio: precioCable });
+                items.push({ concepto: "Cable Tipo Taller 5x1.5mm (Metro)", cant: metrosCable, precio: precioCable });
             }
 
             if (metrosCablecanal > 0) {
