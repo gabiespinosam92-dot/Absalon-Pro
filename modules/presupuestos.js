@@ -20,7 +20,7 @@ export const presupuestos = {
         await this.cargarGarantias();
         this.eventos();
 
-        // 🚀 ENGANCHE INTELIGENTE DEL CÓMPUTO MÉTRICO (Si viene desde Construcción en Seco o Albañilería)
+        // 🚀 ENGANCHE INTELIGENTE DEL CÓMPUTO MÉTRICO
         if (!idPresupuesto) {
             this.verificarMaterialesComputados();
         }
@@ -175,15 +175,17 @@ export const presupuestos = {
             const listaMateriales = JSON.parse(guardados);
             if (listaMateriales.length === 0) return;
 
-            // 🚀 MODIFICADO: Soporta marcado automático de Construcción en Seco y/o Albañilería
+            // 🚀 ENGANCHE INTELIGENTE PARA LOS 4 RUBROS
             const origen = localStorage.getItem("origen_computo") || "";
             document.querySelectorAll(".especialidad").forEach(cb => {
                 if (origen === "albanileria" && cb.value === "Albañilería") {
                     cb.checked = true;
                 } else if (origen === "construccion_seco" && cb.value === "Construcción Seco") {
                     cb.checked = true;
-                } else if (!origen && (cb.value === "Construcción Seco" || cb.value === "Albañilería")) {
-                    cb.checked = true; // Fallback general por compatibilidad
+                } else if (origen === "electricidad" && cb.value === "Electricidad") {
+                    cb.checked = true;
+                } else if (origen === "refrigeracion" && cb.value === "Refrigeración") {
+                    cb.checked = true;
                 }
             });
 
@@ -327,7 +329,6 @@ export const presupuestos = {
             </div>
         </div>
 
-        <!-- BOTONERA DE EXPORTACIÓN MODIFICADA SIN TOCAR LO EXISTENTE -->
         <div class="mt-3" style="margin-bottom:30px; text-align:right; display:flex; justify-content:flex-end; gap:12px; flex-wrap: wrap;">
             <button id="btnListaCompras" style="padding:12px 20px; font-size:15px; background:#475569; color:white; border:none; border-radius:4px; font-weight:bold; cursor:pointer;">📋 Lista de Compras</button>
             <button id="btnPDF" style="padding:12px 25px; font-size:16px; background:#b71c1c; color:white; border:none; border-radius:4px; font-weight:bold; cursor:pointer;">📄 Crear PDF</button>
@@ -419,8 +420,6 @@ export const presupuestos = {
         document.getElementById("btnFilaManoObra").onclick = () => this.crearFilaManoObra();
         document.getElementById("btnGuardar").onclick = () => this.guardarPresupuesto();
         document.getElementById("btnPDF").onclick = () => this.generarPDF();
-        
-        // Asignación del nuevo evento para Lista de Compras mudo
         document.getElementById("btnListaCompras").onclick = () => this.generarPDFListaCompras();
 
         document.querySelectorAll(".especialidad").forEach(cb => {
@@ -556,7 +555,6 @@ export const presupuestos = {
         document.getElementById("totalGeneralLabel").textContent = `$ ${totalGral.toLocaleString("es-AR", { minimumFractionDigits: 2 })}`;
     },
 
-    // 🛠️ EXPORTADOR EXCLUSIVO PARA LISTA DE COMPRAS (SIN PRECIOS NI TOTALES)
     async generarPDFListaCompras() {
         const idCliente = document.getElementById("cliente").value;
         if (!idCliente) {
@@ -567,11 +565,9 @@ export const presupuestos = {
         const clienteSelect = document.getElementById("cliente");
         const clienteNombreText = clienteSelect.options[clienteSelect.selectedIndex].text;
 
-        // 1. Buscamos los datos extendidos del cliente guardado
         const { getById } = await import("./storage.js");
         const clienteData = await getById("clientes", Number(idCliente)) || {};
 
-        // 2. Extraemos los materiales activos cargados en la tabla actual de la pantalla
         const materialesParaExportar = [];
         document.querySelectorAll("#tablaMateriales tbody tr").forEach(fila => {
             const combo = fila.querySelector(".concepto");
@@ -583,7 +579,6 @@ export const presupuestos = {
             }
         });
 
-        // 3. Extraemos las tareas operativas cargadas en la tabla actual de la pantalla
         const manoObraParaExportar = [];
         document.querySelectorAll("#tablaManoObra tbody tr").forEach(fila => {
             const combo = fila.querySelector(".mo-concepto");
@@ -596,7 +591,6 @@ export const presupuestos = {
             }
         });
 
-        // 4. Invocamos al módulo aislado tirando los datos limpios de la interfaz
         try {
             const { exportarListaComprasPDF } = await import("./listaComprasPdf.js");
             
@@ -707,6 +701,7 @@ export const presupuestos = {
             document.head.appendChild(script);
         });
     },
+
     async generarPDF() {
         const idCliente = document.getElementById("cliente").value;
         if (!idCliente) {
@@ -793,10 +788,10 @@ export const presupuestos = {
             tiempoUnidadPlural: tiempoUnidad === 'Días' ? (Number(tiempoCant) === 1 ? 'DIA' : 'DIAS') : tiempoUnidad.toUpperCase(),
             logo: logoPath,
             observaciones: observacionesInput,
-           esFactura: estadoSel === "Facturado",
-           garantiaAplica: "Texto personalizado de cuando aplica...",
-           garantiaExclusiones: "Texto personalizado de exclusiones..."
-              };
+            esFactura: estadoSel === "Facturado",
+            garantiaAplica: "Texto personalizado de cuando aplica...",
+            garantiaExclusiones: "Texto personalizado de exclusiones..."
+        };
 
         await exportarPresupuestoPDF(paqueteDatos);
     },
@@ -925,5 +920,6 @@ export const presupuestos = {
             }
         };
     }
-}
+};
+
 export default presupuestos;
