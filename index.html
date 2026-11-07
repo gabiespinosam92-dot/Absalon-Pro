@@ -6,7 +6,7 @@
     <meta name="viewport"
           content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 
-    <title>Absalon Pro</title>
+    <title>Absalon Pro 3.0</title>
 
     <meta name="theme-color" content="#111827">
 
@@ -22,13 +22,53 @@
 
 <body>
 
+<!-- === VENTANA DE ACCESO SEGURO (BLOQUEO DE CONTRASEÑA) === -->
+<div id="loginModal" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15,23,42,0.95); display:flex; align-items:center; justify-content:center; z-index:99999; font-family:sans-serif;">
+  <div style="background:#1e293b; padding:35px; border-radius:12px; color:#f8fafc; width:320px; box-shadow:0 10px 25px rgba(0,0,0,0.5); border:1px solid #334155; text-align:center;">
+    <h2 style="margin-top:0; color:#38bdf8; font-size:22px;">Absalon Pro 3.0</h2>
+    <p style="font-size:13px; color:#94a3b8; margin-bottom:20px;">Ingrese su contraseña de seguridad</p>
+    <form id="loginForm">
+      <!-- Cambiá la contraseña por la que quieras abajo en el script si lo deseas -->
+      <input type="password" id="inputPassword" placeholder="Contraseña" required style="width:100%; padding:12px; margin-bottom:15px; border-radius:6px; border:1px solid #475569; background:#0f172a; color:#fff; box-sizing:border-box; font-size:16px; text-align:center;">
+      <button type="submit" style="width:100%; padding:12px; border:none; border-radius:6px; background:#0284c7; color:#fff; font-weight:bold; cursor:pointer; font-size:15px;">Ingresar al Sistema</button>
+      <p id="loginError" style="color:#f87171; font-size:12px; margin-top:12px; display:none;">Contraseña incorrecta</p>
+    </form>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const modal = document.getElementById('loginModal');
+    const form = document.getElementById('loginForm');
+    const input = document.getElementById('inputPassword');
+    const errorMsg = document.getElementById('loginError');
+
+    // CONTRASEÑA DE ACCESO (Podés cambiar 'absalon2026' por la que prefieras)
+    const CLAVE_SECRETA = "absalon2026"; 
+
+    if (sessionStorage.getItem('absalon_auth') === 'true') {
+      modal.style.display = 'none';
+    }
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      if (input.value === CLAVE_SECRETA) {
+        sessionStorage.setItem('absalon_auth', 'true');
+        modal.style.display = 'none';
+      } else {
+        errorMsg.style.display = 'block';
+        input.value = '';
+      }
+    });
+  });
+</script>
+
 <div id="app">
 
     <header class="topbar">
 
         <div class="logo" style="display: flex; align-items: center; gap: 10px;">
 
-            <!-- Tu logo oficial -->
             <img src="logo_2.png" alt="Absalon Pro Logo" style="width: 32px; height: 32px; object-fit: contain;">
 
             <div class="logo-text">
@@ -36,7 +76,7 @@
                 <h1>ABSALON PRO</h1>
 
                 <small>
-                    Versión 2.0.0
+                    Versión 3.0.0
                     ·
                     Build 001
                 </small>
@@ -81,7 +121,6 @@
 
             </button>
 
-            <!-- Asegurate de tener este botón exactamente así, adentro del <nav> -->
             <button class="menu-item"
                     data-view="agenda">
 
@@ -126,19 +165,19 @@
                <span>🧮</span> Calc. Seco
 	    </button>
 
-<button class="menu-item" data-view="albanileria">
+            <button class="menu-item" data-view="albanileria">
                <span>🧱</span> Albañilería
 	    </button>
-        </button>
 
 	    <button class="menu-item" data-view="electricidad">
                <span>⚡</span> Electricidad
 	    </button>
 
-<button class="menu-item" data-view="refrigeracion">
+            <button class="menu-item" data-view="refrigeracion">
                <span>❄️</span> Refrigeración
 	    </button>
-     <button class="menu-item"
+
+            <button class="menu-item"
                     data-view="estadisticas">
 
                 📊
@@ -217,7 +256,6 @@
             <span class="bottom-text">Inicio</span>
         </button>
 
-        <!-- COPIÁ Y PEGÁ ESTO AQUÍ: Botón de Agenda para Celular -->
         <button class="bottom-item" data-view="agenda">
             <span class="bottom-icon">📅</span>
             <span class="bottom-text">Agenda</span>
