@@ -1,6 +1,6 @@
 /* ==========================================================
    ABSALON PRO
-   MÓDULO PRESUPUESTOS - SPRINT 11.5 (CON EMISIÓN DE RECIBOS)
+   MÓDULO PRESUPUESTOS - SPRINT 11.6 (CON FILTRADO DE RUBROS Y RECIBOS)
 ========================================================== */
 
 import { getAll, save, update, getNextNumero, getById } from "./storage.js";
@@ -11,6 +11,7 @@ export const presupuestos = {
     catalogo: [],
     garantiasDisponibles: [],
     tabActual: "presupuesto", // 'presupuesto' | 'recibo'
+    clientes: [],
 
     async iniciar() { await this.load(); },
     
@@ -596,9 +597,24 @@ export const presupuestos = {
         if (!tbody) return;
         const tr = document.createElement("tr");
 
+        const especialidadesActivas = [];
+        document.querySelectorAll(".especialidad:checked").forEach(cb => {
+            especialidadesActivas.push(cb.value.toLowerCase().trim());
+        });
+
+        let materialesFiltrados = this.catalogo.filter(item => item.tipo === "material");
+        if (especialidadesActivas.length > 0) {
+            materialesFiltrados = materialesFiltrados.filter(item => {
+                const catItem = (item.categoria || item.rubro || "").toLowerCase().trim();
+                return especialidadesActivas.some(esp => catItem.includes(esp) || esp.includes(catItem));
+            });
+            if (materialesFiltrados.length === 0) {
+                materialesFiltrados = this.catalogo.filter(item => item.tipo === "material");
+            }
+        }
+
         let opcionesHTML = `<option value="">-- Seleccionar Material --</option>`;
-        const materialesSolo = this.catalogo.filter(item => item.tipo === "material");
-        materialesSolo.forEach(item => {
+        materialesFiltrados.forEach(item => {
             opcionesHTML += `<option value="${item.id}" data-precio="${item.precio || item.costo || 0}">${item.concepto || item.nombre}</option>`;
         });
 
@@ -646,9 +662,24 @@ export const presupuestos = {
         if (!tbody) return;
         const tr = document.createElement("tr");
 
+        const especialidadesActivas = [];
+        document.querySelectorAll(".especialidad:checked").forEach(cb => {
+            especialidadesActivas.push(cb.value.toLowerCase().trim());
+        });
+
+        let manoObraFiltrada = this.catalogo.filter(item => item.tipo === "mano_obra");
+        if (especialidadesActivas.length > 0) {
+            manoObraFiltrada = manoObraFiltrada.filter(item => {
+                const catItem = (item.categoria || item.rubro || "").toLowerCase().trim();
+                return especialidadesActivas.some(esp => catItem.includes(esp) || esp.includes(catItem));
+            });
+            if (manoObraFiltrada.length === 0) {
+                manoObraFiltrada = this.catalogo.filter(item => item.tipo === "mano_obra");
+            }
+        }
+
         let opcionesHTML = `<option value="">-- Seleccionar Tarea / Servicio --</option>`;
-        const manoObraSolo = this.catalogo.filter(item => item.tipo === "mano_obra");
-        manoObraSolo.forEach(item => {
+        manoObraFiltrada.forEach(item => {
             opcionesHTML += `<option value="${item.id}" data-precio="${item.precio || item.costo || 0}">${item.concepto || item.nombre}</option>`;
         });
 
