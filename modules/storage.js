@@ -1,11 +1,11 @@
 /* ==========================================================
    ABSALON PRO
    modules/storage.js
-   Sprint 11.0 - Almacén de Inversiones y Soporte Estadístico
+   Sprint 12.0 - Soporte para Módulo Personal, Horas y Pagos
 ========================================================== */
 
 const DB_NAME = "AbsalonProDB";
-const DB_VERSION = 5; // Subimos la versión para que cree el nuevo store de inversiones
+const DB_VERSION = 6; // Subimos de 5 a 6 para crear stores de personal y horas
 
 let db = null;
 
@@ -36,7 +36,7 @@ export async function initDB() {
     });
 }
 
-/* ==========================================================\
+/* ==========================================================
    Crear Object Stores
 ========================================================== */
 function createStores(database) {
@@ -68,16 +68,29 @@ function createStores(database) {
         });
     }
 
-    // NUEVO STORE PARA TUS ESTADÍSTICAS DE GASTOS
     if (!database.objectStoreNames.contains("inversiones")) {
         database.createObjectStore("inversiones", {
             keyPath: "id",
             autoIncrement: true
         });
     }
+
+    if (!database.objectStoreNames.contains("personal")) {
+        database.createObjectStore("personal", {
+            keyPath: "id",
+            autoIncrement: true
+        });
+    }
+
+    if (!database.objectStoreNames.contains("horas_personal")) {
+        database.createObjectStore("horas_personal", {
+            keyPath: "id",
+            autoIncrement: true
+        });
+    }
 }
 
-/* ==========================================================\
+/* ==========================================================
    Operaciones CRUD Genéricas
 ========================================================== */
 export async function getAll(storeName) {
@@ -96,7 +109,7 @@ export async function getById(storeName, id) {
     const database = await initDB();
     return new Promise((resolve, reject) => {
         const transaction = database.transaction(storeName, "readonly");
-        const store = transaction.objectStoreName ? transaction.objectStore(storeName) : transaction.objectStore(storeName);
+        const store = transaction.objectStore(storeName);
         const request = store.get(id);
 
         request.onsuccess = () => resolve(request.result || null);
@@ -158,11 +171,13 @@ export async function getStats() {
         presupuestos: await count("presupuestos"),
         catalogos: await count("catalogos"),
         garantias: await count("garantias"),
-        inversiones: await count("inversiones")
+        inversiones: await count("inversiones"),
+        personal: await count("personal"),
+        horas_personal: await count("horas_personal")
     };
 }
 
-export async function getByField(store, field, value){
+export async function getByField(store, field, value) {
     const datos = await getAll(store);
     return datos.filter(item => item[field] === value);
 }
@@ -175,12 +190,12 @@ export async function save(store, data) {
     return await add(store, data);
 }
 
-export async function exists(store, id){
+export async function exists(store, id) {
     const dato = await getById(store, id);
     return dato !== null;
 }
 
-export async function findOne(store, field, value){
+export async function findOne(store, field, value) {
     const datos = await getByField(store, field, value);
     return datos.length ? datos[0] : null;
 }
