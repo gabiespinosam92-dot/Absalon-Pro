@@ -1,6 +1,6 @@
 /* ==========================================================
    ABSALON PRO
-   MÓDULO PRESUPUESTOS - SPRINT 11.6 (CON FILTRADO DE RUBROS Y RECIBOS)
+   MÓDULO PRESUPUESTOS - SPRINT 11.4 (OPTIMIZACIÓN Y FILTRADO DE CATÁLOGO)
 ========================================================== */
 
 import { getAll, save, update, getNextNumero, getById } from "./storage.js";
@@ -10,8 +10,6 @@ export const presupuestos = {
     manoObraItems: [], 
     catalogo: [],
     garantiasDisponibles: [],
-    tabActual: "presupuesto", // 'presupuesto' | 'recibo'
-    clientes: [],
 
     async iniciar() { await this.load(); },
     
@@ -22,6 +20,7 @@ export const presupuestos = {
         await this.cargarGarantias();
         this.eventos();
 
+        // 🚀 ENGANCHE INTELIGENTE DEL CÓMPUTO MÉTRICO
         if (!idPresupuesto) {
             this.verificarMaterialesComputados();
         }
@@ -95,72 +94,70 @@ export const presupuestos = {
                     }
 
                     const btnGuardar = document.getElementById("btnGuardar");
-                    if (btnGuardar) {
-                        btnGuardar.textContent = "🔄 Actualizar Presupuesto";
-                        btnGuardar.replaceWith(btnGuardar.cloneNode(true));
-                        
-                        document.getElementById("btnGuardar").addEventListener("click", async () => {
-                            const estadoSel = document.getElementById("estado").value;
-                            let prefijoLetra = "B";
-                            if (estadoSel === "Enviado") prefijoLetra = "E";
-                            if (estadoSel === "Finalizado") prefijoLetra = "T";
+                    btnGuardar.textContent = "🔄 Actualizar Presupuesto";
+                    btnGuardar.replaceWith(btnGuardar.cloneNode(true));
+                    
+                    document.getElementById("btnGuardar").addEventListener("click", async () => {
+                        const estadoSel = document.getElementById("estado").value;
+                        let prefijoLetra = "B";
+                        if (estadoSel === "Enviado") prefijoLetra = "E";
+                        if (estadoSel === "Finalizado") prefijoLetra = "T";
 
-                            const especs = [];
-                            document.querySelectorAll(".especialidad:checked").forEach(cb => especs.push(cb.value));
+                        const especs = [];
+                        document.querySelectorAll(".especialidad:checked").forEach(cb => especs.push(cb.value));
 
-                            const datosActualizados = {
-                                ...p,
-                                fecha: document.getElementById("fecha").value,
-                                estado: estadoSel,
-                                prefijo: prefijoLetra,
-                                numeroFormat: `${prefijoLetra}-${p.id}`,
-                                cliente: Number(document.getElementById("cliente").value),
-                                especialidades: especs,
-                                incluirIva: document.getElementById("incluirIva") ? document.getElementById("incluirIva").checked : true,
-                                descripcionTrabajo: document.getElementById("descripcionTrabajo") ? document.getElementById("descripcionTrabajo").value.trim() : "",
-                                garantíaId: document.getElementById("garantiaVinculada") ? document.getElementById("garantiaVinculada").value : "",
-                                materiales: [],
-                                manoObraDetalle: [],
-                                tiempo: {
-                                    cantidad: Number(document.getElementById("tiempoCantidad").value),
-                                    unidad: document.getElementById("tiempoUnidad").value
-                                }
-                            };
+                        const datosActualizados = {
+                            ...p,
+                            fecha: document.getElementById("fecha").value,
+                            estado: estadoSel,
+                            prefijo: prefijoLetra,
+                            numeroFormat: `${prefijoLetra}-${p.id}`,
+                            cliente: Number(document.getElementById("cliente").value),
+                            especialidades: especs,
+                            incluirIva: document.getElementById("incluirIva") ? document.getElementById("incluirIva").checked : true,
+                            descripcionTrabajo: document.getElementById("descripcionTrabajo") ? document.getElementById("descripcionTrabajo").value.trim() : "",
+                            garantíaId: document.getElementById("garantiaVinculada") ? document.getElementById("garantiaVinculada").value : "",
+                            materiales: [],
+                            manoObraDetalle: [],
+                            tiempo: {
+                                cantidad: Number(document.getElementById("tiempoCantidad").value),
+                                unidad: document.getElementById("tiempoUnidad").value
+                            }
+                        };
 
-                            document.querySelectorAll("#tablaMateriales tbody tr").forEach(fila => {
-                                const comboSel = fila.querySelector(".concepto");
-                                if(comboSel && comboSel.value) {
-                                    datosActualizados.materiales.push({
-                                        amount: Number(fila.querySelector(".cantidad").value),
-                                        cantidad: Number(fila.querySelector(".cantidad").value),
-                                        idConcepto: comboSel.value,
-                                        descripcion: comboSel.selectedOptions[0].text,
-                                        precio: Number(fila.querySelector(".precio").value),
-                                        total: Number(fila.querySelector(".total").value)
-                                    });
-                                }
-                            });
-
-                            document.querySelectorAll("#tablaManoObra tbody tr").forEach(fila => {
-                                const comboSel = fila.querySelector(".mo-concepto");
-                                if(comboSel && comboSel.value) {
-                                    datosActualizados.manoObraDetalle.push({
-                                        cantidad: Number(fila.querySelector(".mo-cantidad").value),
-                                        unidad: fila.querySelector(".mo-unidad").value,
-                                        idConcepto: comboSel.value,
-                                        descripcion: comboSel.selectedOptions[0].text,
-                                        precio: Number(fila.querySelector(".mo-precio").value),
-                                        total: Number(fila.querySelector(".mo-total").value)
-                                    });
-                                }
-                            });
-
-                            await update("presupuestos", datosActualizados);
-                            alert("📝 ¡Presupuesto actualizado correctamente!");
-                            const btnHistorial = document.querySelector('[data-view="historial"]');
-                            if (btnHistorial) btnHistorial.click();
+                        document.querySelectorAll("#tablaMateriales tbody tr").forEach(fila => {
+                            const comboSel = fila.querySelector(".concepto");
+                            if(comboSel && comboSel.value) {
+                                datosActualizados.materiales.push({
+                                    amount: Number(fila.querySelector(".cantidad").value),
+                                    cantidad: Number(fila.querySelector(".cantidad").value),
+                                    idConcepto: comboSel.value,
+                                    descripcion: comboSel.selectedOptions[0].text,
+                                    precio: Number(fila.querySelector(".precio").value),
+                                    total: Number(fila.querySelector(".total").value)
+                                });
+                            }
                         });
-                    }
+
+                        document.querySelectorAll("#tablaManoObra tbody tr").forEach(fila => {
+                            const comboSel = fila.querySelector(".mo-concepto");
+                            if(comboSel && comboSel.value) {
+                                datosActualizados.manoObraDetalle.push({
+                                    cantidad: Number(fila.querySelector(".mo-cantidad").value),
+                                    unidad: fila.querySelector(".mo-unidad").value,
+                                    idConcepto: comboSel.value,
+                                    descripcion: comboSel.selectedOptions[0].text,
+                                    precio: Number(fila.querySelector(".mo-precio").value),
+                                    total: Number(fila.querySelector(".mo-total").value)
+                                });
+                            }
+                        });
+
+                        await update("presupuestos", datosActualizados);
+                        alert("📝 ¡Presupuesto actualizado correctamente!");
+                        const btnHistorial = document.querySelector('[data-view="historial"]');
+                        if (btnHistorial) btnHistorial.click();
+                    });
 
                     this.recalcularTotales();
                 }
@@ -178,6 +175,7 @@ export const presupuestos = {
             const listaMateriales = JSON.parse(guardados);
             if (listaMateriales.length === 0) return;
 
+            // 🚀 ENGANCHE INTELIGENTE PARA LOS 4 RUBROS
             const origen = localStorage.getItem("origen_computo") || "";
             document.querySelectorAll(".especialidad").forEach(cb => {
                 if (origen === "albanileria" && cb.value === "Albañilería") {
@@ -205,6 +203,7 @@ export const presupuestos = {
                 const inputTotal = fila.querySelector(".total");
 
                 const itemCatalogo = this.catalogo.find(item => String(item.id) === String(mat.id));
+
                 inputCantidad.value = mat.cantidad;
 
                 if (itemCatalogo) {
@@ -212,44 +211,24 @@ export const presupuestos = {
                     const precioActual = Number(itemCatalogo.precio || itemCatalogo.costo || 0);
                     inputPrecio.value = precioActual;
                     inputTotal.value = mat.cantidad * precioActual;
+                } else {
+                    inputPrecio.value = 0;
+                    inputTotal.value = 0;
+                    console.warn(`El material con ID "${mat.id}" no se encontró en el catálogo.`);
                 }
             });
 
             this.recalcularTotales();
             localStorage.removeItem("materiales_computados");
             localStorage.removeItem("origen_computo");
+
         } catch (error) {
             console.error("Error al procesar materiales computados:", error);
         }
     },
 
     render() {
-        const workspace = document.getElementById("workspace");
-        if (!workspace) return;
-
-        workspace.innerHTML = `
-        <div style="display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #e5e7eb; padding-bottom: 10px;">
-            <button id="tab-presupuesto" style="padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px; background: ${this.tabActual === 'presupuesto' ? '#104E2E' : '#e5e7eb'}; color: ${this.tabActual === 'presupuesto' ? 'white' : '#374151'};">
-                📄 Presupuestos y Órdenes
-            </button>
-            <button id="tab-recibo" style="padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px; background: ${this.tabActual === 'recibo' ? '#104E2E' : '#e5e7eb'}; color: ${this.tabActual === 'recibo' ? 'white' : '#374151'};">
-                💵 Emitir Recibo de Dinero
-            </button>
-        </div>
-
-        <div id="contenedor-pestana-activa">
-            ${this.tabActual === 'presupuesto' ? this.renderHtmlPresupuesto() : this.renderHtmlRecibo()}
-        </div>
-        `;
-
-        if (this.tabActual === 'presupuesto') {
-            document.getElementById("fecha").value = new Date().toISOString().split('T')[0];
-            this.manejarCambioEstado("Borrador");
-        }
-    },
-
-    renderHtmlPresupuesto() {
-        return `
+        document.getElementById("workspace").innerHTML = `
         <div class="card">
             <h2>Nuevo Presupuesto</h2>
             <br>
@@ -356,80 +335,19 @@ export const presupuestos = {
             <button id="btnGuardar" style="padding:12px 25px; font-size:16px; background:#104E2E; color:white; border:none; border-radius:4px; font-weight:bold; cursor:pointer;">💾 Guardar Presupuesto</button>
         </div>
         `;
-    },
-
-    renderHtmlRecibo() {
-        const fechaHoy = new Date().toISOString().split('T')[0];
-        const opcionesClientes = this.clientes.map(c => `
-            <option value="${c.id}">${c.nombre} ${c.direccion ? `(${c.direccion})` : ''}</option>
-        `).join("");
-
-        return `
-        <div class="card" style="max-width: 700px; margin: 0 auto; background: #fff; padding: 25px; border-radius: 8px; border: 1px solid #e5e7eb; font-family: sans-serif;">
-            <h3 style="color: #104E2E; margin-top: 0; display: flex; align-items: center; gap: 8px;">
-                💵 Emisión de Recibo de Dinero
-            </h3>
-            <p style="color: #666; font-size: 13px; margin-bottom: 20px;">
-                Generá un comprobante formal de pago o seña para entregar al cliente.
-            </p>
-
-            <div style="margin-bottom: 15px;">
-                <label style="font-weight: bold; font-size: 14px; display: block; margin-bottom: 5px;">Cliente Registrado:</label>
-                <select id="recibo-cliente" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; background: white;">
-                    <option value="">-- Seleccionar Cliente --</option>
-                    ${opcionesClientes}
-                </select>
-            </div>
-
-            <div style="margin-bottom: 15px; display: flex; gap: 15px;">
-                <div style="flex: 1;">
-                    <label style="font-weight: bold; font-size: 14px; display: block; margin-bottom: 5px;">N° de Presupuesto Asociado:</label>
-                    <input type="text" id="recibo-num-presupuesto" placeholder="Ej: E-0033" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
-                </div>
-                <div style="flex: 1;">
-                    <label style="font-weight: bold; font-size: 14px; display: block; margin-bottom: 5px;">Fecha de Emisión:</label>
-                    <input type="date" id="recibo-fecha" value="${fechaHoy}" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
-                </div>
-            </div>
-
-            <div style="margin-bottom: 15px; display: flex; gap: 15px;">
-                <div style="flex: 1;">
-                    <label style="font-weight: bold; font-size: 14px; display: block; margin-bottom: 5px;">Monto Recibido ($):</label>
-                    <input type="number" id="recibo-monto" placeholder="Ej: 50000" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
-                </div>
-                <div style="flex: 1;">
-                    <label style="font-weight: bold; font-size: 14px; display: block; margin-bottom: 5px;">Medio de Pago:</label>
-                    <select id="recibo-medio" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; background: white;">
-                        <option value="Efectivo">Efectivo</option>
-                        <option value="Transferencia / Mercado Pago">Transferencia / Mercado Pago</option>
-                        <option value="Tarjeta de Débito">Tarjeta de Débito</option>
-                        <option value="Tarjeta de Crédito">Tarjeta de Crédito</option>
-                    </select>
-                </div>
-            </div>
-
-            <div style="margin-bottom: 20px;">
-                <label style="font-weight: bold; font-size: 14px; display: block; margin-bottom: 5px;">Aclaración / Concepto:</label>
-                <textarea id="recibo-aclaracion" rows="3" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-family: sans-serif; box-sizing: border-box;" placeholder="Ej: Seña del 50% correspondiente a materiales para instalación Split..."></textarea>
-            </div>
-
-            <div style="text-align: right;">
-                <button id="btnEmitirReciboPDF" style="padding: 12px 25px; background: #104E2E; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 15px;">
-                    📄 Generar Recibo PDF
-                </button>
-            </div>
-        </div>
-        `;
+        
+        document.getElementById("fecha").value = new Date().toISOString().split('T')[0];
+        this.manejarCambioEstado("Borrador");
     },
 
     async cargarClientes() {
+        const select = document.getElementById("cliente");
+        if (!select) return;
         try {
-            this.clientes = (await getAll("clientes")) || [];
-            const select = document.getElementById("cliente");
-            if (!select) return;
+            const lista = await getAll("clientes");
             select.innerHTML = '<option value="">Seleccione un cliente...</option>';
-            this.clientes.sort((a,b) => a.nombre.localeCompare(b.nombre));
-            this.clientes.forEach(c => {
+            lista.sort((a,b) => a.nombre.localeCompare(b.nombre));
+            lista.forEach(c => {
                 const doc = c.numeroDocumento || "S/D";
                 const ref = c.referencia || "Particular";
                 const option = document.createElement("option");
@@ -488,133 +406,40 @@ export const presupuestos = {
     },
 
     eventos() {
-        const btnTabPresupuesto = document.getElementById("tab-presupuesto");
-        const btnTabRecibo = document.getElementById("tab-recibo");
+        document.getElementById("estado").addEventListener("change", (e) => {
+            this.manejarCambioEstado(e.target.value);
+        });
 
-        if (btnTabPresupuesto && btnTabRecibo) {
-            btnTabPresupuesto.onclick = () => {
-                this.tabActual = "presupuesto";
-                this.render();
-                this.eventos();
-            };
-            btnTabRecibo.onclick = () => {
-                this.tabActual = "recibo";
-                this.render();
-                this.eventos();
-            };
+        const chkIva = document.getElementById("incluirIva");
+        if (chkIva) {
+            chkIva.addEventListener("change", () => this.recalcularTotales());
         }
 
-        if (this.tabActual === "presupuesto") {
-            const estadoEl = document.getElementById("estado");
-            if (estadoEl) {
-                estadoEl.addEventListener("change", (e) => {
-                    this.manejarCambioEstado(e.target.value);
-                });
-            }
+        document.getElementById("btnNuevoCliente").onclick = () => this.abrirModalCliente();
+        document.getElementById("btnFilaMaterial").onclick = () => this.crearFilaMaterial();
+        document.getElementById("btnFilaManoObra").onclick = () => this.crearFilaManoObra();
+        document.getElementById("btnGuardar").onclick = () => this.guardarPresupuesto();
+        document.getElementById("btnPDF").onclick = () => this.generarPDF();
+        document.getElementById("btnListaCompras").onclick = () => this.generarPDFListaCompras();
 
-            const chkIva = document.getElementById("incluirIva");
-            if (chkIva) {
-                chkIva.addEventListener("change", () => this.recalcularTotales());
-            }
-
-            const btnNuevoCli = document.getElementById("btnNuevoCliente");
-            if (btnNuevoCli) btnNuevoCli.onclick = () => this.abrirModalCliente();
-
-            const btnMat = document.getElementById("btnFilaMaterial");
-            if (btnMat) btnMat.onclick = () => this.crearFilaMaterial();
-
-            const btnMO = document.getElementById("btnFilaManoObra");
-            if (btnMO) btnMO.onclick = () => this.crearFilaManoObra();
-
-            const btnGuardar = document.getElementById("btnGuardar");
-            if (btnGuardar) btnGuardar.onclick = () => this.guardarPresupuesto();
-
-            const btnPDF = document.getElementById("btnPDF");
-            if (btnPDF) btnPDF.onclick = () => this.generarPDF();
-
-            const btnCompras = document.getElementById("btnListaCompras");
-            if (btnCompras) btnCompras.onclick = () => this.generarPDFListaCompras();
-
-            document.querySelectorAll(".especialidad").forEach(cb => {
-                cb.addEventListener("change", () => {
-                    const estadoActual = document.getElementById("estado")?.value;
-                    if (estadoActual === "Finalizado") {
-                        this.manejarCambioEstado("Finalizado");
-                    }
-                });
+        document.querySelectorAll(".especialidad").forEach(cb => {
+            cb.addEventListener("change", () => {
+                const estadoActual = document.getElementById("estado").value;
+                if (estadoActual === "Finalizado") {
+                    this.manejarCambioEstado("Finalizado");
+                }
             });
-        }
-
-        if (this.tabActual === "recibo") {
-            const btnEmitirRecibo = document.getElementById("btnEmitirReciboPDF");
-            if (btnEmitirRecibo) {
-                btnEmitirRecibo.onclick = async () => {
-                    const clienteId = document.getElementById("recibo-cliente").value;
-                    if (!clienteId) {
-                        alert("⚠️ Por favor, seleccioná un cliente registrado.");
-                        return;
-                    }
-
-                    const clienteObj = this.clientes.find(c => c.id == clienteId);
-                    const numPresupuesto = document.getElementById("recibo-num-presupuesto").value.trim() || "S/N";
-                    const montoRecibido = document.getElementById("recibo-monto").value.trim() || "0";
-                    const medioPago = document.getElementById("recibo-medio").value;
-                    const aclaracion = document.getElementById("recibo-aclaracion").value.trim();
-
-                    const fechaInputVal = document.getElementById("recibo-fecha").value;
-                    let fechaEmisionFormateada = new Date().toLocaleDateString("es-AR");
-                    if (fechaInputVal) {
-                        const partes = fechaInputVal.split("-");
-                        if (partes.length === 3) {
-                            fechaEmisionFormateada = `${partes[2]}/${partes[1]}/${partes[0]}`;
-                        }
-                    }
-
-                    const paqueteRecibo = {
-                        esRecibo: true,
-                        numero: numPresupuesto,
-                        fecha: fechaEmisionFormateada,
-                        clienteNombre: clienteObj.nombre,
-                        clienteDireccion: clienteObj.direccion || "",
-                        clienteTelefono: clienteObj.telefono || "",
-                        clienteTipoDoc: clienteObj.tipoDocumento || "CUIL/CUIT",
-                        clienteNumDoc: clienteObj.numeroDocumento || "X",
-                        montoRecibido: Number(montoRecibido),
-                        medioPago: medioPago,
-                        aclaracion: aclaracion,
-                        logo: "./logo_083121.png"
-                    };
-
-                    const { exportarPresupuestoPDF } = await import("./pdf.js");
-                    await exportarPresupuestoPDF(paqueteRecibo);
-                };
-            }
-        }
+        });
     },
 
     crearFilaMaterial() {
         const tbody = document.querySelector("#tablaMateriales tbody");
-        if (!tbody) return;
         const tr = document.createElement("tr");
 
-        const especialidadesActivas = [];
-        document.querySelectorAll(".especialidad:checked").forEach(cb => {
-            especialidadesActivas.push(cb.value.toLowerCase().trim());
-        });
-
-        let materialesFiltrados = this.catalogo.filter(item => item.tipo === "material");
-        if (especialidadesActivas.length > 0) {
-            materialesFiltrados = materialesFiltrados.filter(item => {
-                const catItem = (item.categoria || item.rubro || "").toLowerCase().trim();
-                return especialidadesActivas.some(esp => catItem.includes(esp) || esp.includes(catItem));
-            });
-            if (materialesFiltrados.length === 0) {
-                materialesFiltrados = this.catalogo.filter(item => item.tipo === "material");
-            }
-        }
-
         let opcionesHTML = `<option value="">-- Seleccionar Material --</option>`;
-        materialesFiltrados.forEach(item => {
+        const materialesSolo = this.catalogo.filter(item => item.tipo === "material");
+        
+        materialesSolo.forEach(item => {
             opcionesHTML += `<option value="${item.id}" data-precio="${item.precio || item.costo || 0}">${item.concepto || item.nombre}</option>`;
         });
 
@@ -659,27 +484,12 @@ export const presupuestos = {
 
     crearFilaManoObra() {
         const tbody = document.querySelector("#tablaManoObra tbody");
-        if (!tbody) return;
         const tr = document.createElement("tr");
 
-        const especialidadesActivas = [];
-        document.querySelectorAll(".especialidad:checked").forEach(cb => {
-            especialidadesActivas.push(cb.value.toLowerCase().trim());
-        });
-
-        let manoObraFiltrada = this.catalogo.filter(item => item.tipo === "mano_obra");
-        if (especialidadesActivas.length > 0) {
-            manoObraFiltrada = manoObraFiltrada.filter(item => {
-                const catItem = (item.categoria || item.rubro || "").toLowerCase().trim();
-                return especialidadesActivas.some(esp => catItem.includes(esp) || esp.includes(catItem));
-            });
-            if (manoObraFiltrada.length === 0) {
-                manoObraFiltrada = this.catalogo.filter(item => item.tipo === "mano_obra");
-            }
-        }
-
         let opcionesHTML = `<option value="">-- Seleccionar Tarea / Servicio --</option>`;
-        manoObraFiltrada.forEach(item => {
+        const manoObraSolo = this.catalogo.filter(item => item.tipo === "mano_obra");
+        
+        manoObraSolo.forEach(item => {
             opcionesHTML += `<option value="${item.id}" data-precio="${item.precio || item.costo || 0}">${item.concepto || item.nombre}</option>`;
         });
 
@@ -742,8 +552,7 @@ export const presupuestos = {
         const aplicarIva = document.getElementById("incluirIva") ? document.getElementById("incluirIva").checked : true;
         const totalGral = aplicarIva ? (subtotal * 1.21) : subtotal;
 
-        const lbl = document.getElementById("totalGeneralLabel");
-        if (lbl) lbl.textContent = `$ ${totalGral.toLocaleString("es-AR", { minimumFractionDigits: 2 })}`;
+        document.getElementById("totalGeneralLabel").textContent = `$ ${totalGral.toLocaleString("es-AR", { minimumFractionDigits: 2 })}`;
     },
 
     async generarPDFListaCompras() {
@@ -755,6 +564,8 @@ export const presupuestos = {
 
         const clienteSelect = document.getElementById("cliente");
         const clienteNombreText = clienteSelect.options[clienteSelect.selectedIndex].text;
+
+        const { getById } = await import("./storage.js");
         const clienteData = await getById("clientes", Number(idCliente)) || {};
 
         const materialesParaExportar = [];
@@ -782,6 +593,7 @@ export const presupuestos = {
 
         try {
             const { exportarListaComprasPDF } = await import("./listaComprasPdf.js");
+            
             await exportarListaComprasPDF({
                 fecha: document.getElementById("fecha").value,
                 clienteNombre: clienteData.nombre || clienteNombreText,
@@ -791,8 +603,8 @@ export const presupuestos = {
                 manoObra: manoObraParaExportar
             });
         } catch (err) {
-            console.error("Error al ejecutar lista de compras:", err);
-            alert("❌ No se pudo descargar la lista de compras.");
+            console.error("Error al ejecutar el módulo aislado de lista de compras:", err);
+            alert("❌ No se pudo descargar la lista de compras de forma aislada.");
         }
     },
 
@@ -805,6 +617,7 @@ export const presupuestos = {
 
         const proxId = await getNextNumero();
         const estadoSel = document.getElementById("estado").value;
+
         let prefijoLetra = "B";
         if (estadoSel === "Enviado") prefijoLetra = "E";
         if (estadoSel === "Finalizado") prefijoLetra = "T";
@@ -877,6 +690,16 @@ export const presupuestos = {
             console.error(error);
             alert("No se pudo guardar el presupuesto.");
         }
+    }, 
+
+    cargarLibreriaPDF() {
+        return new Promise((resolve) => {
+            if (typeof html2pdf !== "undefined") return resolve();
+            const script = document.createElement("script");
+            script.src = "https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js";
+            script.onload = () => resolve();
+            document.head.appendChild(script);
+        });
     },
 
     async generarPDF() {
@@ -910,13 +733,14 @@ export const presupuestos = {
 
         document.querySelectorAll("#tablaManoObra tbody tr").forEach(tr => {
             const comboSel = tr.querySelector(".mo-concepto");
-            if (comboSel && comboSel.value) {
+            if(comboSel && comboSel.value) {
                 const cant = Number(tr.querySelector(".mo-cantidad").value || 1);
                 const un = tr.querySelector(".mo-unidad").value || "";
                 const prec = Number(tr.querySelector(".mo-precio").value || 0);
                 const tot = Number(tr.querySelector(".mo-total").value || 0);
 
                 totalManoObraNeto += tot;
+
                 manoObraItemsDetalle.push({
                     concepto: comboSel.selectedOptions[0].text,
                     cantidad: cant,
@@ -928,6 +752,7 @@ export const presupuestos = {
         });
 
         const aplicarIva = document.getElementById("incluirIva") ? document.getElementById("incluirIva").checked : true;
+
         const ivaMateriales = aplicarIva ? (totalMaterialesNeto * 0.21) : 0;
         const ivaManoObra = aplicarIva ? (totalManoObraNeto * 0.21) : 0;
 
@@ -939,6 +764,7 @@ export const presupuestos = {
         const tiempoCant = document.getElementById("tiempoCantidad").value || "1";
         const tiempoUnidad = document.getElementById("tiempoUnidad").value || "Días";
         const observacionesInput = document.getElementById("descripcionTrabajo") ? document.getElementById("descripcionTrabajo").value.trim() : "";
+        const logoPath  = "./logo_083121.png";
         
         const paqueteDatos = {
             numero: numeroRealPresupuesto,
@@ -960,9 +786,11 @@ export const presupuestos = {
             tiempoCant: tiempoCant,
             tiempoUnidadTexto: tiempoUnidad === 'Días' ? 'uno' : tiempoCant,
             tiempoUnidadPlural: tiempoUnidad === 'Días' ? (Number(tiempoCant) === 1 ? 'DIA' : 'DIAS') : tiempoUnidad.toUpperCase(),
-            logo: "./logo_083121.png",
+            logo: logoPath,
             observaciones: observacionesInput,
-            esFactura: estadoSel === "Facturado"
+            esFactura: estadoSel === "Facturado",
+            garantiaAplica: "Texto personalizado de cuando aplica...",
+            garantiaExclusiones: "Texto personalizado de exclusiones..."
         };
 
         await exportarPresupuestoPDF(paqueteDatos);
@@ -972,76 +800,124 @@ export const presupuestos = {
         const modalContainer = document.createElement("div");
         modalContainer.id = "dynamicModalContainer";
         Object.assign(modalContainer.style, {
-            position: "fixed", top: "0", left: "0", width: "100vw", height: "100vh",
-            backgroundColor: "rgba(0, 0, 0, 0.5)", display: "flex", justifyContent: "center",
-            alignItems: "center", zIndex: "99999"
+            position: "fixed",
+            top: "0",
+            left: "0",
+            width: "100vw",
+            height: "100vh",
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: "99999"
         });
 
         modalContainer.innerHTML = `
         <div style="background: white; padding: 25px; border-radius: 8px; width: 500px; max-width: 90%; max-height: 85vh; overflow-y: auto; box-shadow: 0px 4px 10px rgba(0,0,0,0.3); font-family: sans-serif;">
             <h2 style="color: #104E2E; margin-top:0; display:flex; align-items:center; gap:10px;">👤 Registrar Nuevo Cliente</h2>
+            <p style="color: gray; font-size: 13px; margin-bottom:20px;">Los datos se guardarán directamente en tu base de datos central.</p>
             
             <label style="font-weight:bold; font-size:14px;">Nombre y Apellido</label><br>
-            <input id="cliNombre" type="text" style="width:100%; padding:8px; margin-top:4px; margin-bottom:15px; border:1px solid #ccc; border-radius:4px;"><br>
+            <input id="cliNombre" type="text" style="width:100%; padding:8px; margin-top:4px; margin-bottom:15px; box-sizing:border-box; border:1px solid #ccc; border-radius:4px;"><br>
 
             <div style="display:flex; gap:15px; margin-bottom:15px;">
                 <div style="flex:1;">
-                    <label style="font-weight:bold; font-size:14px;">📍 Referencia</label><br>
+                    <label style="font-weight:bold; font-size:14px;">📍 Referencia (Zona/Localidad)</label><br>
                     <select id="cliReferencia" style="width:100%; padding:8px; margin-top:4px; border:1px solid #ccc; border-radius:4px;">
                         <option value="Resistencia">Resistencia</option>
                         <option value="Fontana">Fontana</option>
                         <option value="Barranqueras">Barranqueras</option>
-                        <option value="Particular">Particular</option>
+                        <option value="Puerto Vilelas">Puerto Vilelas</option>
+                        <option value="Particular">Particular (Sin Zona)</option>
+                        <option value="Interior Chaco">Interior / Chaco</option>
                     </select>
                 </div>
                 <div style="flex:1;">
                     <label style="font-weight:bold; font-size:14px;">🏢 Tipo Documento</label><br>
                     <select id="cliTipo" style="width:100%; padding:8px; margin-top:4px; border:1px solid #ccc; border-radius:4px;">
-                        <option value="X">Particular (X)</option>
-                        <option value="CUIT">CUIT</option>
-                        <option value="CUIL">CUIL</option>
+                        <option value="X">🏠 Particular (Consumidor Final / X)</option>
+                        <option value="CUIT">🏭 Comercio (CUIT)</option>
+                        <option value="CUIL">💼 Profesional / Empleado (CUIL)</option>
                     </select>
                 </div>
             </div>
 
             <label style="font-weight:bold; font-size:14px;">Teléfono</label><br>
-            <input id="cliTelefono" type="text" style="width:100%; padding:8px; margin-top:4px; margin-bottom:15px; border:1px solid #ccc; border-radius:4px;"><br>
+            <input id="cliTelefono" type="text" placeholder="Ej: 3624XXXXXX" style="width:100%; padding:8px; margin-top:4px; margin-bottom:15px; box-sizing:border-box; border:1px solid #ccc; border-radius:4px;"><br>
 
             <label style="font-weight:bold; font-size:14px;">Dirección</label><br>
-            <input id="cliDireccion" type="text" style="width:100%; padding:8px; margin-top:4px; margin-bottom:15px; border:1px solid #ccc; border-radius:4px;"><br>
+            <input id="cliDireccion" type="text" style="width:100%; padding:8px; margin-top:4px; margin-bottom:15px; box-sizing:border-box; border:1px solid #ccc; border-radius:4px;"><br>
 
-            <label style="font-weight:bold; font-size:14px;">Nro Documento / CUIT</label><br>
-            <input id="cliNumero" type="text" value="X" style="width:100%; padding:8px; margin-top:4px; margin-bottom:20px; border:1px solid #ccc; border-radius:4px;"><br>
+            <label style="font-weight:bold; font-size:14px;">Número de Documento / CUIT</label><br>
+            <input id="cliNumero" type="text" value="X" placeholder="Escribí el número o X si no tiene" style="width:100%; padding:8px; margin-top:4px; margin-bottom:15px; box-sizing:border-box; border:1px solid #ccc; border-radius:4px;"><br>
+
+            <label style="font-weight:bold; font-size:14px;">Observaciones</label><br>
+            <textarea id="cliObs" rows="2" style="width:100%; padding:8px; margin-top:4px; margin-bottom:20px; box-sizing:border-box; border:1px solid #ccc; border-radius:4px; resize:vertical;"></textarea><br>
 
             <div style="display:flex; justify-content: flex-end; gap:10px;">
                 <button id="cancelarCliente" style="padding:10px 15px; background:#ccc; border:none; border-radius:4px; cursor:pointer; font-weight:bold;">Cancelar</button>
-                <button id="guardarCliente" style="padding:10px 15px; background:#104E2E; color:white; border:none; border-radius:4px; cursor:pointer; font-weight:bold;">💾 Guardar</button>
+                <button id="guardarCliente" style="padding:10px 15px; background:#104E2E; color:white; border:none; border-radius:4px; cursor:pointer; font-weight:bold;">💾 Guardar Cliente</button>
             </div>
         </div>
         `;
 
         document.body.appendChild(modalContainer);
 
-        document.getElementById("cancelarCliente").onclick = () => modalContainer.remove();
+        document.getElementById("cliTipo").addEventListener("change", e => {
+            const campoNum = document.getElementById("cliNumero");
+            if (e.target.value === "X") {
+                campoNum.value = "X";
+            } else if (campoNum.value === "X") {
+                campoNum.value = "";
+            }
+        });
+
+        document.getElementById("cancelarCliente").onclick = () => {
+            modalContainer.remove();
+        };
+
         document.getElementById("guardarCliente").onclick = async () => {
             const nombre = document.getElementById("cliNombre").value.trim();
-            if (!nombre) { alert("Ingrese el nombre del cliente."); return; }
+            const referencia = document.getElementById("cliReferencia").value;
+            const telefono = document.getElementById("cliTelefono").value.trim();
+            const direccion = document.getElementById("cliDireccion").value.trim();
+            const tipoDocumento = document.getElementById("cliTipo").value;
+            const numeroDocumento = document.getElementById("cliNumero").value.trim();
+            const observaciones = document.getElementById("cliObs").value.trim();
 
-            const nuevoCliente = {
-                id: Date.now(),
-                nombre: nombre,
-                referencia: document.getElementById("cliReferencia").value,
-                telefono: document.getElementById("cliTelefono").value.trim(),
-                direccion: document.getElementById("cliDireccion").value.trim(),
-                tipoDocumento: document.getElementById("cliTipo").value,
-                numeroDocumento: document.getElementById("cliNumero").value.trim()
-            };
+            if (!nombre) {
+                alert("Ingrese el nombre del cliente.");
+                return;
+            }
 
-            await save("clientes", nuevoCliente);
-            alert(`🎉 Cliente "${nombre}" registrado con éxito.`);
-            modalContainer.remove();
-            await this.cargarClientes();
-            document.getElementById("cliente").value = nuevoCliente.id;
+            try {
+                const clientesActuales = await getAll("clientes");
+                let proximoId = 1;
+                if (clientesActuales.length > 0) {
+                    const ids = clientesActuales.map(c => Number(c.id || 0));
+                    proximoId = Math.max(...ids) + 1;
+                }
+
+                const nuevoCliente = {
+                    id: proximoId,
+                    nombre: nombre,
+                    referencia: referencia,
+                    telefono: telefono,
+                    direccion: direccion,
+                    tipoDocumento: tipoDocumento,
+                    numeroDocumento: numeroDocumento,
+                    observaciones: observaciones
+                };
+
+                await save("clientes", nuevoCliente);
+                alert(`🎉 Cliente "${nombre}" registrado con éxito.`);
+                modalContainer.remove();
+                await this.cargarClientes();
+                document.getElementById("cliente").value = nuevoCliente.id;
+            } catch(err) { 
+                console.error("Error al guardar cliente:", err); 
+                alert("Ocurrió un error al intentar registrar el cliente.");
+            }
         };
     }
 };
