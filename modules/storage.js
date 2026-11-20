@@ -1,17 +1,14 @@
 /* ==========================================================
    ABSALON PRO
    modules/storage.js
-   Sprint 12.0 - Soporte para Módulo Personal, Horas y Pagos
+   Almacén IndexedDB unificado (Presupuestos, Clientes, Personal)
 ========================================================== */
 
 const DB_NAME = "AbsalonProDB";
-const DB_VERSION = 6; // Subimos de 5 a 6 para crear stores de personal y horas
+const DB_VERSION = 6;
 
 let db = null;
 
-/* ==========================================================
-   Abrir Base de Datos
-========================================================== */
 export async function initDB() {
     if (db) return db;
 
@@ -19,12 +16,22 @@ export async function initDB() {
         const request = indexedDB.open(DB_NAME, DB_VERSION);
 
         request.onerror = () => {
-            console.error("Error al abrir la base de datos.");
+            console.error("Error al abrir la base de datos:", request.error);
             reject(request.error);
+        };
+
+        request.onblocked = () => {
+            console.warn("La apertura de IndexedDB está bloqueada por otra pestaña o conexión abierta.");
         };
 
         request.onsuccess = () => {
             db = request.result;
+
+            db.onversionchange = () => {
+                db.close();
+                db = null;
+            };
+
             console.log("✔ Base de datos iniciada.");
             resolve(db);
         };
@@ -36,63 +43,27 @@ export async function initDB() {
     });
 }
 
-/* ==========================================================
-   Crear Object Stores
-========================================================== */
 function createStores(database) {
-    if (!database.objectStoreNames.contains("clientes")) {
-        database.createObjectStore("clientes", {
-            keyPath: "id",
-            autoIncrement: true
-        });
-    }
+    const stores = [
+        "clientes",
+        "presupuestos",
+        "catalogos",
+        "garantias",
+        "inversiones",
+        "personal",
+        "horas_personal"
+    ];
 
-    if (!database.objectStoreNames.contains("presupuestos")) {
-        database.createObjectStore("presupuestos", {
-            keyPath: "id",
-            autoIncrement: true
-        });
-    }
-
-    if (!database.objectStoreNames.contains("catalogos")) {
-        database.createObjectStore("catalogos", {
-            keyPath: "id",
-            autoIncrement: true
-        });
-    }
-
-    if (!database.objectStoreNames.contains("garantias")) {
-        database.createObjectStore("garantias", {
-            keyPath: "id",
-            autoIncrement: true
-        });
-    }
-
-    if (!database.objectStoreNames.contains("inversiones")) {
-        database.createObjectStore("inversiones", {
-            keyPath: "id",
-            autoIncrement: true
-        });
-    }
-
-    if (!database.objectStoreNames.contains("personal")) {
-        database.createObjectStore("personal", {
-            keyPath: "id",
-            autoIncrement: true
-        });
-    }
-
-    if (!database.objectStoreNames.contains("horas_personal")) {
-        database.createObjectStore("horas_personal", {
-            keyPath: "id",
-            autoIncrement: true
-        });
-    }
+    stores.forEach((storeName) => {
+        if (!database.objectStoreNames.contains(storeName)) {
+            database.createObjectStore(storeName, {
+                keyPath: "id",
+                autoIncrement: true
+            });
+        }
+    });
 }
 
-/* ==========================================================
-   Operaciones CRUD Genéricas
-========================================================== */
 export async function getAll(storeName) {
     const database = await initDB();
     return new Promise((resolve, reject) => {
@@ -100,7 +71,7 @@ export async function getAll(storeName) {
         const store = transaction.objectStore(storeName);
         const request = store.getAll();
 
-        request.onsuccess = () => resolve(request.result);
+        request.onsuccess = () => resolve(request.result || []);
         request.onerror = () => reject(request.error);
     });
 }
@@ -179,7 +150,7 @@ export async function getStats() {
 
 export async function getByField(store, field, value) {
     const datos = await getAll(store);
-    return datos.filter(item => item[field] === value);
+    return datos.filter((item) => item[field] === value);
 }
 
 export async function save(store, data) {
@@ -203,6 +174,6 @@ export async function findOne(store, field, value) {
 export async function getNextNumero() {
     const presupuestos = await getAll("presupuestos");
     if (presupuestos.length === 0) return 1;
-    const numeros = presupuestos.map(p => p.id || p.numero || 0);
+    const numeros = presupuestos.map((p) => Number(p.id || p.numero || 0));
     return Math.max(...numeros) + 1;
 }
