@@ -173,7 +173,7 @@ export const exportarPresupuestoPDF = async (datos) => {
     // ==========================================
     // FLUJO ESTÁNDAR (PRESUPUESTO / ORDEN / FACTURA)
     // ==========================================
-    const esFinalizado = prefijo === "T";
+   const esFinalizado = prefijo === "T";
     const esFactura = datos.esFactura || false;
     const aplicarIva = datos.incluirIva !== undefined ? datos.incluirIva : true;
 
