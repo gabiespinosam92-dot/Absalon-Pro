@@ -31,11 +31,8 @@ export const exportarPresupuestoPDF = async (datos) => {
 
     const esRecibo = datos.esRecibo || false;
 
-    // ==========================================
-    // PIE DE PÁGINA (CONFIGURABLE SEGÚN RECIBO)
-    // ==========================================
     const dibujarPieDePagina = (esDocumentoRecibo = false) => {
-        const yPie = 260; 
+        const yPie = 260;
 
         doc.setDrawColor(0, 0, 0);
         doc.setLineWidth(0.25);
@@ -59,7 +56,7 @@ export const exportarPresupuestoPDF = async (datos) => {
         doc.setFont("helvetica", "bold");
         doc.setFontSize(10);
         doc.text("GABRIEL ABSALON", 15, yPie + offsetFirma);
-        
+
         doc.setFont("helvetica", "normal");
         doc.setFontSize(9);
         doc.setTextColor(80, 80, 80);
@@ -69,15 +66,12 @@ export const exportarPresupuestoPDF = async (datos) => {
         doc.setFontSize(9.5);
         doc.setTextColor(0, 0, 0);
         doc.text("CEL: 3624884054", 195, yPie + offsetFirma, { align: "right" });
-        
+
         doc.setFont("helvetica", "normal");
         doc.setFontSize(9);
         doc.text("Carlos Gardel 1420 - Resistencia Chaco", 195, yPie + offsetFirma + 4, { align: "right" });
     };
 
-    // ==========================================
-    // DISEÑO ESPECÍFICO PARA RECIBO DE DINERO
-    // ==========================================
     if (esRecibo) {
         if (datos.logo) {
             try { doc.addImage(datos.logo, "PNG", 15, 15, 46, 29); } catch (e) {}
@@ -91,7 +85,7 @@ export const exportarPresupuestoPDF = async (datos) => {
 
         doc.setFont("helvetica", "bold");
         doc.setFontSize(22);
-        doc.setTextColor(0, 0, 0); 
+        doc.setTextColor(0, 0, 0);
         doc.text("RECIBO", 195, 25, { align: "right" });
 
         doc.setFont("monospace", "bold");
@@ -108,7 +102,6 @@ export const exportarPresupuestoPDF = async (datos) => {
         doc.setLineWidth(0.3);
         doc.line(15, 55, 195, 55);
 
-        // Datos del cliente
         doc.setFont("helvetica", "bold");
         doc.setFontSize(9.5);
         doc.text("CLIENTE:", 15, 65);
@@ -127,7 +120,6 @@ export const exportarPresupuestoPDF = async (datos) => {
             doc.text(String(docNum), 152, 65);
         }
 
-        // Bloque central del Recibo
         let yRecibo = 95;
         doc.setFillColor(245, 247, 245);
         doc.rect(15, yRecibo, 180, 85, "FD");
@@ -142,24 +134,24 @@ export const exportarPresupuestoPDF = async (datos) => {
         doc.setFont("helvetica", "bold");
         doc.setFontSize(11);
         doc.setTextColor(0, 0, 0);
-        doc.text(`Monto Recibido:`, 21, yRecibo + 25);
+        doc.text("Monto Recibido:", 21, yRecibo + 25);
         doc.setFont("helvetica", "normal");
         doc.setFontSize(14);
         doc.text(`$ ${formato(datos.montoRecibido)}`, 60, yRecibo + 25);
 
         doc.setFont("helvetica", "bold");
         doc.setFontSize(11);
-        doc.text(`Medio de Pago:`, 21, yRecibo + 38);
+        doc.text("Medio de Pago:", 21, yRecibo + 38);
         doc.setFont("helvetica", "normal");
         doc.setFontSize(11);
-        doc.text(`${datos.medioPago}`, 60, yRecibo + 38);
+        doc.text(`${datos.medioPago || ""}`, 60, yRecibo + 38);
 
         doc.setFont("helvetica", "bold");
         doc.setFontSize(11);
-        doc.text(`Aclaración:`, 21, yRecibo + 52);
+        doc.text("Aclaración:", 21, yRecibo + 52);
         doc.setFont("helvetica", "normal");
         doc.setFontSize(10);
-        
+
         const lineasAclaracion = doc.splitTextToSize(datos.aclaracion || "Sin observaciones adicionales.", 130);
         doc.text(lineasAclaracion, 21, yRecibo + 60);
 
@@ -170,10 +162,8 @@ export const exportarPresupuestoPDF = async (datos) => {
         return;
     }
 
-    // ==========================================
-    // FLUJO ESTÁNDAR (PRESUPUESTO / ORDEN / FACTURA)
-    // ==========================================
-   const esFinalizado = prefijo === "T";
+    const prefijo = String(datos.prefijo || nroPresupuesto || "").toUpperCase().charAt(0);
+    const esFinalizado = prefijo === "T";
     const esFactura = datos.esFactura || false;
     const aplicarIva = datos.incluirIva !== undefined ? datos.incluirIva : true;
 
@@ -209,7 +199,7 @@ export const exportarPresupuestoPDF = async (datos) => {
     } else {
         doc.setFont("helvetica", "bold");
         doc.setFontSize(24);
-        doc.setTextColor(0, 0, 0); 
+        doc.setTextColor(0, 0, 0);
         doc.text("PRESUPUESTO", 195, 25, { align: "right" });
     }
 
@@ -263,20 +253,20 @@ export const exportarPresupuestoPDF = async (datos) => {
         y += 7.5;
         doc.setFillColor(255, 255, 255);
         doc.rect(15, y, 180, 7.5, "S");
-        
+
         doc.setFont("helvetica", "normal");
         doc.text(String(cant), 21, y + 5, { align: "center" });
-        
-        const descTexto = String(descripcion).length > 48 
-            ? String(descripcion).substring(0, 45) + "..." 
+
+        const descTexto = String(descripcion).length > 48
+            ? String(descripcion).substring(0, 45) + "..."
             : String(descripcion);
-            
+
         doc.text(descTexto, 32, y + 5);
         doc.text(neto ? `$ ${formato(neto)}` : "", 125, y + 5, { align: "right" });
-        
+
         const textoIva = aplicarIva ? (iva ? `$ ${formato(iva)}` : "$ 0,00") : "$ 0,00";
         doc.text(textoIva, 158, y + 5, { align: "right" });
-        
+
         doc.text(total ? `$ ${formato(total)}` : "", 192, y + 5, { align: "right" });
     };
 
@@ -344,7 +334,7 @@ export const exportarPresupuestoPDF = async (datos) => {
 
         doc.setFont("helvetica", "bold");
         doc.setFontSize(18);
-        doc.setTextColor(0, 0, 0); 
+        doc.setTextColor(0, 0, 0);
         doc.text("GARANTÍAS Y COBERTURA", 195, 25, { align: "right" });
 
         doc.setFont("helvetica", "normal");
@@ -370,7 +360,7 @@ export const exportarPresupuestoPDF = async (datos) => {
         doc.setFont("helvetica", "normal");
         doc.setFontSize(9);
 
-        const textoAplica = datos.garantiaAplica || 
+        const textoAplica = datos.garantiaAplica ||
             "La presente garantía cubre fallas de ejecución, defectos de ensamblado o vicios ocultos derivados exclusivamente de la mano de obra aplicada en los trabajos detallados en el comprobante principal. Esta cobertura posee una validez de 12 meses a partir de la fecha de entrega y conformidad de la obra.";
 
         const lineasAplica = doc.splitTextToSize(textoAplica, 172);
@@ -388,7 +378,7 @@ export const exportarPresupuestoPDF = async (datos) => {
         doc.setFont("helvetica", "normal");
         doc.setFontSize(9);
 
-        const textoExclusiones = datos.garantiaExclusiones || 
+        const textoExclusiones = datos.garantiaExclusiones ||
             "Quedan expresamente excluidas de la garantía las siguientes situaciones:\n" +
             "• Intervención o modificación de las instalaciones por parte de terceros no autorizados.\n" +
             "• Daños provocados por mal uso, sobrecargas eléctricas, humedad ajena a la estructura o factores climáticos extremos.\n" +
