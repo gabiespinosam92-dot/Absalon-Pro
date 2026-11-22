@@ -2,7 +2,7 @@
    ABSALON PRO - MÓDULO PDF UNIFICADO (PRESUPUESTOS, GARANTÍAS Y RECIBOS)
 ========================================================== */
 
-export const exportarPresupuestoPDF = async (datos) => {
+export const exportarPresupuestoPDF = async (datos = {}) => {
     if (typeof window.jspdf === "undefined") {
         try {
             await import("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js");
@@ -21,21 +21,26 @@ export const exportarPresupuestoPDF = async (datos) => {
             maximumFractionDigits: 2
         });
 
-    const nroPresupuesto = datos.numero || "S/N";
+    const nroPresupuesto = String(datos.numero || "S/N").trim();
     const fechaPresupuesto = datos.fecha || "";
-    const nombreCliente = datos.clienteNombre || "";
-    const dirCliente = datos.clienteDireccion || "";
-    const telCliente = datos.clienteTelefono || "";
+    const nombreCliente = String(datos.clienteNombre || "").trim();
+    const dirCliente = String(datos.clienteDireccion || "").trim();
+    const telCliente = String(datos.clienteTelefono || "").trim();
     const docTipo = datos.clienteTipoDoc || "CUIL/CUIT";
     const docNum = datos.clienteNumDoc || "";
 
-    const esRecibo = datos.esRecibo || false;
+    // Definimos 'prefijo' de forma segura a partir de datos.prefijo o del número (ej: "E-0034" -> "E")
+    const prefijo = String(
+        datos.prefijo || (nroPresupuesto.includes("-") ? nroPresupuesto.split("-")[0] : "")
+    ).toUpperCase();
+
+    const esRecibo = Boolean(datos.esRecibo);
 
     // ==========================================
     // PIE DE PÁGINA (CONFIGURABLE SEGÚN RECIBO)
     // ==========================================
     const dibujarPieDePagina = (esDocumentoRecibo = false) => {
-        const yPie = 260; 
+        const yPie = 260;
 
         doc.setDrawColor(0, 0, 0);
         doc.setLineWidth(0.25);
@@ -59,7 +64,7 @@ export const exportarPresupuestoPDF = async (datos) => {
         doc.setFont("helvetica", "bold");
         doc.setFontSize(10);
         doc.text("GABRIEL ABSALON", 15, yPie + offsetFirma);
-        
+
         doc.setFont("helvetica", "normal");
         doc.setFontSize(9);
         doc.setTextColor(80, 80, 80);
@@ -69,7 +74,7 @@ export const exportarPresupuestoPDF = async (datos) => {
         doc.setFontSize(9.5);
         doc.setTextColor(0, 0, 0);
         doc.text("CEL: 3624884054", 195, yPie + offsetFirma, { align: "right" });
-        
+
         doc.setFont("helvetica", "normal");
         doc.setFontSize(9);
         doc.text("Carlos Gardel 1420 - Resistencia Chaco", 195, yPie + offsetFirma + 4, { align: "right" });
@@ -91,7 +96,7 @@ export const exportarPresupuestoPDF = async (datos) => {
 
         doc.setFont("helvetica", "bold");
         doc.setFontSize(22);
-        doc.setTextColor(0, 0, 0); 
+        doc.setTextColor(0, 0, 0);
         doc.text("RECIBO", 195, 25, { align: "right" });
 
         doc.setFont("monospace", "bold");
@@ -116,9 +121,9 @@ export const exportarPresupuestoPDF = async (datos) => {
         doc.text("TELÉFONO:", 15, 79);
 
         doc.setFont("helvetica", "normal");
-        doc.text(String(nombreCliente), 35, 65);
-        doc.text(String(dirCliente), 39, 72);
-        doc.text(String(telCliente), 38, 79);
+        doc.text(nombreCliente, 35, 65);
+        doc.text(dirCliente, 39, 72);
+        doc.text(telCliente, 38, 79);
 
         if (docNum) {
             doc.setFont("helvetica", "bold");
@@ -142,30 +147,30 @@ export const exportarPresupuestoPDF = async (datos) => {
         doc.setFont("helvetica", "bold");
         doc.setFontSize(11);
         doc.setTextColor(0, 0, 0);
-        doc.text(`Monto Recibido:`, 21, yRecibo + 25);
+        doc.text("Monto Recibido:", 21, yRecibo + 25);
         doc.setFont("helvetica", "normal");
         doc.setFontSize(14);
         doc.text(`$ ${formato(datos.montoRecibido)}`, 60, yRecibo + 25);
 
         doc.setFont("helvetica", "bold");
         doc.setFontSize(11);
-        doc.text(`Medio de Pago:`, 21, yRecibo + 38);
+        doc.text("Medio de Pago:", 21, yRecibo + 38);
         doc.setFont("helvetica", "normal");
         doc.setFontSize(11);
-        doc.text(`${datos.medioPago}`, 60, yRecibo + 38);
+        doc.text(`${datos.medioPago || ""}`, 60, yRecibo + 38);
 
         doc.setFont("helvetica", "bold");
         doc.setFontSize(11);
-        doc.text(`Aclaración:`, 21, yRecibo + 52);
+        doc.text("Aclaración:", 21, yRecibo + 52);
         doc.setFont("helvetica", "normal");
         doc.setFontSize(10);
-        
+
         const lineasAclaracion = doc.splitTextToSize(datos.aclaracion || "Sin observaciones adicionales.", 130);
         doc.text(lineasAclaracion, 21, yRecibo + 60);
 
         dibujarPieDePagina(true);
 
-        const nombreArchivoRecibo = `Recibo_${nroPresupuesto}_${nombreCliente.replace(/\s+/g, '_')}.pdf`;
+        const nombreArchivoRecibo = `Recibo_${nroPresupuesto}_${nombreCliente.replace(/\s+/g, "_")}.pdf`;
         doc.save(nombreArchivoRecibo);
         return;
     }
@@ -173,12 +178,12 @@ export const exportarPresupuestoPDF = async (datos) => {
     // ==========================================
     // FLUJO ESTÁNDAR (PRESUPUESTO / ORDEN / FACTURA)
     // ==========================================
-    const esFinalizado = prefijo === "T";
-    const esFactura = datos.esFactura || false;
-    const aplicarIva = datos.incluirIva !== undefined ? datos.incluirIva : true;
+    const esFinalizado = prefijo === "T" || Boolean(datos.esGarantia) || Boolean(datos.garantiaAplica) || Boolean(datos.garantiaExclusiones);
+    const esFactura = Boolean(datos.esFactura);
+    const aplicarIva = datos.incluirIva !== undefined ? Boolean(datos.incluirIva) : true;
 
     const matNeto = Number(datos.totalMaterialesNeto || 0);
-    const matIva = aplicarIva ? Number(datos.ivaMateriales || (matNeto * 0.21)) : 0;
+    const matIva = aplicarIva ? Number(datos.ivaMateriales ?? (matNeto * 0.21)) : 0;
     const matTotal = matNeto + matIva;
 
     const columnaTotalNeto = Number(datos.columnaTotalNeto || 0);
@@ -209,14 +214,14 @@ export const exportarPresupuestoPDF = async (datos) => {
     } else {
         doc.setFont("helvetica", "bold");
         doc.setFontSize(24);
-        doc.setTextColor(0, 0, 0); 
+        doc.setTextColor(0, 0, 0);
         doc.text("PRESUPUESTO", 195, 25, { align: "right" });
     }
 
     doc.setFont("monospace", "bold");
     doc.setFontSize(14);
     doc.setTextColor(50, 50, 50);
-    doc.text(String(nroPresupuesto), 195, 32, { align: "right" });
+    doc.text(nroPresupuesto, 195, 32, { align: "right" });
 
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
@@ -234,9 +239,9 @@ export const exportarPresupuestoPDF = async (datos) => {
     doc.text("TELÉFONO:", 15, 75);
 
     doc.setFont("helvetica", "normal");
-    doc.text(String(nombreCliente), 35, 63);
-    doc.text(String(dirCliente), 39, 69);
-    doc.text(String(telCliente), 38, 75);
+    doc.text(nombreCliente, 35, 63);
+    doc.text(dirCliente, 39, 69);
+    doc.text(telCliente, 38, 75);
 
     if (docNum) {
         doc.setFont("helvetica", "bold");
@@ -263,20 +268,20 @@ export const exportarPresupuestoPDF = async (datos) => {
         y += 7.5;
         doc.setFillColor(255, 255, 255);
         doc.rect(15, y, 180, 7.5, "S");
-        
+
         doc.setFont("helvetica", "normal");
         doc.text(String(cant), 21, y + 5, { align: "center" });
-        
-        const descTexto = String(descripcion).length > 48 
-            ? String(descripcion).substring(0, 45) + "..." 
+
+        const descTexto = String(descripcion).length > 48
+            ? String(descripcion).substring(0, 45) + "..."
             : String(descripcion);
-            
+
         doc.text(descTexto, 32, y + 5);
         doc.text(neto ? `$ ${formato(neto)}` : "", 125, y + 5, { align: "right" });
-        
+
         const textoIva = aplicarIva ? (iva ? `$ ${formato(iva)}` : "$ 0,00") : "$ 0,00";
         doc.text(textoIva, 158, y + 5, { align: "right" });
-        
+
         doc.text(total ? `$ ${formato(total)}` : "", 192, y + 5, { align: "right" });
     };
 
@@ -286,12 +291,12 @@ export const exportarPresupuestoPDF = async (datos) => {
 
     const moItems = datos.manoObraItems || [];
     if (moItems.length > 0) {
-        moItems.forEach(item => {
+        moItems.forEach((item) => {
             const itemNeto = Number(item.total || 0);
             const itemIva = aplicarIva ? (itemNeto * 0.21) : 0;
             const itemTotal = itemNeto + itemIva;
             const cantMostrar = `${item.cantidad || 1}`;
-            const descMostrar = `${item.concepto || item.descripcion}`;
+            const descMostrar = `${item.concepto || item.descripcion || ""}`;
 
             agregarFilaTabla(cantMostrar, descMostrar, itemNeto, itemIva, itemTotal);
         });
@@ -309,7 +314,7 @@ export const exportarPresupuestoPDF = async (datos) => {
     doc.text(`$ ${formato(granTotalFinal)}`, 192, y + 5, { align: "right" });
 
     const limitesColumnas = [30, 128, 161];
-    limitesColumnas.forEach(colX => {
+    limitesColumnas.forEach((colX) => {
         doc.line(colX, 83, colX, y + 7.5);
     });
 
@@ -344,7 +349,7 @@ export const exportarPresupuestoPDF = async (datos) => {
 
         doc.setFont("helvetica", "bold");
         doc.setFontSize(18);
-        doc.setTextColor(0, 0, 0); 
+        doc.setTextColor(0, 0, 0);
         doc.text("GARANTÍAS Y COBERTURA", 195, 25, { align: "right" });
 
         doc.setFont("helvetica", "normal");
@@ -370,7 +375,7 @@ export const exportarPresupuestoPDF = async (datos) => {
         doc.setFont("helvetica", "normal");
         doc.setFontSize(9);
 
-        const textoAplica = datos.garantiaAplica || 
+        const textoAplica = datos.garantiaAplica ||
             "La presente garantía cubre fallas de ejecución, defectos de ensamblado o vicios ocultos derivados exclusivamente de la mano de obra aplicada en los trabajos detallados en el comprobante principal. Esta cobertura posee una validez de 12 meses a partir de la fecha de entrega y conformidad de la obra.";
 
         const lineasAplica = doc.splitTextToSize(textoAplica, 172);
@@ -388,7 +393,7 @@ export const exportarPresupuestoPDF = async (datos) => {
         doc.setFont("helvetica", "normal");
         doc.setFontSize(9);
 
-        const textoExclusiones = datos.garantiaExclusiones || 
+        const textoExclusiones = datos.garantiaExclusiones ||
             "Quedan expresamente excluidas de la garantía las siguientes situaciones:\n" +
             "• Intervención o modificación de las instalaciones por parte de terceros no autorizados.\n" +
             "• Daños provocados por mal uso, sobrecargas eléctricas, humedad ajena a la estructura o factores climáticos extremos.\n" +
@@ -400,6 +405,7 @@ export const exportarPresupuestoPDF = async (datos) => {
         dibujarPieDePagina(false);
     }
 
-    const nombreFinalArchivo = `${esFactura ? 'Factura' : 'Presupuesto'}_${nroPresupuesto}_${nombreCliente.replace(/\s+/g, '_')}.pdf`;
+    const nombreBase = esFactura ? "Factura" : (datos.esGarantia ? "Garantia" : "Presupuesto");
+    const nombreFinalArchivo = `${nombreBase}_${nroPresupuesto}_${nombreCliente.replace(/\s+/g, "_")}.pdf`;
     doc.save(nombreFinalArchivo);
 };
