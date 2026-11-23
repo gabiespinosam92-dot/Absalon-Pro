@@ -2,22 +2,24 @@
    ABSALON PRO - modules/historial.js
 ========================================================== */
 import { getAll } from "./storage.js";
+import { exportarPresupuestoPDF } from "./pdf.js";
 
 class Historial {
     constructor() {
         this.presupuestos = [];
         this.clientes = [];
+        this.garantias = [];
         const hoy = new Date();
-        const mm = String(hoy.getMonth() + 1).padStart(2, '0');
+        const mm = String(hoy.getMonth() + 1).padStart(2, "0");
         this.mesSeleccionado = `${hoy.getFullYear()}-${mm}`;
     }
 
     async load() {
-        // Obtenemos el workspace de pantalla activo al cargar
         this.workspace = document.getElementById("workspace");
         try {
-            this.presupuestos = await getAll("presupuestos") || [];
-            this.clientes = await getAll("clientes") || [];
+            this.presupuestos = (await getAll("presupuestos")) || [];
+            this.clientes = (await getAll("clientes")) || [];
+            this.garantias = (await getAll("garantias")) || [];
         } catch (err) {
             console.error("Error al cargar datos en historial:", err);
         }
@@ -47,7 +49,9 @@ class Historial {
                 const dbRequest = indexedDB.open(dbName);
                 dbRequest.onsuccess = (event) => {
                     const db = event.target.result;
-                    const nombreStore = db.objectStoreNames.contains("presupuestos") ? "presupuestos" : db.objectStoreNames[0];
+                    const nombreStore = db.objectStoreNames.contains("presupuestos")
+                        ? "presupuestos"
+                        : db.objectStoreNames[0];
 
                     const tx = db.transaction(nombreStore, "readwrite");
                     const store = tx.objectStore(nombreStore);
@@ -55,7 +59,7 @@ class Historial {
 
                     tx.oncomplete = async () => {
                         alert("🗑️ Presupuesto eliminado del registro.");
-                        this.presupuestos = this.presupuestos.filter(p => p.id != id);
+                        this.presupuestos = this.presupuestos.filter((p) => p.id != id);
                         this.procesarYRenderizar();
                     };
                 };
@@ -65,8 +69,91 @@ class Historial {
         }
     }
 
+    _formatearFechaArg(fechaStr) {
+        if (!fechaStr) return "";
+        if (fechaStr.includes("/")) return fechaStr;
+        if (fechaStr.includes("-")) {
+            const [a, m, d] = fechaStr.split("-");
+            return `${d}/${m}/${a}`;
+        }
+        return fechaStr;
+    }
+
+    async exportarPDFDesdeHistorial(id) {
+        const p = this.presupuestos.find((item) => String(item.id) === String(id));
+        if (!p) return;
+
+        const clienteObj = this.clientes.find((c) => String(c.id) === String(p.cliente || "")) || {};
+        const aplicarIva = p.incluirIva !== undefined ? Boolean(p.incluirIva) : true;
+
+        let totalMaterialesNeto = 0;
+        if (Array.isArray(p.materiales) && p.materiales.length > 0) {
+            totalMaterialesNeto = p.materiales.reduce((acc, m) => acc + this._parseMonto(m.total || 0), 0);
+        }
+
+        const moItems = Array.isArray(p.manoObraDetalle) ? p.manoObraDetalle : [];
+        const totalManoObraNeto = moItems.reduce((acc, item) => acc + this._parseMonto(item.total || 0), 0);
+
+        const ivaMateriales = aplicarIva ? totalMaterialesNeto * 0.21 : 0;
+        const ivaManoObra = aplicarIva ? totalManoObraNeto * 0.21 : 0;
+
+        const columnaTotalNeto = totalMaterialesNeto + totalManoObraNeto;
+        const columnaTotalIva = ivaMateriales + ivaManoObra;
+        const totalAPagarFinal =
+            p.totalGeneral !== undefined
+                ? this._parseMonto(p.totalGeneral)
+                : columnaTotalNeto + columnaTotalIva;
+
+        let prefijo = String(p.prefijo || "").toUpperCase();
+        if (!prefijo) {
+            const est = String(p.estado || "").toLowerCase().trim();
+            if (est === "enviado" || est === "e") prefijo = "E";
+            else if (est === "finalizado" || est === "terminado" || est === "t") prefijo = "T";
+            else prefijo = "B";
+        }
+
+        const numeroFormateado = p.numeroFormat || `${prefijo}-${p.numero || p.id}`;
+        const tiempoCant = p.tiempo?.cantidad || 1;
+        const tiempoUnidad = p.tiempo?.unidad || "Días";
+
+        const garantiaVinculada = this.garantias.find(
+            (g) => String(g.id) === String(p.garantíaId || p.garantiaId || "")
+        );
+
+        await exportarPresupuestoPDF({
+            numero: numeroFormateado,
+            prefijo,
+            fecha: this._formatearFechaArg(p.fecha),
+            clienteNombre: clienteObj.nombre || p.cliente || "",
+            clienteDireccion: clienteObj.direccion || "",
+            clienteTelefono: clienteObj.telefono || "",
+            clienteTipoDoc: clienteObj.tipoDocumento || "CUIL/CUIT",
+            clienteNumDoc: clienteObj.numeroDocumento || "",
+            manoObraItems: moItems,
+            incluirIva: aplicarIva,
+            totalMaterialesNeto,
+            totalManoObraNeto,
+            ivaMateriales,
+            ivaManoObra,
+            columnaTotalNeto,
+            columnaTotalIva,
+            totalAPagarFinal,
+            tiempoCant,
+            tiempoUnidadTexto: tiempoUnidad === "Días" ? "uno" : tiempoCant,
+            tiempoUnidadPlural:
+                tiempoUnidad === "Días"
+                    ? Number(tiempoCant) === 1
+                        ? "DIA"
+                        : "DIAS"
+                    : String(tiempoUnidad).toUpperCase(),
+            logo: "./logo_083121.png",
+            observaciones: p.descripcionTrabajo || "",
+            garantiaAplica: garantiaVinculada?.textoGarantia || "",
+            esFactura: String(p.estado || "").toLowerCase() === "facturado"
+        });
+    }
+
     async render() {
-        // Siempre consultamos el elemento fresco de la pantalla
         this.workspace = document.getElementById("workspace");
         if (!this.workspace) return;
 
@@ -129,7 +216,6 @@ class Historial {
             </div>
         `;
 
-        // Vinculamos los eventos verificando primero que los elementos existan
         const filtroMes = document.getElementById("filtroMesHistorial");
         if (filtroMes) {
             filtroMes.onchange = (e) => {
@@ -150,16 +236,16 @@ class Historial {
 
     _parseMonto(val) {
         if (val === null || val === undefined) return 0;
-        if (typeof val === 'number') return val;
-        let str = String(val).replace(/\s/g, '').replace(/\$/g, '');
-        if (str.includes(',') && str.includes('.')) {
-            if (str.indexOf('.') < str.indexOf(',')) {
-                str = str.replace(/\./g, '').replace(',', '.');
+        if (typeof val === "number") return val;
+        let str = String(val).replace(/\s/g, "").replace(/\$/g, "");
+        if (str.includes(",") && str.includes(".")) {
+            if (str.indexOf(".") < str.indexOf(",")) {
+                str = str.replace(/\./g, "").replace(",", ".");
             } else {
-                str = str.replace(/,/g, '');
+                str = str.replace(/,/g, "");
             }
-        } else if (str.includes(',')) {
-            str = str.replace(',', '.');
+        } else if (str.includes(",")) {
+            str = str.replace(",", ".");
         }
         const num = parseFloat(str);
         return isNaN(num) ? 0 : num;
@@ -168,7 +254,7 @@ class Historial {
     procesarYRenderizar() {
         const buscadorEl = document.getElementById("buscadorHistorial");
         const busqueda = buscadorEl ? buscadorEl.value.toLowerCase().trim() : "";
-        
+
         let countB = 0, countE = 0, countT = 0;
         let dineroB = 0, dineroE = 0, dineroT = 0;
 
@@ -178,17 +264,17 @@ class Historial {
 
         const [anoFiltro, mesFiltro] = this.mesSeleccionado.split("-");
 
-        const presupuestosDelMes = this.presupuestos.filter(p => {
+        const presupuestosDelMes = this.presupuestos.filter((p) => {
             if (!p.fecha) return false;
             if (p.fecha.includes("/")) {
-                const [d, m, a] = p.fecha.split("/");
+                const [, m, a] = p.fecha.split("/");
                 return a === anoFiltro && m === mesFiltro;
             }
             return p.fecha.startsWith(this.mesSeleccionado);
         });
 
-        presupuestosDelMes.forEach(p => {
-            const est = String(p.estado || '').toLowerCase().trim();
+        presupuestosDelMes.forEach((p) => {
+            const est = String(p.estado || "").toLowerCase().trim();
             const montoNum = this._parseMonto(p.totalGeneral || p.total || 0);
 
             if (est === "borrador" || est === "b") {
@@ -203,7 +289,8 @@ class Historial {
             }
         });
 
-        const fmt = (v) => v.toLocaleString("es-AR", { style: "currency", currency: "ARS", minimumFractionDigits: 2 });
+        const fmt = (v) =>
+            v.toLocaleString("es-AR", { style: "currency", currency: "ARS", minimumFractionDigits: 2 });
 
         const txtTotalB = document.getElementById("txtTotalB");
         const txtTotalE = document.getElementById("txtTotalE");
@@ -215,9 +302,9 @@ class Historial {
 
         this.dibujarCirculo(countB, countE, countT);
 
-        const filtrados = presupuestosDelMes.filter(p => {
-            const clienteIdString = String(p.cliente || '');
-            const clienteObj = this.clientes.find(c => String(c.id) === clienteIdString);
+        const filtrados = presupuestosDelMes.filter((p) => {
+            const clienteIdString = String(p.cliente || "");
+            const clienteObj = this.clientes.find((c) => String(c.id) === clienteIdString);
             const nombre = clienteObj ? clienteObj.nombre.toLowerCase() : clienteIdString.toLowerCase();
             return nombre.includes(busqueda);
         });
@@ -227,15 +314,20 @@ class Historial {
             return;
         }
 
-        filtrados.forEach(p => {
-            const clienteIdString = String(p.cliente || '');
-            const clienteObj = this.clientes.find(c => String(c.id) === clienteIdString);
-            const nombreCliente = clienteObj ? clienteObj.nombre : (p.cliente || "Sin Nombre");
-            
-            const est = String(p.estado || '').toLowerCase().trim();
+        filtrados.forEach((p) => {
+            const clienteIdString = String(p.cliente || "");
+            const clienteObj = this.clientes.find((c) => String(c.id) === clienteIdString);
+            const nombreCliente = clienteObj ? clienteObj.nombre : p.cliente || "Sin Nombre";
+
+            const est = String(p.estado || "").toLowerCase().trim();
             let badgeBg = "#fee2e2", badgeCc = "#ef4444";
-            if (est === "finalizado" || est === "terminado" || est === "t" || est === "aceptado") { badgeBg = "#d1fae5"; badgeCc = "#16a34a"; }
-            else if (est === "enviado" || est === "e") { badgeBg = "#fffbeb"; badgeCc = "#b45309"; }
+            if (est === "finalizado" || est === "terminado" || est === "t" || est === "aceptado") {
+                badgeBg = "#d1fae5";
+                badgeCc = "#16a34a";
+            } else if (est === "enviado" || est === "e") {
+                badgeBg = "#fffbeb";
+                badgeCc = "#b45309";
+            }
 
             const totalFinal = this._parseMonto(p.totalGeneral || p.total || 0);
 
@@ -245,8 +337,9 @@ class Historial {
                 <td style="padding: 10px; color: #475569;">${p.fecha}</td>
                 <td style="padding: 10px; font-weight: bold; color: #334155;">${nombreCliente}</td>
                 <td style="padding: 10px; font-weight: bold; color: #0f172a;">${fmt(totalFinal)}</td>
-                <td style="padding: 10px;"><span style="background: ${badgeBg}; color: ${badgeCc}; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">${p.estado || 'Borrador'}</span></td>
+                <td style="padding: 10px;"><span style="background: ${badgeBg}; color: ${badgeCc}; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">${p.estado || "Borrador"}</span></td>
                 <td style="padding: 10px; text-align: center;">
+                    <button class="btn-pdf-presupuesto" data-id="${p.id}" style="background: #b71c1c; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer; font-weight: bold; margin-right: 5px;">📄 PDF</button>
                     <button class="btn-ver-presupuesto" data-id="${p.id}" style="background: #104E2E; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer; font-weight: bold; margin-right: 5px;">👁️ Ver / Editar</button>
                     <button class="btn-eliminar-presupuesto" data-id="${p.id}" style="background: #ef4444; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer; font-weight: bold;">🗑️ Eliminar</button>
                 </td>
@@ -258,14 +351,21 @@ class Historial {
     }
 
     asignarEventosBotones() {
-        document.querySelectorAll(".btn-ver-presupuesto").forEach(btn => {
+        document.querySelectorAll(".btn-pdf-presupuesto").forEach((btn) => {
+            btn.onclick = (e) => {
+                const id = e.target.getAttribute("data-id");
+                this.exportarPDFDesdeHistorial(id);
+            };
+        });
+
+        document.querySelectorAll(".btn-ver-presupuesto").forEach((btn) => {
             btn.onclick = (e) => {
                 const id = e.target.getAttribute("data-id");
                 this.verPresupuesto(id);
             };
         });
 
-        document.querySelectorAll(".btn-eliminar-presupuesto").forEach(btn => {
+        document.querySelectorAll(".btn-eliminar-presupuesto").forEach((btn) => {
             btn.onclick = (e) => {
                 const id = e.target.getAttribute("data-id");
                 this.eliminarPresupuesto(id);
@@ -281,7 +381,10 @@ class Historial {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
         if (total === 0) {
-            ctx.beginPath(); ctx.arc(80, 80, 70, 0, 2 * Math.PI); ctx.fillStyle = "#e2e8f0"; ctx.fill();
+            ctx.beginPath();
+            ctx.arc(80, 80, 70, 0, 2 * Math.PI);
+            ctx.fillStyle = "#e2e8f0";
+            ctx.fill();
             return;
         }
 
@@ -291,8 +394,12 @@ class Historial {
         data.forEach((val, idx) => {
             if (val > 0) {
                 const slice = (val / total) * 2 * Math.PI;
-                ctx.beginPath(); ctx.moveTo(80, 80); ctx.arc(80, 80, 70, startAngle, startAngle + slice);
-                ctx.closePath(); ctx.fillStyle = colors[idx]; ctx.fill();
+                ctx.beginPath();
+                ctx.moveTo(80, 80);
+                ctx.arc(80, 80, 70, startAngle, startAngle + slice);
+                ctx.closePath();
+                ctx.fillStyle = colors[idx];
+                ctx.fill();
                 startAngle += slice;
             }
         });
