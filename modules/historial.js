@@ -2,7 +2,7 @@
    ABSALON PRO - modules/historial.js
 ========================================================== */
 import { getAll } from "./storage.js";
-import { exportarPresupuestoPDF } from "./pdf.js";
+import { exportarPresupuestoPDF, exportarGarantiaPDF, exportarReciboPDF } from "./pdf.js";
 
 class Historial {
     constructor() {
@@ -79,10 +79,7 @@ class Historial {
         return fechaStr;
     }
 
-    async exportarPDFDesdeHistorial(id) {
-        const p = this.presupuestos.find((item) => String(item.id) === String(id));
-        if (!p) return;
-
+    _armarDatosBase(p) {
         const clienteObj = this.clientes.find((c) => String(c.id) === String(p.cliente || "")) || {};
         const aplicarIva = p.incluirIva !== undefined ? Boolean(p.incluirIva) : true;
 
@@ -115,12 +112,11 @@ class Historial {
         const numeroFormateado = p.numeroFormat || `${prefijo}-${p.numero || p.id}`;
         const tiempoCant = p.tiempo?.cantidad || 1;
         const tiempoUnidad = p.tiempo?.unidad || "Días";
-
         const garantiaVinculada = this.garantias.find(
             (g) => String(g.id) === String(p.garantíaId || p.garantiaId || "")
         );
 
-        await exportarPresupuestoPDF({
+        return {
             numero: numeroFormateado,
             prefijo,
             fecha: this._formatearFechaArg(p.fecha),
@@ -150,7 +146,91 @@ class Historial {
             observaciones: p.descripcionTrabajo || "",
             garantiaAplica: garantiaVinculada?.textoGarantia || "",
             esFactura: String(p.estado || "").toLowerCase() === "facturado"
+        };
+    }
+
+    async exportarSoloPresupuesto(id) {
+        const p = this.presupuestos.find((item) => String(item.id) === String(id));
+        if (!p) return;
+        await exportarPresupuestoPDF(this._armarDatosBase(p));
+    }
+
+    async exportarSoloGarantia(id) {
+        const p = this.presupuestos.find((item) => String(item.id) === String(id));
+        if (!p) return;
+        await exportarGarantiaPDF(this._armarDatosBase(p));
+    }
+
+    abrirModalRecibo(id) {
+        const p = this.presupuestos.find((item) => String(item.id) === String(id));
+        if (!p) return;
+
+        const base = this._armarDatosBase(p);
+        const hoyArg = new Date().toLocaleDateString("es-AR");
+
+        const modal = document.createElement("div");
+        modal.id = "modalReciboHistorial";
+        Object.assign(modal.style, {
+            position: "fixed",
+            top: "0",
+            left: "0",
+            width: "100vw",
+            height: "100vh",
+            backgroundColor: "rgba(0,0,0,0.5)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: "99999"
         });
+
+        modal.innerHTML = `
+            <div style="background:white; padding:22px; border-radius:8px; width:420px; max-width:92%; font-family:sans-serif; box-shadow:0 4px 12px rgba(0,0,0,0.25);">
+                <h3 style="margin-top:0; color:#104E2E;">🧾 Generar Recibo (${base.numero})</h3>
+                <p style="font-size:13px; color:#475569; margin-bottom:14px;">Cliente: <b>${base.clienteNombre}</b></p>
+
+                <label style="font-size:13px; font-weight:bold;">Fecha Emisión</label>
+                <input id="recFecha" type="text" value="${hoyArg}" style="width:100%; padding:8px; margin:4px 0 12px; box-sizing:border-box; border:1px solid #cbd5e1; border-radius:4px;">
+
+                <label style="font-size:13px; font-weight:bold;">Monto Recibido ($)</label>
+                <input id="recMonto" type="number" step="0.01" value="${base.totalAPagarFinal}" style="width:100%; padding:8px; margin:4px 0 12px; box-sizing:border-box; border:1px solid #cbd5e1; border-radius:4px;">
+
+                <label style="font-size:13px; font-weight:bold;">Medio de Pago</label>
+                <select id="recMedio" style="width:100%; padding:8px; margin:4px 0 12px; box-sizing:border-box; border:1px solid #cbd5e1; border-radius:4px;">
+                    <option value="Efectivo">Efectivo</option>
+                    <option value="Transferencia">Transferencia</option>
+                    <option value="Mercado Pago">Mercado Pago</option>
+                    <option value="Tarjeta">Tarjeta</option>
+                </select>
+
+                <label style="font-size:13px; font-weight:bold;">Aclaración</label>
+                <textarea id="recAclaracion" rows="3" style="width:100%; padding:8px; margin:4px 0 16px; box-sizing:border-box; border:1px solid #cbd5e1; border-radius:4px;">Se recibió el pago correspondiente al comprobante ${base.numero}.</textarea>
+
+                <div style="display:flex; justify-content:flex-end; gap:10px;">
+                    <button id="btnCancelarRecibo" style="padding:8px 14px; background:#e2e8f0; border:none; border-radius:4px; cursor:pointer; font-weight:bold;">Cancelar</button>
+                    <button id="btnConfirmarRecibo" style="padding:8px 14px; background:#104E2E; color:white; border:none; border-radius:4px; cursor:pointer; font-weight:bold;">📄 Descargar Recibo</button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        document.getElementById("btnCancelarRecibo").onclick = () => modal.remove();
+        document.getElementById("btnConfirmarRecibo").onclick = async () => {
+            await exportarReciboPDF({
+                numero: base.numero,
+                fecha: document.getElementById("recFecha").value.trim(),
+                clienteNombre: base.clienteNombre,
+                clienteDireccion: base.clienteDireccion,
+                clienteTelefono: base.clienteTelefono,
+                clienteTipoDoc: base.clienteTipoDoc,
+                clienteNumDoc: base.clienteNumDoc,
+                montoRecibido: Number(document.getElementById("recMonto").value || 0),
+                medioPago: document.getElementById("recMedio").value,
+                aclaracion: document.getElementById("recAclaracion").value.trim(),
+                logo: "./logo_083121.png"
+            });
+            modal.remove();
+        };
     }
 
     async render() {
@@ -339,9 +419,11 @@ class Historial {
                 <td style="padding: 10px; font-weight: bold; color: #0f172a;">${fmt(totalFinal)}</td>
                 <td style="padding: 10px;"><span style="background: ${badgeBg}; color: ${badgeCc}; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">${p.estado || "Borrador"}</span></td>
                 <td style="padding: 10px; text-align: center;">
-                    <button class="btn-pdf-presupuesto" data-id="${p.id}" style="background: #b71c1c; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer; font-weight: bold; margin-right: 5px;">📄 PDF</button>
-                    <button class="btn-ver-presupuesto" data-id="${p.id}" style="background: #104E2E; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer; font-weight: bold; margin-right: 5px;">👁️ Ver / Editar</button>
-                    <button class="btn-eliminar-presupuesto" data-id="${p.id}" style="background: #ef4444; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer; font-weight: bold;">🗑️ Eliminar</button>
+                    <button class="btn-pdf-presupuesto" data-id="${p.id}" style="background: #b71c1c; color: white; border: none; padding: 5px 8px; border-radius: 4px; font-size: 12px; cursor: pointer; font-weight: bold; margin-right: 4px;">📄 PDF</button>
+                    <button class="btn-pdf-garantia" data-id="${p.id}" style="background: #0f766e; color: white; border: none; padding: 5px 8px; border-radius: 4px; font-size: 12px; cursor: pointer; font-weight: bold; margin-right: 4px;">🛡️ Garantía</button>
+                    <button class="btn-pdf-recibo" data-id="${p.id}" style="background: #1d4ed8; color: white; border: none; padding: 5px 8px; border-radius: 4px; font-size: 12px; cursor: pointer; font-weight: bold; margin-right: 4px;">🧾 Recibo</button>
+                    <button class="btn-ver-presupuesto" data-id="${p.id}" style="background: #104E2E; color: white; border: none; padding: 5px 8px; border-radius: 4px; font-size: 12px; cursor: pointer; font-weight: bold; margin-right: 4px;">👁️ Ver / Editar</button>
+                    <button class="btn-eliminar-presupuesto" data-id="${p.id}" style="background: #ef4444; color: white; border: none; padding: 5px 8px; border-radius: 4px; font-size: 12px; cursor: pointer; font-weight: bold;">🗑️</button>
                 </td>
             `;
             tbody.appendChild(fila);
@@ -354,7 +436,21 @@ class Historial {
         document.querySelectorAll(".btn-pdf-presupuesto").forEach((btn) => {
             btn.onclick = (e) => {
                 const id = e.target.getAttribute("data-id");
-                this.exportarPDFDesdeHistorial(id);
+                this.exportarSoloPresupuesto(id);
+            };
+        });
+
+        document.querySelectorAll(".btn-pdf-garantia").forEach((btn) => {
+            btn.onclick = (e) => {
+                const id = e.target.getAttribute("data-id");
+                this.exportarSoloGarantia(id);
+            };
+        });
+
+        document.querySelectorAll(".btn-pdf-recibo").forEach((btn) => {
+            btn.onclick = (e) => {
+                const id = e.target.getAttribute("data-id");
+                this.abrirModalRecibo(id);
             };
         });
 
