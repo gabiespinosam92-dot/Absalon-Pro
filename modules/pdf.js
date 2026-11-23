@@ -2,6 +2,30 @@
    ABSALON PRO - MÓDULO PDF UNIFICADO (PRESUPUESTOS, GARANTÍAS Y RECIBOS)
 ========================================================== */
 
+const cargarImagenBase64 = (src) => {
+    return new Promise((resolve) => {
+        if (!src) return resolve(null);
+        if (src.startsWith("data:image")) return resolve(src);
+
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.onload = () => {
+            try {
+                const canvas = document.createElement("canvas");
+                canvas.width = img.naturalWidth || img.width;
+                canvas.height = img.naturalHeight || img.height;
+                const ctx = canvas.getContext("2d");
+                ctx.drawImage(img, 0, 0);
+                resolve(canvas.toDataURL("image/png"));
+            } catch (e) {
+                resolve(src);
+            }
+        };
+        img.onerror = () => resolve(null);
+        img.src = src;
+    });
+};
+
 export const exportarPresupuestoPDF = async (datos = {}) => {
     if (typeof window.jspdf === "undefined") {
         try {
@@ -29,12 +53,22 @@ export const exportarPresupuestoPDF = async (datos = {}) => {
     const docTipo = datos.clienteTipoDoc || "CUIL/CUIT";
     const docNum = datos.clienteNumDoc || "";
 
-    // Definimos 'prefijo' de forma segura a partir de datos.prefijo o del número (ej: "E-0034" -> "E")
     const prefijo = String(
         datos.prefijo || (nroPresupuesto.includes("-") ? nroPresupuesto.split("-")[0] : "")
     ).toUpperCase();
 
     const esRecibo = Boolean(datos.esRecibo);
+    const logoData = await cargarImagenBase64(datos.logo || "./logo_083121.png");
+
+    const dibujarLogo = (x, y, w, h) => {
+        if (!logoData) return;
+        try {
+            const formatoImg = logoData.includes("image/jpeg") ? "JPEG" : "PNG";
+            doc.addImage(logoData, formatoImg, x, y, w, h);
+        } catch (e) {
+            console.warn("No se pudo insertar el logo en el PDF:", e);
+        }
+    };
 
     // ==========================================
     // PIE DE PÁGINA (CONFIGURABLE SEGÚN RECIBO)
@@ -49,11 +83,16 @@ export const exportarPresupuestoPDF = async (datos = {}) => {
         if (!esDocumentoRecibo) {
             doc.setFont("helvetica", "bold");
             doc.setFontSize(9);
+            doc.setTextColor(0, 0, 0);
             doc.text("CONDICIONES COMERCIALES:", 15, yPie + 5);
 
             doc.setFont("helvetica", "normal");
             doc.setFontSize(8.5);
-            doc.text("RECUERDE QUE LOS PRESUPUESTOS TIENEN UN PLAZO DE 15 DIAS Y PARA CONFIRMAR SE ABONA UNA SEÑA DEL 50%.", 15, yPie + 9);
+            doc.text(
+                "RECUERDE QUE LOS PRESUPUESTOS TIENEN UN PLAZO DE 15 DIAS Y PARA CONFIRMAR SE ABONA UNA SEÑA DEL 50%.",
+                15,
+                yPie + 9
+            );
 
             doc.setLineWidth(0.5);
             doc.line(15, yPie + 14, 195, yPie + 14);
@@ -63,6 +102,7 @@ export const exportarPresupuestoPDF = async (datos = {}) => {
 
         doc.setFont("helvetica", "bold");
         doc.setFontSize(10);
+        doc.setTextColor(0, 0, 0);
         doc.text("GABRIEL ABSALON", 15, yPie + offsetFirma);
 
         doc.setFont("helvetica", "normal");
@@ -84,9 +124,7 @@ export const exportarPresupuestoPDF = async (datos = {}) => {
     // DISEÑO ESPECÍFICO PARA RECIBO DE DINERO
     // ==========================================
     if (esRecibo) {
-        if (datos.logo) {
-            try { doc.addImage(datos.logo, "PNG", 15, 15, 46, 29); } catch (e) {}
-        }
+        dibujarLogo(15, 15, 46, 29);
 
         doc.setFont("helvetica", "normal");
         doc.setFontSize(9);
@@ -109,13 +147,19 @@ export const exportarPresupuestoPDF = async (datos = {}) => {
         doc.setTextColor(0, 0, 0);
         doc.text(`FECHA EMISIÓN: ${fechaPresupuesto}`, 195, 40, { align: "right" });
 
+        if (docNum) {
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(9.5);
+            doc.text(`${docTipo}: ${docNum}`, 195, 47, { align: "right" });
+        }
+
         doc.setDrawColor(210, 210, 210);
         doc.setLineWidth(0.3);
         doc.line(15, 55, 195, 55);
 
-        // Datos del cliente
         doc.setFont("helvetica", "bold");
         doc.setFontSize(9.5);
+        doc.setTextColor(0, 0, 0);
         doc.text("CLIENTE:", 15, 65);
         doc.text("DIRECCIÓN:", 15, 72);
         doc.text("TELÉFONO:", 15, 79);
@@ -125,15 +169,7 @@ export const exportarPresupuestoPDF = async (datos = {}) => {
         doc.text(dirCliente, 39, 72);
         doc.text(telCliente, 38, 79);
 
-        if (docNum) {
-            doc.setFont("helvetica", "bold");
-            doc.text(`${docTipo}:`, 130, 65);
-            doc.setFont("helvetica", "normal");
-            doc.text(String(docNum), 152, 65);
-        }
-
-        // Bloque central del Recibo
-        let yRecibo = 95;
+        const yRecibo = 95;
         doc.setFillColor(245, 247, 245);
         doc.rect(15, yRecibo, 180, 85, "FD");
         doc.setDrawColor(200, 200, 200);
@@ -157,7 +193,7 @@ export const exportarPresupuestoPDF = async (datos = {}) => {
         doc.text("Medio de Pago:", 21, yRecibo + 38);
         doc.setFont("helvetica", "normal");
         doc.setFontSize(11);
-        doc.text(`${datos.medioPago || ""}`, 60, yRecibo + 38);
+        doc.text(`${datos.medioPago || "Efectivo"}`, 60, yRecibo + 38);
 
         doc.setFont("helvetica", "bold");
         doc.setFontSize(11);
@@ -165,20 +201,23 @@ export const exportarPresupuestoPDF = async (datos = {}) => {
         doc.setFont("helvetica", "normal");
         doc.setFontSize(10);
 
-        const lineasAclaracion = doc.splitTextToSize(datos.aclaracion || "Sin observaciones adicionales.", 130);
+        const lineasAclaracion = doc.splitTextToSize(
+            datos.aclaracion || "Sin observaciones adicionales.",
+            130
+        );
         doc.text(lineasAclaracion, 21, yRecibo + 60);
 
         dibujarPieDePagina(true);
 
-        const nombreArchivoRecibo = `Recibo_${nroPresupuesto}_${nombreCliente.replace(/\s+/g, "_")}.pdf`;
-        doc.save(nombreArchivoRecibo);
+        const nombreLimpio = (nombreCliente || "Cliente").replace(/\s+/g, "_");
+        doc.save(`Recibo_${nroPresupuesto}_${nombreLimpio}.pdf`);
         return;
     }
 
     // ==========================================
     // FLUJO ESTÁNDAR (PRESUPUESTO / ORDEN / FACTURA)
     // ==========================================
-    const esFinalizado = prefijo === "T" || Boolean(datos.esGarantia) || Boolean(datos.garantiaAplica) || Boolean(datos.garantiaExclusiones);
+    const esFinalizado = prefijo === "T" || Boolean(datos.incluirGarantia);
     const esFactura = Boolean(datos.esFactura);
     const aplicarIva = datos.incluirIva !== undefined ? Boolean(datos.incluirIva) : true;
 
@@ -188,11 +227,12 @@ export const exportarPresupuestoPDF = async (datos = {}) => {
 
     const columnaTotalNeto = Number(datos.columnaTotalNeto || 0);
     const columnaTotalIva = aplicarIva ? Number(datos.columnaTotalIva || 0) : 0;
-    const granTotalFinal = columnaTotalNeto + columnaTotalIva;
+    const granTotalFinal =
+        datos.totalAPagarFinal !== undefined
+            ? Number(datos.totalAPagarFinal)
+            : columnaTotalNeto + columnaTotalIva;
 
-    if (datos.logo) {
-        try { doc.addImage(datos.logo, "PNG", 15, 15, 46, 29); } catch (e) {}
-    }
+    dibujarLogo(15, 15, 46, 29);
 
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
@@ -228,12 +268,19 @@ export const exportarPresupuestoPDF = async (datos = {}) => {
     doc.setTextColor(0, 0, 0);
     doc.text(`FECHA: ${fechaPresupuesto}`, 195, 40, { align: "right" });
 
+    if (docNum) {
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(9.5);
+        doc.text(`${docTipo}: ${docNum}`, 195, 47, { align: "right" });
+    }
+
     doc.setDrawColor(210, 210, 210);
     doc.setLineWidth(0.3);
     doc.line(15, 55, 195, 55);
 
     doc.setFont("helvetica", "bold");
     doc.setFontSize(9.5);
+    doc.setTextColor(0, 0, 0);
     doc.text("CLIENTE:", 15, 63);
     doc.text("DIRECCIÓN:", 15, 69);
     doc.text("TELÉFONO:", 15, 75);
@@ -242,13 +289,6 @@ export const exportarPresupuestoPDF = async (datos = {}) => {
     doc.text(nombreCliente, 35, 63);
     doc.text(dirCliente, 39, 69);
     doc.text(telCliente, 38, 75);
-
-    if (docNum) {
-        doc.setFont("helvetica", "bold");
-        doc.text(`${docTipo}:`, 130, 63);
-        doc.setFont("helvetica", "normal");
-        doc.text(String(docNum), 152, 63);
-    }
 
     let y = 83;
     doc.setDrawColor(0, 0, 0);
@@ -272,9 +312,10 @@ export const exportarPresupuestoPDF = async (datos = {}) => {
         doc.setFont("helvetica", "normal");
         doc.text(String(cant), 21, y + 5, { align: "center" });
 
-        const descTexto = String(descripcion).length > 48
-            ? String(descripcion).substring(0, 45) + "..."
-            : String(descripcion);
+        const descTexto =
+            String(descripcion).length > 48
+                ? String(descripcion).substring(0, 45) + "..."
+                : String(descripcion);
 
         doc.text(descTexto, 32, y + 5);
         doc.text(neto ? `$ ${formato(neto)}` : "", 125, y + 5, { align: "right" });
@@ -293,7 +334,7 @@ export const exportarPresupuestoPDF = async (datos = {}) => {
     if (moItems.length > 0) {
         moItems.forEach((item) => {
             const itemNeto = Number(item.total || 0);
-            const itemIva = aplicarIva ? (itemNeto * 0.21) : 0;
+            const itemIva = aplicarIva ? itemNeto * 0.21 : 0;
             const itemTotal = itemNeto + itemIva;
             const cantMostrar = `${item.cantidad || 1}`;
             const descMostrar = `${item.concepto || item.descripcion || ""}`;
@@ -332,31 +373,45 @@ export const exportarPresupuestoPDF = async (datos = {}) => {
     doc.setFontSize(10);
     doc.text("ALIAS: GABI.ESPINOSAM (MERCADO PAGO)", 19, y + 11.5);
 
+    if (datos.observaciones) {
+        y += 20;
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(9.5);
+        doc.text("OBSERVACIONES Y CONDICIONES DEL SERVICIO:", 15, y);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9);
+        const lineasObs = doc.splitTextToSize(String(datos.observaciones).toUpperCase(), 180);
+        doc.text(lineasObs, 15, y + 5);
+    }
+
     dibujarPieDePagina(false);
 
     if (esFinalizado || esFactura) {
         doc.addPage();
 
-        if (datos.logo) {
-            try { doc.addImage(datos.logo, "PNG", 15, 15, 46, 29); } catch (e) {}
-        }
+        dibujarLogo(15, 15, 46, 29);
 
         doc.setFont("helvetica", "normal");
         doc.setFontSize(9);
         doc.setTextColor(100, 100, 100);
-        doc.text("RESPONSABLE OPERATIVO:", 15, 47);
-        doc.text("Técnico: Gabriel Absalon | M.M.O.", 15, 51);
+        doc.text("Servicio Técnico Integral", 15, 47);
+        doc.text("Resistencia - Chaco", 15, 51);
 
         doc.setFont("helvetica", "bold");
-        doc.setFontSize(18);
+        doc.setFontSize(16);
         doc.setTextColor(0, 0, 0);
-        doc.text("GARANTÍAS Y COBERTURA", 195, 25, { align: "right" });
+        doc.text("ORDEN DE TRABAJO TERMINADO", 195, 25, { align: "right" });
 
         doc.setFont("helvetica", "normal");
         doc.setFontSize(10);
-        doc.text(`ASOCIADO A: ${nroPresupuesto}`, 195, 32, { align: "right" });
+        doc.text(`NÚMERO DE PRESUPUESTO: ${nroPresupuesto}`, 195, 32, { align: "right" });
         doc.text(`FECHA EMISIÓN: ${fechaPresupuesto}`, 195, 38, { align: "right" });
-        doc.text(`CLIENTE: ${nombreCliente}`, 195, 44, { align: "right" });
+        if (datos.fechaCaducidad) {
+            doc.text(`FECHA CADUCIDAD: ${datos.fechaCaducidad}`, 195, 44, { align: "right" });
+        }
+        if (docNum) {
+            doc.text(`${docTipo}: ${docNum}`, 195, datos.fechaCaducidad ? 50 : 44, { align: "right" });
+        }
 
         doc.setDrawColor(210, 210, 210);
         doc.setLineWidth(0.3);
@@ -375,13 +430,16 @@ export const exportarPresupuestoPDF = async (datos = {}) => {
         doc.setFont("helvetica", "normal");
         doc.setFontSize(9);
 
-        const textoAplica = datos.garantiaAplica ||
-            "La presente garantía cubre fallas de ejecución, defectos de ensamblado o vicios ocultos derivados exclusivamente de la mano de obra aplicada en los trabajos detallados en el comprobante principal. Esta cobertura posee una validez de 12 meses a partir de la fecha de entrega y conformidad de la obra.";
+        const textoAplica =
+            datos.garantiaAplica ||
+            "La presente garantía cubre exclusivamente los trabajos de reparación, mantenimiento o instalación ejecutados sobre el equipo por un período de 6 (seis) meses a partir de la fecha de entrega/finalización del servicio.\n" +
+                "Condiciones de Anulación:\n" +
+                "La garantía perderá validez de forma inmediata e irrevocable si el equipo es intervenido, desarmado, reparado o modificado por personal técnico ajeno a nuestra empresa o por el propio usuario durante el período de vigencia. Asimismo, quedan excluidas las fallas ocasionadas por fluctuaciones extremas de tensión eléctrica, mal uso o causas ajenas al trabajo realizado.";
 
         const lineasAplica = doc.splitTextToSize(textoAplica, 172);
         doc.text(lineasAplica, 19, yGarantia);
 
-        yGarantia += (lineasAplica.length * 5) + 12;
+        yGarantia += lineasAplica.length * 4.5 + 10;
 
         doc.setFillColor(239, 239, 239);
         doc.rect(15, yGarantia, 180, 7.5, "FD");
@@ -393,11 +451,12 @@ export const exportarPresupuestoPDF = async (datos = {}) => {
         doc.setFont("helvetica", "normal");
         doc.setFontSize(9);
 
-        const textoExclusiones = datos.garantiaExclusiones ||
+        const textoExclusiones =
+            datos.garantiaExclusiones ||
             "Quedan expresamente excluidas de la garantía las siguientes situaciones:\n" +
-            "• Intervención o modificación de las instalaciones por parte de terceros no autorizados.\n" +
-            "• Daños provocados por mal uso, sobrecargas eléctricas, humedad ajena a la estructura o factores climáticos extremos.\n" +
-            "• Desgaste natural de insumos y materiales provistos directamente por el cliente.";
+                "• Intervención o modificación de las instalaciones por parte de terceros no autorizados.\n" +
+                "• Daños provocados por mal uso, sobrecargas eléctricas, humedad ajena a la estructura o factores climáticos extremos.\n" +
+                "• Desgaste natural de insumos y materiales provistos directamente por el cliente.";
 
         const lineasExclusiones = doc.splitTextToSize(textoExclusiones, 172);
         doc.text(lineasExclusiones, 19, yGarantia);
@@ -405,7 +464,7 @@ export const exportarPresupuestoPDF = async (datos = {}) => {
         dibujarPieDePagina(false);
     }
 
-    const nombreBase = esFactura ? "Factura" : (datos.esGarantia ? "Garantia" : "Presupuesto");
-    const nombreFinalArchivo = `${nombreBase}_${nroPresupuesto}_${nombreCliente.replace(/\s+/g, "_")}.pdf`;
+    const nombreLimpio = (nombreCliente || "Cliente").replace(/\s+/g, "_");
+    const nombreFinalArchivo = `${esFactura ? "Factura" : "Presupuesto"}_${nroPresupuesto}_${nombreLimpio}.pdf`;
     doc.save(nombreFinalArchivo);
 };
